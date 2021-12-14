@@ -1,0 +1,94 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Adams adm",
+	"patterns": [		
+		{
+			"include": "#numerics"
+		},
+		{
+			"include": "#keywords"
+		},
+		{
+			"include": "#commands"
+		},
+		{
+			"include": "#functions"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		}
+	],
+	"repository": {
+		"commands": {
+			"patterns": [
+				{
+					"name": "command.command",
+					"match": "(?i)^\\s*\\b(END|TITLE|FE_PART|FLEX_BODY|MATERIAL|PART|POINT_MASS|GRAPHICS|MARKER|COUPLER|CVCV|GEAR|GCON|JOINT|JPRIM|MOTION|PTCV|ACCGRAV|BEAM|BUSHING|CONTACT|FE_LOAD|FIELD|FRICTION|GFORCE|MFORCE|NFORCE|SFORCE|SPRINGDAMPER|VFORCE|VTORQUE|DIFF|GSE|LSE|TFSISO|VARIABLE|ARRAY|CURVE|MATRIX|PINPUT|POUTPUT|SPLINE|STRING|SURFACE|DEBUG|ENVIRONMENT|EQUILIBRIUM|IC|INTEGRATOR|KINEMATICS|LSOLVER|PREFERENCES|SENSOR|UNITS|FEMDATA|LIST/NOLIST|MREQUEST|OUTPUT|REQUEST|RESULTS|UCON|LIST|NOLIST|FE_NODE)\\b"					
+				},
+				{
+					"name": "command.argument",
+					"match": "(?i)\\b(part|qp|qg|mass|cm|ip|x|y|z|box|corner|type|rect_base|rect_height|ixx|iyy|izz|area|force|mass|length|time|ground|node_labels|coordinates|section|material|cratiok|name|density|youngs_modulus|poissons_ratio|fe_part|node_label|reuler|label|S|angle|section_node|mu_static|mu_dynamic|stiffness|damping|dmax|igeom|jgeom|exponent|coulomb_friction|stiction_transition_velocity|friction_transition_velocity|full|rows|columns|values|open|matrix|curve_points|hht|error|hmax|xrf|jgrav|igrav|kgrav|iyx|jxx)\\b"				
+				}
+			]
+
+		},
+		"numerics": {
+			"patterns": [
+				{
+				"name": "constant.numeric", 
+				"match": "\\b[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?(d|D)?\\b"
+				}
+			]
+		},
+		"keywords": {
+			"patterns": [
+				{
+					"name": "constant.language",
+					"match": "(?i)\\b(yes|no|on|off)\\b"
+				},
+				{
+					"match": "(?i)(=)\\s*(RORDER|NEWTON|KILOGRAM|MILLIMETER|SECOND|solid rectangular|3dbeam)",
+					"captures": {"1": {"name": "keyword.operator"}, "2": {"name": "constant.language"}}
+				},
+				{
+					"name": "keyword.operator",
+					"match": "(\\+|\\-|=|\\*|/|\\.|!=)"
+				}
+		]
+	},
+	"functions": {
+		"patterns": [
+			{
+				"name": "entity.name.function", 
+				"match": "(?i)\\b(ABS|ACOS|AINT|ANINT|ASIN|ATAN|ATAN2|COS|COSH|EXP|LOG|LOG10|MAX|MIN|MOD|SIGN|SIN|SINH|SQRT|TAN|TANH|CPU|HSIZE|TIME|MODE|NJAC|NRHS|ORDER|PI|DTOR|RTOD|AX|AY|AZ|DM|DX|DXYZ|DY|DZ|INCANG|ORIENT|PHI|PITCH|PSI|ROLL|THETA|YAW|VM|VR|VX|VXYZ|VY|VZ|WM|WX|WY|WZ|ACCM|ACCX|ACCY|ACCZ|WDTM|WDTX|WDTY|WDTZ|FM|FX|FY|FZ|TM|TX|TY|TZ|BEAM|BUSH|FIELD|FRICTION|GFORCE|SFORCE|SPDP|VFORCE|VTORQ|CVCV|JOINT|JPRIM|MOTION|PTCV|ARYVAL|DIF|DIF1|PINVAL|POUVAL|SENVAL|VARVAL|IF|AO|AKISPL|CUBSPL|CURVE|INTERP|BISTOP|CHEBY|DELAY|FORCOS|FORSIN|HAVSIN|IMPACT|INVPSD|POLY|SHF|STEP|STEP5|SWEEP|FXFREQ|FXMODE|ACCXYZ|DXYZ|FXYZ|TXYZ|UVX|UVY|UVZ|VXYZ|WXYZ|WDTXYZ|UV|MAG|TRANS)\\b"
+			}
+		]
+	},
+	"strings": {
+			"name": "string.quoted.double.adams_adm",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "parameter.reference", 			
+					"match": "\\$(([A-Za-z]|_)*)\\b"				
+				}
+			]
+		},
+		"comments": {
+			"name": "comment",
+			"begin": "^\\s*!",
+			"end": "$",
+			"patterns": [
+				{
+					"name": "keyword", 			
+					"match": "(NOTE:)|(TODO:)"				
+				}
+			]
+		}
+	},
+	"scopeName": "source.adm"
+}

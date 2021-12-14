@@ -1,0 +1,46 @@
+{
+    "name": "msc_adams",
+    "displayName": "MSC Adams",
+    "description": "Support for the MSC Adams lanugages",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.42.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "adams_cmd",
+                "aliases": ["Adams CMD", "adams_cmd"],
+                "extensions": [".cmd",".mac"],
+                "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "adams_adm",
+                "aliases": ["Adams ADM", "adams_adm"],
+                "extensions": [".adm"],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "adams_cmd",
+                "scopeName": "source.cmd",
+                "path": "./syntaxes/adams_cmd.tmLanguage.json"
+            },
+            {
+                "language": "adams_adm",
+                "scopeName": "source.adm",
+                "path": "./syntaxes/adams_adm.tmLanguage.json"
+            }
+        ],
+        "snippets": [
+            {
+              "language": "adams_cmd",
+              "path": "./snippets/adams_cmd.json"
+            }
+        ]
+    }
+}

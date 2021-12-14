@@ -1,0 +1,11 @@
+{
+    "iconDefinitions": {
+      "adams": {
+        "iconPath": "./images/adams.ico"
+      }
+    },
+    "fileExtensions": {
+        "mac": "adams",
+        "cmd": "adams"
+    }
+}

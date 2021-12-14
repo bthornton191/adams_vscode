@@ -1,0 +1,51 @@
+{    
+    "editor.tokenColorCustomizations": {
+        "textMateRules": [
+            {
+                "scope": "parameter.reference",
+                "settings": {
+                    "foreground": "#b9edfd",
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                "scope": "variable",
+                "settings": {
+                    "foreground": "#b9edfd"
+                }
+            },
+            {
+                "scope": "parameter.definition",
+                "settings": {
+                    "foreground": "#b9edfd9c",
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                "scope": "selfParameter",
+                "settings": {
+                    "foreground": "#775194"
+                }
+            },
+            {
+                "scope": "command.command",
+                "settings": {
+                    "foreground": "#d3a7fd",
+                    "fontStyle": "bold"
+                }
+            },
+            {
+                "scope": "command.control",
+                "settings": {
+                    "foreground": "#d3a7fd"
+                }
+            },
+            {
+                "scope": "command.argument",
+                "settings": {
+                    "foreground": "#8ec7f0"
+                }
+            }
+        ]
+    }
+}

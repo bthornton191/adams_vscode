@@ -1,0 +1,330 @@
+Adams View model name: MODEL_1
+!
+!-------------------------------- SYSTEM UNITS ---------------------------------
+!
+UNITS/
+, FORCE = NEWTON
+, MASS = KILOGRAM
+, LENGTH = MILLIMETER
+, TIME = SECOND
+!
+!----------------------------------- PARTS -------------------------------------
+!
+!----------------------------------- Ground ------------------------------------
+!
+!                            adams_view_name='ground'
+PART/1
+, GROUND
+!
+!                           adams_view_name='MARKER_1'
+MARKER/1
+, PART = 1
+, QP = -650, 100, 0
+!
+!                           adams_view_name='MARKER_3'
+MARKER/3
+, PART = 1
+, QP = -600, 72.5, -100
+!
+!                           adams_view_name='MARKER_4'
+MARKER/4
+, PART = 1
+, QP = 550, 72.5, -100
+!
+!                           adams_view_name='GCURVE_1'
+!GRAPHICS/1
+!, CURVE
+!, CID = 1
+!, CRM = 1
+!
+!                            adams_view_name='BOX_11'
+GRAPHICS/11
+, BOX
+, CORNER = 3
+, X = 50
+, Y = -50
+, Z = 200
+!
+!                            adams_view_name='BOX_12'
+GRAPHICS/12
+, BOX
+, CORNER = 4
+, X = 50
+, Y = -50
+, Z = 200
+!
+!------------------------------------ Part -------------------------------------
+!
+!                            adams_view_name='PART_3'
+PART/3
+, QG = 25, 25, 0
+, MASS = 3.9005
+, CM = 10
+, IP = 13814.27083, 13814.27083, 1625.208333
+!
+!                           adams_view_name='MARKER_5'
+MARKER/5
+, PART = 3
+, QP = -50, 250, -100
+!
+!                              adams_view_name='cm'
+MARKER/10
+, PART = 3
+, QP = -25, 225, 1.387778781E-014
+, REULER = 90D, 180D, 0D
+!
+!                            adams_view_name='BOX_13'
+GRAPHICS/13
+, BOX
+, CORNER = 5
+, X = 50
+, Y = -50
+, Z = 200
+!
+!---------------------------------- SECTONS ------------------------------------
+!
+!                          adams_view_name='SECTION_1'
+SECTION/1
+, TYPE = Solid Rectangular
+, RECT_BASE = 100
+, RECT_HEIGHT = 25
+, IYY = 2.083333333E+006
+, IZZ = 1.302083333E+005
+, IYZ = 0
+, JXX = 2.213541667E+006
+, AREA = 2500
+!
+!---------------------------------- FE PARTS -----------------------------------
+!
+!---------------------------------- FE PART ------------------------------------
+!
+!                          adams_view_name='Fe_Part_1'
+FE_PART/2
+, TYPE = 3DBEAM
+, NODE_LABELS = 1, 2, 3, 4, 5, 6
+, COORDINATES = 1, -650, 100, 0, 6.113438635, 0, 0, 2, -391.1735603, 64.68486282
+, 0, 6.181626994, 0, 0, 3, -130.5867801, 47.02729423, 0, 6.249381246, 0, 0, 4
+, 130.5867801, 47.02729423, 0, 0.0338040613, 0, 0, 5, 391.1735603, 64.68486282
+, 0, 0.101558313, 0, 0, 6, 650, 100, 0, 0.1697466718, 0, 0
+, SECTION = 
+, 1, 2500, 2.083333333E+006, 1.302083333E+005, 0, 2.213541667E+006
+, 2, 2500, 2.083333333E+006, 1.302083333E+005, 0, 2.213541667E+006
+, 3, 2500, 2.083333333E+006, 1.302083333E+005, 0, 2.213541667E+006
+, 4, 2500, 2.083333333E+006, 1.302083333E+005, 0, 2.213541667E+006
+, 5, 2500, 2.083333333E+006, 1.302083333E+005, 0, 2.213541667E+006
+, 6, 2500, 2.083333333E+006, 1.302083333E+005, 0, 2.213541667E+006
+, MATERIAL = 1
+, CRATIOK = 0.01
+!
+!                            adams_view_name='rubber'
+MATERIAL/1
+, NAME = rubber
+, DENSITY = 7.801E-006
+, YOUNGS_MODULUS = 20700
+, POISSONS_RATIO = 0.29
+!
+!                      adams_view_name='Centreline_Marker'
+MARKER/2
+, FE_PART = 2
+, NODE_LABEL = 1
+, QP = -650, 100, 0
+!
+!                          adams_view_name='Node_Start'
+MARKER/7
+, FE_PART = 2
+, NODE_LABEL = 1
+, QP = -650, 100, 0
+, REULER = 350.2742321D, 0D, 0D
+!
+!                           adams_view_name='Node_End'
+MARKER/8
+, FE_PART = 2
+, NODE_LABEL = 6
+, QP = 650, 100, 0
+, REULER = 9.725767883D, 0D, 0D
+!
+!                           adams_view_name='MARKER_3'
+MARKER/9
+, FE_PART = 2
+, NODE_LABEL = 4
+!
+!                          adams_view_name='MARKER_11'
+MARKER/11
+, FE_PART = 2
+, NODE_LABEL = 4
+!
+!                          adams_view_name='Fe_Node_3'
+FE_NODE/1
+, FE_PART = 2
+, LABEL = 3
+, S = 0.4
+, ANGLE = 0
+, SECTION_NODE = 1
+, QG = -130.5867801, 47.02729423, 0
+, REULER = 358.06317D, 0D, 0D
+!
+!                          adams_view_name='Fe_Node_4'
+FE_NODE/2
+, FE_PART = 2
+, LABEL = 4
+, S = 0.6
+, ANGLE = 0
+, SECTION_NODE = 1
+, QG = 130.5867801, 47.02729423, 0
+, REULER = 1.936830042D, 0D, 0D
+!
+!                          adams_view_name='Fe_Node_5'
+FE_NODE/3
+, FE_PART = 2
+, LABEL = 5
+, S = 0.8
+, ANGLE = 0
+, SECTION_NODE = 1
+, QG = 391.1735603, 64.68486282, 0
+, REULER = 5.818862712D, 0D, 0D
+!
+!                          adams_view_name='Fe_Node_6'
+FE_NODE/4
+, FE_PART = 2
+, LABEL = 6
+, S = 1
+, ANGLE = 0
+, SECTION_NODE = 1
+, QG = 650, 100, 0
+, REULER = 9.725767883D, 0D, 0D
+!
+!                          adams_view_name='Fe_Node_1'
+FE_NODE/5
+, FE_PART = 2
+, LABEL = 1
+, S = 0
+, ANGLE = 0
+, SECTION_NODE = 1
+, QG = -650, 100, 0
+, REULER = 350.2742321D, 0D, 0D
+!
+!                          adams_view_name='Fe_Node_2'
+FE_NODE/6
+, FE_PART = 2
+, LABEL = 2
+, S = 0.2
+, ANGLE = 0
+, SECTION_NODE = 1
+, QG = -391.1735603, 64.68486282, 0
+, REULER = 354.1811373D, 0D, 0D
+!
+!                           adams_view_name='GCURVE_2'
+GRAPHICS/2
+, CURVE
+, CID = 2
+, CRM = 2
+!
+!                           adams_view_name='SHELL_10'
+GRAPHICS/10
+, EXTERNAL
+, RM = 11
+, FILE = curved_beam_contact.xmt_txt
+, ELEMENT = SHELL_10
+, FACETING_TOLERANCE = 300
+!
+!---------------------------------- CONTACTS -----------------------------------
+!
+!                          adams_view_name='CONTACT_1'
+CONTACT/1
+, IGEOM = 10
+, JGEOM = 11
+, IMPACT
+, STIFFNESS = 1.0E+005
+, DAMPING = 10
+, DMAX = 0.1
+, EXPONENT = 2.2
+, COULOMB_FRICTION = ON
+, MU_STATIC = 0.3
+, MU_DYNAMIC = 0.1
+, STICTION_TRANSITION_VELOCITY = 100
+, FRICTION_TRANSITION_VELOCITY = 1000
+!
+!                          adams_view_name='CONTACT_2'
+CONTACT/2
+, IGEOM = 10
+, JGEOM = 12
+, IMPACT
+, STIFFNESS = 1.0E+005
+, DAMPING = 10
+, DMAX = 0.1
+, EXPONENT = 2.2
+, COULOMB_FRICTION = ON
+, MU_STATIC = 0.3
+, MU_DYNAMIC = 0.1
+, STICTION_TRANSITION_VELOCITY = 100
+, FRICTION_TRANSITION_VELOCITY = 1000
+!
+!                          adams_view_name='CONTACT_3'
+CONTACT/3
+, IGEOM = 10
+, JGEOM = 13
+, IMPACT
+, STIFFNESS = 1.0E+005
+, DAMPING = 10
+, DMAX = 0.1
+, EXPONENT = 2.2
+, COULOMB_FRICTION = ON
+, MU_STATIC = 0.3
+, MU_DYNAMIC = 0.1
+, STICTION_TRANSITION_VELOCITY = 100
+, FRICTION_TRANSITION_VELOCITY = 1000
+!
+!------------------------------ DYNAMIC GRAPHICS -------------------------------
+!
+!------------------------------ DATA STRUCTURES --------------------------------
+!
+!                           adams_view_name='MATRIX_1'
+!                           adams_view_units='length'
+MATRIX/1
+, FULL = RORDER
+, ROWS = 4
+, COLUMNS = 3
+, VALUES = 0, 0, 0
+, 450, -50, 0
+, 850, -50, 0
+, 1300, 0, 0
+!
+!                           adams_view_name='MATRIX_2'
+!                           adams_view_units='length'
+MATRIX/2
+, FULL = RORDER
+, ROWS = 4
+, COLUMNS = 3
+, VALUES = 0, 0, 0
+, 388.9731347808, -46.3511175456, 0
+, 780.5867801253, -52.9727057665, 0
+, 1300, 0, 0
+!
+!                           adams_view_name='CURVE_1'
+CURVE/1
+, OPEN
+, MATRIX = 1
+, CURVE_POINTS
+!
+!                           adams_view_name='CURVE_2'
+CURVE/2
+, OPEN
+, MATRIX = 2
+, CURVE_POINTS
+!
+!------------------------- GRAVITATIONAL ACCELERATION --------------------------
+!
+ACCGRAV/
+, JGRAV = -9806.65
+!
+!----------------------------- ANALYSIS SETTINGS -------------------------------
+!
+INTEGRATOR/
+, HHT
+, ERROR = 5.0E-006
+, HMAX = 0.002
+!
+RESULTS/
+, XRF
+!
+END

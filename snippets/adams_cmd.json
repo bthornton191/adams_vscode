@@ -1,0 +1,31 @@
+{    
+    "Set a variable" : { 
+        "scope": "adams_cmd",       
+        "prefix": "var set var",         
+        "body": [      
+            "var set var=${1:\\$_self.${2:varname}} ${3|real,int,str,obj|}=$4",
+            "$0"
+        ],
+        "description": "Set a variable"
+    },
+    "If statement" : { 
+        "scope": "adams_cmd",       
+        "prefix": "if ",         
+        "body": [      
+            "if condition=(eval($3))",
+            "   $0",
+            "end"
+        ],
+        "description": "For loop"
+    },
+    "For loop" : { 
+        "scope": "adams_cmd",       
+        "prefix": "for ",         
+        "body": [      
+            "for var=${1:\\$_self.${2:idx}} ${3|start_value=1 end_value=, obj=|}",
+            "   $0",
+            "end"
+        ],
+        "description": "For loop"
+    }
+}
