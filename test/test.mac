@@ -1,0 +1,12 @@
+!USER_ENTERED_COMMAND  command
+! -----------------------------------------------------------------
+! MACRO NAME:  test.mac
+! DESCRIPTION:  description   
+! AUTHOR:       Ben Thornton (ben.thornton@hexagon.com)
+!END_OF_PARAMETERS
+
+abs()
+asin()
+ax()
+abs()
+db_active()

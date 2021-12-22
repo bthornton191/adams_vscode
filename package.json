@@ -9,18 +9,36 @@
     "categories": [
         "Programming Languages"
     ],
+    "main": "./src/extension.ts",
+    "activationEvents": [
+        "onLanguage:adams_cmd"
+    ],
     "contributes": {
+        "capabilities": {
+            "hoverProvider": "true"
+        },
         "languages": [
             {
                 "id": "adams_cmd",
-                "aliases": ["Adams CMD", "adams_cmd"],
-                "extensions": [".cmd",".mac"],
+                "aliases": [
+                    "Adams CMD",
+                    "adams_cmd"
+                ],
+                "extensions": [
+                    ".cmd",
+                    ".mac"
+                ],
                 "configuration": "./language-configuration.json"
             },
             {
                 "id": "adams_adm",
-                "aliases": ["Adams ADM", "adams_adm"],
-                "extensions": [".adm"],
+                "aliases": [
+                    "Adams ADM",
+                    "adams_adm"
+                ],
+                "extensions": [
+                    ".adm"
+                ],
                 "configuration": "./language-configuration.json"
             }
         ],
@@ -38,9 +56,12 @@
         ],
         "snippets": [
             {
-              "language": "adams_cmd",
-              "path": "./snippets/adams_cmd.json"
+                "language": "adams_cmd",
+                "path": "./snippets/adams_cmd.json"
             }
         ]
+    },
+    "devDependencies": {
+        "@types/node": "^17.0.2"
     }
 }

@@ -15,6 +15,7 @@ analysis collate_contacts &
 
 var set var=sep_str string='.' 
 var set var=number real=.05
+var set var=$_self.varname real=(eval(abs())))
 
 mar create marker_name = .my_part.marker_1
 
@@ -27,11 +28,12 @@ if condition = (DB_EXISTS(eval("."//"$New_plot_name")))
 	   variable_name = plotname &
 	   string = (UNIQUE_NAME(eval("$New_plot_name")))
 else
-   variable set &
+   variable set & 
 	   variable_name = plotname &
 	   string = (eval("$New_plot_name"))
 end
 
+var set var=hello real=(eval(abs))
 ! -----------
 ! Create Plot
 ! -----------

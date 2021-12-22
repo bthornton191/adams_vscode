@@ -27,5 +27,19 @@
             "end"
         ],
         "description": "For loop"
+    },
+    "Macro Header" : {
+        "scope": "adams_cmd",
+        "prefix": "macro_header ",
+        "body": [
+            "!USER_ENTERED_COMMAND ${1:command}",
+            "! -----------------------------------------------------------------",
+            "! MACRO NAME:  $TM_FILENAME",
+            "! DESCRIPTION: ${2:description}   ",
+            "! AUTHOR:      ${3:Ben Thornton (ben.thornton@hexagon.com)}",
+            "!END_OF_PARAMETERS",
+            "$0"
+        ],
+        "description": "Macro Header"
     }
 }
