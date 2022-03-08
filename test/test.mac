@@ -5,8 +5,10 @@
 ! AUTHOR:       Ben Thornton (ben.thornton@hexagon.com)
 !END_OF_PARAMETERS
 
-abs()
-asin()
-ax()
-abs()
-db_active()
+var set var=$_self.varname str=(eval(db_)) 
+var set var=$_self.varname str=(eval(db_default_name()))
+vie
+
+
+
+    

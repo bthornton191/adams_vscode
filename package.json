@@ -11,9 +11,21 @@
     ],
     "main": "./src/extension.ts",
     "activationEvents": [
-        "onLanguage:adams_cmd"
+        "onLanguage:adams_cmd",
+        "onCommand:msc_adams.activate"
     ],
+    "icon": "images/adams.png",
     "contributes": {
+        "commands" : [
+            {
+                "command": "msc_adams.macros.makeHeader",
+                "title": "Make Macro Header"
+            },
+            {
+                "command": "msc_adams.activate",
+                "title": "Activate MSC Adams Extenstion"
+            }
+        ],
         "capabilities": {
             "hoverProvider": "true"
         },

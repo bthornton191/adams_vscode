@@ -4,16 +4,17 @@ const fs = require('fs');
 
 
 // vscode.window.showInformationMessage(file)
-let function_names = new Map();
 
 function activate(context) {
 	
-	const dir = context.asAbsolutePath('resources/adams_design_functions');
-	const files = fs.readdirSync(dir);
+	let function_names = new Map();
+	let view_commandws = new Map();
+	const func_dir = context.asAbsolutePath('resources/adams_design_functions');
+	const func_files = fs.readdirSync(func_dir);
 	
-	for (var file of files) {
-		if (fs.lstatSync([dir, file].join('/')).isFile()) {
-			var text = fs.readFileSync([dir, file].join('/'),'utf8');
+	for (var file of func_files) {
+		if (fs.lstatSync([func_dir, file].join('/')).isFile()) {
+			var text = fs.readFileSync([func_dir, file].join('/'),'utf8');
 			var function_name = path.parse(file).name
 			function_names.set(function_name, text)
 			// vscode.window.showInformationMessage(path.parse(function_name).name)
@@ -21,6 +22,9 @@ function activate(context) {
 		}
 	}
 	
+	// ---------------------------------------------------------------------------
+	// Hover
+	// ---------------------------------------------------------------------------
     vscode.languages.registerHoverProvider('adams_cmd', {
 		provideHover(document, position, token) {
 			
@@ -36,9 +40,92 @@ function activate(context) {
 			return new vscode.Hover(markdown, range);
         }
     });
+	
+	
+	// ---------------------------------------------------------------------------
+	// Completion
+	// ---------------------------------------------------------------------------
+	
+	const cmd_files_json = context.asAbsolutePath('resources/adams_view_commands/unstructured.json');
+	const commands = JSON.parse(fs.readFileSync(cmd_files_json))
+	vscode.languages.registerCompletionItemProvider('adams_cmd', {
+		
+		provideCompletionItems(document, position, token, context) {
+			
+			let completions = []
+			const range = document.getWordRangeAtPosition(position);
+            const word = document.getText(range).toLowerCase();			
+			const line = document.lineAt(position).text.substr(0, position.character);
+			
+			// Functions
+			for (var [name, doc] of function_names.entries()) {
+				if (name.startsWith(word)) {
+					let completion = new vscode.CompletionItem(name);
+					completion.kind = vscode.CompletionItemKind.Function;
+					completion.command = { command: 'editor.action.showHover'};
+					completion.documentation = new vscode.MarkdownString(doc);
+					// vscode.window.showInformationMessage(function_names.get(name));
+					completions.push(completion);
+				}
+			}
+			
+			// Commands
+			for (var command of commands) {
+				if (command.startsWith(line)) {
+					let completion = new vscode.CompletionItem(command);
+					completion.kind = vscode.CompletionItemKind.Interface;
+					completions.push(completion);
+				}
+			}
+			
+			return completions;
+		}
+	});
+	
+	// ---------------------------------------------------------------------------
+	// Add stub files to extra python analysis paths
+	// ---------------------------------------------------------------------------
+	const stub_dir = context.asAbsolutePath('resources/adamspy');
+	const section = vscode.workspace.getConfiguration('python', vscode.ConfigurationTarget.Workspace)
+	const current_setting = section.get('analysis.extraPaths').filter(item => ![stub_dir].includes(item));
+	section.update('analysis.extraPaths', current_setting.concat([stub_dir]), vscode.ConfigurationTarget.Workspace )
+	
+	// ---------------------------------------------------------------------------
+	// Commands
+	// ---------------------------------------------------------------------------
+	const command = 'msc_adams.macros.makeHeader';
+	const commandHandler = () => {
+		const activeEditor = vscode.window.activeTextEditor;
+		vscode.commands.executeCommand('editor.action.goToLocations', activeEditor.document.uri, vscode.P)
+		vscode.commands.executeCommand('editor.action.insertSnippet', {langeId: "adams_cmd", name: "Macro Header"});
+		// const editor = vscode.window.activeTextEditor;
+    	// if (editor) {
+			// 	editor.edit(editBuilder => {
+				//     	editBuilder.insert(editor.selection.active, text);
+				// 	});
+				// };
+			};
+	vscode.commands.registerCommand(command, commandHandler);
+
+	vscode.window.showInformationMessage('MSC Adams Extension Activated');
 }
 
-function deactivate() { }
+
+function deactivate(context) {
+	
+	// ---------------------------------------------------------------------------
+	// Remove stub files to extra python analysis paths
+	// ---------------------------------------------------------------------------
+	const stub_dir = context.asAbsolutePath('resources/adamspy');
+	const section = vscode.workspace.getConfiguration('python', vscode.ConfigurationTarget.Workspace)
+	const current_setting = section.get('analysis.extraPaths').filter(item => ![stub_dir].includes(item));
+	section.update('analysis.extraPaths', current_setting, vscode.ConfigurationTarget.Workspace )
+}
+
+
+const command = 'msc_adams.activate';
+const commandHandler = () => {};
+vscode.commands.registerCommand(command, commandHandler);
 
 module.exports = {
     activate,

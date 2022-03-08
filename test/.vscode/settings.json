@@ -47,5 +47,8 @@
                 }
             }
         ]
-    }
+    },
+    "python.analysis.extraPaths": [
+        "c:\\Users\\bthornt\\.vscode\\extensions\\adams_vscode\\resources\\adamspy"
+    ]
 }

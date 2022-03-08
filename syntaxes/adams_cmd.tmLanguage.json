@@ -12,6 +12,12 @@
 			"include": "#commands"
 		},
 		{
+			"include": "#arguments"
+		},
+		{
+			"include": "#continued-commands"
+		},
+		{
 			"include": "#functions"
 		},
 		{
@@ -29,18 +35,30 @@
 			"patterns": [
 				{
 					"name": "command.command",
-					"match": "(?i)^\\s*\\b(analysis|ana|animation|ani|toolkit|check_messages|clearance|callback|color|constraint|contact|contour_plot|data_element|data|defaults|def|display_attributes|display|disp|entity|ent|executive_control|exec|fepart_node|file|fi|floating_marker|force|function|geometry|geom|graphic_results|group|hardcopy|help|highlight|hotspots|info_window|info|inf|interface|int|language|library|lib|list_info|list|li|macro|mac|marker|mar|material|mat|mdi|measure|measure_display|model|mod|move|multi_run_analysis|notes|numeric_results|numeric|optimize|output_control|output|out|panel|part|pause|plot3D|plotcurve3d|plugin|point|ptemplate|report|section|simulation|sim|stereo|submit|system|sys|time|ude|undo|variable|var|view|xy_plots|xy_plot|colors)\\b"					
-				},
-				{
-					"name": "command.argument",
-					"match": "(?i)\\b(var|variable|variable_name|cond|condition|str|string|string_value|int|integer|integer_value|real|real_value|table|title|auto_subtitle|auto_date|auto_analysis_type|obj|object|object_name|cont|contact|contact_name|echo|auto_analsis_name|analysis_name|auto_analysis_name|create_page|calculate_axis_limits|y_expression|x_expression|y_units|x_units|auto_zoom|plot_name|file_name|file|fi|model_name|mod|into_model_name|into_model|c1|c2|c3|part_name|part|extrusion_name|reference|marker|points_for_profile|length_along_z_axis|analytical|default_coordinate_system|location|orientation|undisplay|display|plugin_name|variable_name|real_value|zoom_factor|component_units|user_function|routine|note_name|point_size|analysis_name|subtitle|spline_name|matrix_name|column_count|row_count|input_order|values|data_element_name|object_names|library_name|push_button_name|label|command|confirmation|separator_name|help_text|documentation_text|echo_all_loops|x_units|user_entered_command|wrap_in_undo|create_panel|y_units|z_units|start_value|end_value|object_value|full|echo|analysis_names|config_file_name|cross_plotting|execute_macros|update|commands_include|state|brief|threshold|density|material_name|macro_name|write_to_terminal|youngs_modulus|poissons_ratio|marker_name|model_name|thread_count|user|file_name|create_results_file|data_structures|formatted|accelerations|applied_forces|suppress|default_layout|displacements|plot_name|auto_title|reaction_forces|velocities|auto_subtitle|auto_date|auto_analysis_name|request_name|orientation|ori|group_name|c1|c2|c3|new_group|location|loc|f1|f2|f3|f4|f5|f6|f7|f8|results_name|component_names|component_labels|comment|create_page|ddata|run|table|auto_axis|title|condition|layout|page_name|dialog_box_name|Header_Left_text|Header_Right_text|Footer_Left_text|Footer_Right_text|updates_enabled|Header_Center_text|curve_name|set_contents|string_value|str|real_value|real|integer_value|int|a1|a2|a3|csmarker_name|about|objects_in_group|page_name|send_to_printer|language|curve_thickness|red|green|blue|part_name|auto_zoom|image_prefix|increment_frame_by|animation_name|loop|up_axis|forward_axis|image_type|mpeg_ngop|mpeg_round_size|mode|format|color_name|avi_compression|avi_quality|avi_keyframe_every|avi_frames_per_sec|mpeg_ngop|mpeg_round_size|window_size|end_time|step_size|save_analyses|analysis_prefix|eigen_solution_name|mode_number|objective_name|new_result_set_component_name|format_for_output|values_for_output|filename|file|constraint_name|constraint|name_visibility|size_of_icons|i_marker_name|i_marker|j_marker_name|j_marker|friction_name|joint_name|joint|mu_static|mu_dynamic|friction_arm|bending_reaction_arm|pin_radius|stiction_transition_velocity|friction_transition_velocity|transition_velocity_coefficient|ma_stiction_deformation|friction_torque_preload|effect|inactive_during_static|force_name|force|instance_name|stiffness|damping|dmax|exponent|coulomb_friction|i_maker_name|i_geometry_name|j_marker_name|j_geometry_name|i_curve_name|j_curve_name|type|adams_id|max_stiction_deformation|duplicate_parts|legend|j_flip_normal|height|width|horiz_resizing|vert_resizing|commands|default|tab_container_name|current_choice|tab_label|justified|label_name|scrollable|word_wrap|editable|required|execute_cmds_on_exit|number_of_values|file_type|filter|alert_on_overwrite|browse_action|units|iconifiable|execution_commands|decorate|resizable|width_minimum|height_minimum|grab_all_input|field_name|string_type|add_quotes|text|numeric_type|upper_check|lower_check|container_name|relative_to|length|radius|cylinder_name|side_count_for_body|segment_count_for_ends|center_marker|red_component|green_component|blue_component|gradient|color|geometry_name|revolution_name|reference_marker|angle_extent|profile_curve|entity|entity_name|objects)\\b"				
+					"match": "(?i)^\\s*\\b(analysis|ana|animation|ani|toolkit|check_messages|clearance|callback|color|constraint|contact|contour_plot|data_element|data|defaults|def|display_attributes|display|disp|entity|ent|executive_control|exec|fepart_node|file|fi|floating_marker|force|function|geometry|geom|graphic_results|group|hardcopy|help|highlight|hotspots|info_window|info|inf|interface|int|language|library|lib|list_info|list|li|macro|mac|marker|mar|material|mat|mdi|measure|measure_display|model|mod|move|multi_run_analysis|notes|numeric_results|numeric|optimize|output_control|output|out|panel|part|pause|plot3D|plotcurve3d|plugin|point|ptemplate|report|section|simulation|sim|stereo|submit|system|sys|time|ude|undo|variable|var|view|xy_plots|xy_plot|colors|analysis|animation|toolkit|putenv|break|check_messages|clearance|callback|color|constraint|contact|continue|contour_plot|data_element|defaults|default|display_attributes|else|elseif|end|entity|executive_control|fepart_node|FePart_Node|file|floating_marker|for|force|function|geometry|graphic_results|group|hardcopy|help|highlight|hotspots|if|info_window|interface|Interface|language|library|list_info|macro|marker|material|mdi|measure|measure_display|model|move|multi_run_analysis|multi_run|notes|numeric_results|optimize|output_control|panel|part|Part|pause|plot3D|plugin|point|ptemplate|report|return|section|simulation|stereo|submit|system|time|ude|undo|variable|view|while|xy_plots)\\b"					
 				},
 				{
 					"name": "command.control",
-					"match": "(?i)\\b(collate_contacts|template|create|cre|set|com|curve|modify|mod|delete|del|command|comm|com|read|re|merge|translation|coordinate_system|grid|ribbon|unload|dialog|create|delete|attributes|full|empty|hardcopy|add|page_display|plotting|push_button|separator|open|spline|matrix|command_file|postprocessing|plots|toolbar|analysis|log_file|message|set|units|page|template|preferences|results|request|curve|plot|window|update_toolbar|begin|create_new_page|calculate_axis_limits|dialog_box|tree_nav|modify|mod|read|delete|del|translation|rotation|object|copy|write|cre|visibility|part|management|orient|zoom|record|start|play|stop|animation_settings|set_mode|load_view|single_run|reset|transient|equilibrium|close|eigensolution|component|text|python|joint|revolute|translational|instance|tab_container|container|field|cylinder|model|revolution|rigid_body|name_and_position|bin|binary)\\b"			
+					"match": "(?i)\\b(collate_contacts|template|create|cre|set|com|curve|modify|mod|delete|del|command|comm|com|read|re|merge|translation|coordinate_system|grid|ribbon|unload|dialog|create|delete|attributes|full|empty|hardcopy|add|page_display|plotting|push_button|separator|open|spline|matrix|command_file|postprocessing|plots|toolbar|analysis|log_file|message|set|units|page|template|preferences|results|request|curve|plot|window|update_toolbar|begin|create_new_page|calculate_axis_limits|dialog_box|tree_nav|modify|mod|read|delete|del|translation|rotation|object|copy|write|cre|visibility|part|management|orient|zoom|record|start|play|stop|animation_settings|set_mode|load_view|single_run|reset|transient|equilibrium|close|eigensolution|component|text|python|joint|revolute|translational|instance|tab_container|container|field|cylinder|model|revolution|rigid_body|name_and_position|bin|binary|collate_contacts|create|delete|modify|reload_files|add_simulation|display|log|pause|play|record|replace_simulation|reset|step|compute|export_results|copy|attributes|legend|adams_output|analysis|command_file|coordinate_system|expert_fields|force_graphics|geometry|hardcopy|icon_naming|lights|model|name_generation|orient_axis_and_plane|page|plot|plt_attributes|prompting_level|report|solver|sprintf_precision|units|vector_plots|view|color|icon_size|rendering_mode|scale|visibility|set|adams_data_set|binary|command|dac|enhanced_data_set|fea_loads|graphics|html|iges|log_file|mnfxform|parasolid|postprocessing|render|request|results|rpc|shell|spread_sheet|stereo_lithography|table|temporary_settings|testdata|text|wavefront|animate|deformed_mode_shape|mode_shape_animation|single_frame_display|empty|objects|filter|label|close|read|btn_stack|cmd_window|container|coord_window|data_table|database_navigator|dialog_box|event|entity|field|grid|menu|menubar|message|mode|model_browser|object_table|option_menu|push_button|radio_box|separator|slider|tab_container|toggle_button|toolbar|window|write|switch_to|aggregate_mass|constraint|curves|data_element|defaults|eigen_values|executive_control|files|force|group|linear_mode_shapes|macro|marker|measure|memory_usage|names|notes|output_control|part|plots|statistics|topology|triglue|undo|variable|views|delete_unused|full_plot|save_curve|assemble|generate_ids|merge|verify|control_panel|mirror|object|rotation|translation|component|list_info|read_from_file|transform|design_of_experiments|fit_response_surface|surface|load|unload|reload|restore|configuration|multi_run|script|single_run|animations|commands|generic|autoconnect|build|connect|disassemble|disconnect|replace|sync|backward|begin_block|end_block|flush|forward|save|activate|center|erase|fill_screen|layout|management|reset_default|rotate|translate|zoom|auto_plot|axis|bode|complex_scattering|curve|fft_window|spec_line|template|start|stop|complex_joint|general_constraint|higher_pair_contact|joint|motion_generator|primitive_joint|user_defined|array|matrix|plant|spline|string|torque_graphics|sensor|dynamics_parameters|equilibrium_parameters|easy_dynamics|integrator_parameters|kinematics_parameters|numerical_integration_parameters|preferences|solver_parameters|apply|revert|open|body|direct|element_like|fe_load|direct_torque_vector|feature|point|shape|add|remove|rename|undisplay|execute|clear|insert|sort|location|cut|paste|refresh|undock|dock|mbfilter|copy_object|load_view|panel|python|initial_conditions_parameters|numeric_integration_parameters|debug|femdata|madata|mrequest|output|angle|computed|function|orient|pt2pt|query|range|absolute_value|addition|definite_integral|differentiation|division|dynamic_polyline|fft|interpolation|linear_equation|multiplication|percent_difference|sqrt_sum_of_squares|subtraction|values|zero|all|maximum_value|minimum_value|number_of_time_steps|time_range|evaluate|acf_twindow|acf_window|twindow_function|equation|external_system|fe_part|flexible_body|new_ground|point_mass|rigid_body|create/modify|design_study|doe|optimization|preview_doe|read_results|plot_measure|summarize|tsf_sweep|update|read_acf|write_acf|debugger|eigensolution|equilibrium|mkb|nastran_export|replay|rerun|scripted|statematrix|subroutine|transient|vibration|definition|instance|type_of_instance|swap|output_requests|system_data|both_phase_and_magn|magnitude_plot|phase_plot|auto_zoom|calculate_axis_limits|freeze_curves|coupler|gear|curve_curve|point_curve|convel|cylindrical|fixed|hooke|planar|rackpin|revolute|screw|spherical|translational|universal|at_point|inline|inplane|orientation|parallel_axis|perpendicular|point_point|general_array|ic_array|u_input_array|x_state_array|y_output_array|file|full|sparse|input|state|coord_partitioning_parameters|dynamic_solver|dstiff|(.eds)|measures|splines|gravitational|force_vector|general_force|multi_point_force|single_component_force|torque_vector|beam|bushing|friction|rotational_spring_damper|translational_spring_damper|arc|bspline|chain|circle|curve_trace|ellipse|nurb_curve|outline|point_trace|polyline|blend|hole|thinshell|blockgeometry|ellipsoid|extrusion|frustum|gcontactgeometry|nurb_surf|picture|plane|plate|revolution|solid_shell|spring_damper|torus|block|cylinder|gcontact|link|column|row|cell|selected|mode_set|update_toolbar|create_new_page|delete_page|page_display|deactivate|dynamic_simulation|eigen_solution_calculation|generate_state_matrix|kinematic_simulation|output_file_separator|static_simulation|transient_simulation|akima_spline|ax|ay|az|b_spline|bistop_slot|chebyshev_polynomial|cosine_fourier_series|cubic_spline|differential_equation|dm|dt_differential_equation|dx|dy|fmpanel|fx|fy|impact|input_value_for_plant|invpsd|m_acc|m_wdt|motion|phi|pitch|polynomial|psi|roll|simple_harmonic_function|sine_fourier_series|state_value_for_plant|sweep|theta|tm|torque_vectorpanel|ty|tz|variable_value|vm|vr|vx|vy|vz|wx|wy|wz|x_acc|x_wdt|y_acc|y_wdtpanel|z_acc|z_wdt|general_state_equation|linear_state_equation|transfer_function|initial_velocity|name_and_position|nodal_ics|modal_ics|mass_properties|initial|name_position_section|visual_representation|auto_disable_modes|deformed_mode_display|current_time|dynamic|kinematic|quasi_static|static|consub|solve|coefficient_input|lse_input|matrix_input|measures_input|result_set_input|state_matrix_input|tfsiso_input|result_set_inputxy_plots|hlabel|subtitle|title|vlabel|_point|velocity|tx|yaw)\\b"			
 				}
 			]
-
+		},
+		"arguments": {
+			"patterns": [
+				{
+					"name": "command.argument",
+					"match": "(?i)\\b(var|variable|variable_name|cond|condition|str|string|string_value|int|integer|integer_value|real|real_value|table|title|auto_subtitle|auto_date|auto_analysis_type|obj|object|object_name|cont|contact|contact_name|echo|auto_analsis_name|analysis_name|auto_analysis_name|create_page|calculate_axis_limits|y_expression|x_expression|y_units|x_units|auto_zoom|plot_name|file_name|file|fi|model_name|mod|into_model_name|into_model|c1|c2|c3|part_name|part|extrusion_name|reference|marker|points_for_profile|length_along_z_axis|analytical|default_coordinate_system|location|orientation|undisplay|display|plugin_name|variable_name|real_value|zoom_factor|component_units|user_function|routine|note_name|point_size|analysis_name|subtitle|spline_name|matrix_name|column_count|row_count|input_order|values|data_element_name|object_names|library_name|push_button_name|label|command|confirmation|separator_name|help_text|documentation_text|echo_all_loops|x_units|user_entered_command|wrap_in_undo|create_panel|y_units|z_units|start_value|end_value|object_value|full|echo|analysis_names|config_file_name|cross_plotting|execute_macros|update|commands_include|state|brief|threshold|density|material_name|macro_name|write_to_terminal|youngs_modulus|poissons_ratio|marker_name|model_name|thread_count|user|file_name|create_results_file|data_structures|formatted|accelerations|applied_forces|suppress|default_layout|displacements|plot_name|auto_title|reaction_forces|velocities|auto_subtitle|auto_date|auto_analysis_name|request_name|orientation|ori|group_name|c1|c2|c3|new_group|location|loc|f1|f2|f3|f4|f5|f6|f7|f8|results_name|component_names|component_labels|comment|create_page|ddata|run|table|auto_axis|title|condition|layout|page_name|dialog_box_name|Header_Left_text|Header_Right_text|Footer_Left_text|Footer_Right_text|updates_enabled|Header_Center_text|curve_name|set_contents|string_value|str|real_value|real|integer_value|int|a1|a2|a3|csmarker_name|about|objects_in_group|page_name|send_to_printer|language|curve_thickness|red|green|blue|part_name|auto_zoom|image_prefix|increment_frame_by|animation_name|loop|up_axis|forward_axis|image_type|mpeg_ngop|mpeg_round_size|mode|format|color_name|avi_compression|avi_quality|avi_keyframe_every|avi_frames_per_sec|mpeg_ngop|mpeg_round_size|window_size|end_time|step_size|save_analyses|analysis_prefix|eigen_solution_name|mode_number|objective_name|new_result_set_component_name|format_for_output|values_for_output|filename|file|constraint_name|constraint|name_visibility|size_of_icons|i_marker_name|i_marker|j_marker_name|j_marker|friction_name|joint_name|joint|mu_static|mu_dynamic|friction_arm|bending_reaction_arm|pin_radius|stiction_transition_velocity|friction_transition_velocity|transition_velocity_coefficient|ma_stiction_deformation|friction_torque_preload|effect|inactive_during_static|force_name|force|instance_name|stiffness|damping|dmax|exponent|coulomb_friction|i_maker_name|i_geometry_name|j_marker_name|j_geometry_name|i_curve_name|j_curve_name|type|adams_id|max_stiction_deformation|duplicate_parts|legend|j_flip_normal|height|width|horiz_resizing|vert_resizing|commands|default|tab_container_name|current_choice|tab_label|justified|label_name|scrollable|word_wrap|editable|required|execute_cmds_on_exit|number_of_values|file_type|filter|alert_on_overwrite|browse_action|units|iconifiable|execution_commands|decorate|resizable|width_minimum|height_minimum|grab_all_input|field_name|string_type|add_quotes|text|numeric_type|upper_check|lower_check|container_name|relative_to|length|radius|cylinder_name|side_count_for_body|segment_count_for_ends|center_marker|red_component|green_component|blue_component|gradient|color|geometry_name|revolution_name|reference_marker|angle_extent|profile_curve|entity|entity_name|objects)\\b"				
+				}				
+			]
+		},
+		"continued-commands": {
+			"name": "command.argument.continued",
+			"begin": "(&)(?:\\s*)(!.*)?(?:$)",
+			"beginCaptures": {"1": {"name": "keyword.continuation"}, "2": {"name": "comment"}},
+			"end": "=|((?:^.*)(?<!&)\\s*$)",
+			"endCaptures": {"1": {"patterns": [{"include": "#numerics"}, {"include": "#keywords"}]}},
+			
+			"patterns": [{"include": "#arguments"}, {"include": "#numerics"}, {"include": "#strings"}, {"include": "#comments"}]			
 		},
 		"numerics": {
 			"patterns": [
@@ -51,73 +69,70 @@
 			]
 		},
 		"keywords": {
-			"patterns": [{
-				"name": "keyword.control.conditionals",
-				"match": "(?i)^\\s*\\b(if|else|elseif|while|for|end|continue|break|return)\\b"
-			},
-			{
-				"name": "keyword.continuation",
-				"match": "\\s&\\s*$"
-			},
-			{
-				"name": "constant.language",
-				"match": "(?i)\\b(yes|no|on|off|none)\\b"
-			},
-			{
-				"match": "(?i)(=)\\s*(merge|solid_to_solid|point_to_plane|curve_to_curve)",
-				"captures": {"1": {"name": "keyword.operator"}, "2": {"name": "constant.language"}}
-			},
-			{
-				"name": "keyword.operator",
-				"match": "(\\+|\\-|\\=|\\*|//|\\.)"
-			},
-			{
-				"name": "keyword.boolean",
-				"match": "(!=|==|<|<=|>|>=|&&|\\|\\|)"	
-			}
-		]
-	},
-	"functions": {
-		"patterns": [{
-			"name": "entity.name.function", 
-			"match": "(?i)\\b(ABS|ACOS|AGGREGATE_MASS|AINT|AKIMA_SPLINE|AKIMA_SPLINE2|ALERT|ALERT2|ALERT3|ALIGN|ALLM|ANGLES|ANINT|ANYM|APPEND|HOT_SPOTS|ASIN|ATAN|ATAN2|AVIEW_EDIT_FILE|AX|AY|AZ|BACKUP_FILE|BALANCE|BARTLETT|BARTLETT_WINDOW|BLACKMAN|BLACKMAN_WINDOW|BODEABCD|BODELSE|BODELSM|BODESEQ|BODETFCOEF|BODETFS|BUTTER_DENOMINATOR|BUTTER_FILTER|BUTTER_NUMERATOR|BUTTORD_FREQUENCY|BUTTORD_ORDER|CEIL|CENTER|CHDIR|CLIP|COLS|COMPRESS|COND|CONVERT_ANGLES|COPY_FILES|COS|COSH|CROSS|CSPLINE|CUBIC_SPLINE|DB_ACTIVE|DB_ANCESTOR|DB_CHANGED|DB_CHILDREN|DB_COUNT|DB_DEFAULT|DB_DEFAULT_NAME|DB_DEFAULT_NAME_FOR_TYPE|DB_DELETE_DEPENDENTS|DB_DEL_PARAM_DEPENDENTS|DB_DEL_UNPARAM_DEPENDENTS|DB_DEPENDENTS|DB_DEPENDENTS_EXHAUSTIVE|DB_DESCENDANTS|DB_EXISTS|DB_FIELD_FILTER|DB_FIELD_TYPE|DB_FILTER_NAME|DB_FILTER_TYPE|DB_FULL_NAME_FROM_SHORT|DB_FULL_TYPE_FIELDS|DB_IMMEDIATE_CHILDREN|DB_OBJECT_COUNT|DB_OBJ_EXISTS|DB_OBJ_EXISTS_EXHAUSTIVE|DB_OBJ_FROM_NAME_TYPE|DB_OF_CLASS|DB_OF_TYPE_EXISTS|DB_OLDEST_ANCESTOR|DB_REFERENTS|DB_REFERENTS_EXHAUSTIVE|DB_SHORT_NAME|DB_TWO_WAY|DB_TYPE|DB_TYPE_FIELDS|DET|DETREND|DIFF|DIFFERENTIATE|DIM|DM|DMAT|DOE_MATRIX|DOE_NUM_TERMS|DOT|DX|DY|DZ|EIG_DI|EIG_DR|EIG_VI|EIG_VR|EIGENVALUES_I|EIGENVALUES_R|ELEMENT|EVAL|EXCLUDE|EXECUTE_VIEW_COMMAND|EXP|EXPR_EXISTS|EXPR_REFERENCE|EXPR_REFERENCES|EXPR_STRING|FFTMAG|FFTPHASE|FILE_ALERT|FILE_DIRECTORY_NAME|FILE_EXISTS|FILE_MINUS_EXT|FILE_TEMP_NAME|FILTER|FILTFILT|FIND_MACRO_FROM_COMMAND|FIRST|FIRST_N|FLOOR|FREQUENCY|GETCWD|GETENV|GRIDDATA|GUICLEANUP|HAMMING|HAMMING_WINDOW|HANNING|HANNING_WINDOW|HERMITE_SPLINE|INCLUDE|INT|INTEGR|INTEGRATE|INTERP1|INTERP2|INTERPFT|INVERSE|LAST|LAST_N|LINEAR_SPLINE|LOC_ALONG_LINE|LOC_BY_FLEXBODY_NODEID|LOC_CYLINDRICAL|LOC_FRAME_MIRROR|LOC_GLOBAL|LOC_INLINE|LOC_LOC|LOC_LOCAL|LOC_MIRROR|LOC_ON_AXIS|LOC_ON_LINE|LOC_PERPENDICULAR|LOC_PLANE_MIRROR|LOC_RELATIVE_TO|LOC_SPHERICAL|LOC_TO_FLEXBODY_NODEID|LOC_X_AXIS|LOC_Y_AXIS|LOC_Z_AXIS|LOCAL_FILE_ NAME|LOG|LOG10|MAG|MAX|MAXI|MEAN|MEASURE|MESHGRID|MIN|MINI|MKDIR|MOD|NINT|NODE_ID_CLOSEST|NODE_ID_IS_INTERFACE|NODE_IDS_CLOSEST_TO|NODE_IDS_IN_VOLUME|NODE_IDS_WITHIN_RADIUS|NODE_NODE_CLOSEST|NORM|NORM2|NORMALIZE|NOTAKNOT_SPLINE|OBJECTIVE_UNIT|OBJECTIVE_VALUE|ON_OFF|ORI_ALIGN_AXIS|ORI_ALIGN_AXIS_EUL|ORI_ALL_AXES|ORI_ALONG_AXIS|ORI_FRAME_MIRROR|ORI_GLOBAL|ORI_IN_PLANE|ORI_LOCAL|ORI_MIRROR|ORI_ONE_AXIS|ORI_ORI|ORI_PLANE_MIRROR|ORI_RELATIVE_TO|OTABLE_CHANGED_CELLS|PARAM_STRING|PARSE_STATUS|PARZEN|PARZEN_WINDOW|PHI|PICK_OBJECT|PITCH|POLYFIT|POLYVAL|PROD|PSD|PSI|PUTENV|PWELCH|RAND|Real LIFE (FlexBody [, Analysis])|Real MAX_STRESS (Body, Criterion)|READ_T_O_OPEN_FILE|READ_T_O_CLOSE_FILE|READ_T_O_FIND_BLOCK|READ_T_O_FIND_SUBBLOCK|READ_T_O_UNITS|READ_T_O_CHECK_HEADER|READ_T_O_INTEGER|READ_T_O_SUBBLOCK_INTEGER|READ_T_O_REAL|READ_T_O_REAL_ARRAY|READ_T_O_SUBBLOCK_REAL|READ_T_O_SUBBLOCK_REAL_ARRAY|READ_T_O_STRING|READ_T_O_SUBBLOCK_STRING|READ_T_O_TABLE_COLUMN|READ_T_O_SUBBLOCK_TABLE_COLUMN|READ_T_O_START_TABLE_READ|READ_T_O_START_SUBBLOCK_TABLE_READ|READ_T_O_READ_TABLE_LINE|READ_T_O_NEXT_BLOCK|READ_T_O_NEXT_ATTRIBUTE|READ_T_O_BLOCK_EXISTS|READ_T_O_ATTRIBUTE_EXISTS|RECTANGULAR|RECTANGULAR_WINDOW|REMOVE_FILE|RENAME_FILE|REPLACE_DELIMITER|RESAMPLE|RESHAPE|REVERSE|RMDIR|RMS|ROLL|ROWS|RTOI|RUN_PYTHON_CODE|RUN_PYTHON_FILE|SECURITY_CHECK|SELECT_DIRECTORY|SELECT_FIELD|SELECT_FILE|SELECT_MULTI_TEXT|SELECT_OBJECT|SELECT_OBJECTS|SELECT_REQUEST_IDS|SELECT_TEXT|SELECT_TYPE|SERIES|SHAPE|SERIES2|SIGN|SIM_STATUS|SIM_TIME|SIN|SINH|SORT|SORT_BY|SORT_INDEX|SPLINE|SQRT|SSQ|STACK|STATUS_PRINT|STEP|STOI|STOO|STOR|STR_CASE|STR_CHR|STR_COMPARE|STR_DATE|STR_DELETE|STR_FIND|STR_FIND_COUNT|STR_FIND_IN_STRINGS|STR_FIND_N|STR_INSERT|STR_IS_REAL|STR_IS_SPACE|STR_LENGTH|STR_MATCH|STR_PRINT|STR_REMOVE_WHITESPACE|STR_REPLACE_ALL|STR_SPLIT|STR_SPRINTF|STR_SUBSTR|STR_TIMESTAMP|STR_XLATE|SUM|SYS_INFO|TABLE_COLUMN_SELECTED_CELLS|TABLE_GET_CELLS|TABLE_GET_DIMENSION|TABLE_GET_REALS|TABLE_GET_SELECTED_COLS|TABLE_GET_SELECTED_ROWS|TAN|TANH|TERM_STATUS|THETA|TILDE|TIMER_CPU|TIMER_ELAPSED|TMAT3|TMAT|TRANSPOSE|TRIANGULAR|TRIANGULAR_WINDOW|UNIQUE|UNIQUE_FILE_NAME|UNIQUE_ID|UNIQUE_FULL_NAME|UNIQUE_LOCAL_NAME|UNIQUE_NAME|UNIQUE_NAME_IN_HIERARCHY|UNIQUE_PARTIAL_NAME|UNITS_STRING|UNITS_CONVERSION_FACTOR|UNITS_TYPE|UNITS_VALUE|UNWRAP|USER_STRING|VAL|VALAT|VALI|WELCH|WELCH_WINDOW|WRITE_T_O_OPEN_FILE|WRITE_T_O_CLOSE_FILE|WRITE_T_O_UNITS|WRITE_T_O_DATA_BLOCK|WRITE_T_O_SUBBLOCK|WRITE_T_O_INTEGER|WRITE_T_O_REAL|WRITE_T_O_REAL_ARRAY|WRITE_T_O_PUSH_PRECISION|WRITE_T_O_POP_PRECISION|WRITE_T_O_STRING|WRITE_T_O_TABLE_HEADER|WRITE_T_O_TABLE_REALS|WRITE_I_N_TABLE_REALS|WRITE_T_O_TABLE_LINE|WRITE_T_O_TABLE_STRING|WRITE_T_O_COMMENT|YAW)\\b"
-			}]
-	},
-	"variables": {
-		"patterns": [
-			{
-				"match": "(\\$_self)(\\.)([a-zA-Z0-9_]+)",
-				"captures": {
-					"1": {"name": "selfParameter"},
-					"2": {"name": "keyword.operator"},
-					"3": {"name": "variable"}
-				}
-			},
-			{
-				"name": "parameter.reference", 			
-				"match": "\\$(([A-Za-z]|_)*)\\b"				
-			},
-			{
-				"match": "^(:?\\!)(\\$[A-Za-z_]*)(:.*$)?",
-				"captures": {
-					"1": {"name": "parameter.definition"},
-					"2": {"name": "parameter.reference"},
-					"3": {"name": "parameter.definition"}
-				}												
-			}
-		]
-},
-	"strings": {
-			"name": "string.quoted.double.adams_cmd",
-			"begin": "\"",
-			"end": "\"",
 			"patterns": [
 				{
-					"name": "parameter.reference", 			
-					"match": "\\$(([A-Za-z]|_)*)\\b"				
+					"name": "keyword.control.conditionals",
+					"match": "(?i)^\\s*\\b(if|else|elseif|while|for|end|continue|break|return|abort|:|\\?)\\b"
+				},
+				{
+					"name": "constant.language",
+					"match": "(?i)\\b(yes|no|on|off|none)\\b"
+				},
+				{
+					"match": "(?i)(=)\\s*(merge|solid_to_solid|point_to_plane|curve_to_curve)",
+					"captures": {"1": {"name": "keyword.operator"}, "2": {"name": "constant.language"}}
+				},
+				{
+					"name": "keyword.operator",
+					"match": "(\\+|\\-|\\=|\\*|//|\\.)"
+				},
+				{
+					"name": "keyword.boolean",
+					"match": "(!=|==|<|<=|>|>=|&&|\\|\\|)"	
 				}
 			]
 		},
+		"functions": {
+			"patterns": [{
+				"name": "entity.name.function", 
+				"match": "(?i)\\b(ABS|ACOS|AGGREGATE_MASS|AINT|AKIMA_SPLINE|AKIMA_SPLINE2|ALERT|ALERT2|ALERT3|ALIGN|ALLM|ANGLES|ANINT|ANYM|APPEND|HOT_SPOTS|ASIN|ATAN|ATAN2|AVIEW_EDIT_FILE|AX|AY|AZ|BACKUP_FILE|BALANCE|BARTLETT|BARTLETT_WINDOW|BLACKMAN|BLACKMAN_WINDOW|BODEABCD|BODELSE|BODELSM|BODESEQ|BODETFCOEF|BODETFS|BUTTER_DENOMINATOR|BUTTER_FILTER|BUTTER_NUMERATOR|BUTTORD_FREQUENCY|BUTTORD_ORDER|CEIL|CENTER|CHDIR|CLIP|COLS|COMPRESS|COND|CONVERT_ANGLES|COPY_FILES|COS|COSH|CROSS|CSPLINE|CUBIC_SPLINE|DB_ACTIVE|DB_ANCESTOR|DB_CHANGED|DB_CHILDREN|DB_COUNT|DB_DEFAULT|DB_DEFAULT_NAME|DB_DEFAULT_NAME_FOR_TYPE|DB_DELETE_DEPENDENTS|DB_DEL_PARAM_DEPENDENTS|DB_DEL_UNPARAM_DEPENDENTS|DB_DEPENDENTS|DB_DEPENDENTS_EXHAUSTIVE|DB_DESCENDANTS|DB_EXISTS|DB_FIELD_FILTER|DB_FIELD_TYPE|DB_FILTER_NAME|DB_FILTER_TYPE|DB_FULL_NAME_FROM_SHORT|DB_FULL_TYPE_FIELDS|DB_IMMEDIATE_CHILDREN|DB_OBJECT_COUNT|DB_OBJ_EXISTS|DB_OBJ_EXISTS_EXHAUSTIVE|DB_OBJ_FROM_NAME_TYPE|DB_OF_CLASS|DB_OF_TYPE_EXISTS|DB_OLDEST_ANCESTOR|DB_REFERENTS|DB_REFERENTS_EXHAUSTIVE|DB_SHORT_NAME|DB_TWO_WAY|DB_TYPE|DB_TYPE_FIELDS|DET|DETREND|DIFF|DIFFERENTIATE|DIM|DM|DMAT|DOE_MATRIX|DOE_NUM_TERMS|DOT|DX|DY|DZ|EIG_DI|EIG_DR|EIG_VI|EIG_VR|EIGENVALUES_I|EIGENVALUES_R|ELEMENT|EVAL|EXCLUDE|EXECUTE_VIEW_COMMAND|EXP|EXPR_EXISTS|EXPR_REFERENCE|EXPR_REFERENCES|EXPR_STRING|FFTMAG|FFTPHASE|FILE_ALERT|FILE_DIRECTORY_NAME|FILE_EXISTS|FILE_MINUS_EXT|FILE_TEMP_NAME|FILTER|FILTFILT|FIND_MACRO_FROM_COMMAND|FIRST|FIRST_N|FLOOR|FREQUENCY|GETCWD|GETENV|GRIDDATA|GUICLEANUP|HAMMING|HAMMING_WINDOW|HANNING|HANNING_WINDOW|HERMITE_SPLINE|INCLUDE|INT|INTEGR|INTEGRATE|INTERP1|INTERP2|INTERPFT|INVERSE|LAST|LAST_N|LINEAR_SPLINE|LOC_ALONG_LINE|LOC_BY_FLEXBODY_NODEID|LOC_CYLINDRICAL|LOC_FRAME_MIRROR|LOC_GLOBAL|LOC_INLINE|LOC_LOC|LOC_LOCAL|LOC_MIRROR|LOC_ON_AXIS|LOC_ON_LINE|LOC_PERPENDICULAR|LOC_PLANE_MIRROR|LOC_RELATIVE_TO|LOC_SPHERICAL|LOC_TO_FLEXBODY_NODEID|LOC_X_AXIS|LOC_Y_AXIS|LOC_Z_AXIS|LOCAL_FILE_ NAME|LOG|LOG10|MAG|MAX|MAXI|MEAN|MEASURE|MESHGRID|MIN|MINI|MKDIR|MOD|NINT|NODE_ID_CLOSEST|NODE_ID_IS_INTERFACE|NODE_IDS_CLOSEST_TO|NODE_IDS_IN_VOLUME|NODE_IDS_WITHIN_RADIUS|NODE_NODE_CLOSEST|NORM|NORM2|NORMALIZE|NOTAKNOT_SPLINE|OBJECTIVE_UNIT|OBJECTIVE_VALUE|ON_OFF|ORI_ALIGN_AXIS|ORI_ALIGN_AXIS_EUL|ORI_ALL_AXES|ORI_ALONG_AXIS|ORI_FRAME_MIRROR|ORI_GLOBAL|ORI_IN_PLANE|ORI_LOCAL|ORI_MIRROR|ORI_ONE_AXIS|ORI_ORI|ORI_PLANE_MIRROR|ORI_RELATIVE_TO|OTABLE_CHANGED_CELLS|PARAM_STRING|PARSE_STATUS|PARZEN|PARZEN_WINDOW|PHI|PICK_OBJECT|PITCH|POLYFIT|POLYVAL|PROD|PSD|PSI|PUTENV|PWELCH|RAND|Real LIFE (FlexBody [, Analysis])|Real MAX_STRESS (Body, Criterion)|READ_T_O_OPEN_FILE|READ_T_O_CLOSE_FILE|READ_T_O_FIND_BLOCK|READ_T_O_FIND_SUBBLOCK|READ_T_O_UNITS|READ_T_O_CHECK_HEADER|READ_T_O_INTEGER|READ_T_O_SUBBLOCK_INTEGER|READ_T_O_REAL|READ_T_O_REAL_ARRAY|READ_T_O_SUBBLOCK_REAL|READ_T_O_SUBBLOCK_REAL_ARRAY|READ_T_O_STRING|READ_T_O_SUBBLOCK_STRING|READ_T_O_TABLE_COLUMN|READ_T_O_SUBBLOCK_TABLE_COLUMN|READ_T_O_START_TABLE_READ|READ_T_O_START_SUBBLOCK_TABLE_READ|READ_T_O_READ_TABLE_LINE|READ_T_O_NEXT_BLOCK|READ_T_O_NEXT_ATTRIBUTE|READ_T_O_BLOCK_EXISTS|READ_T_O_ATTRIBUTE_EXISTS|RECTANGULAR|RECTANGULAR_WINDOW|REMOVE_FILE|RENAME_FILE|REPLACE_DELIMITER|RESAMPLE|RESHAPE|REVERSE|RMDIR|RMS|ROLL|ROWS|RTOI|RUN_PYTHON_CODE|RUN_PYTHON_FILE|SECURITY_CHECK|SELECT_DIRECTORY|SELECT_FIELD|SELECT_FILE|SELECT_MULTI_TEXT|SELECT_OBJECT|SELECT_OBJECTS|SELECT_REQUEST_IDS|SELECT_TEXT|SELECT_TYPE|SERIES|SHAPE|SERIES2|SIGN|SIM_STATUS|SIM_TIME|SIN|SINH|SORT|SORT_BY|SORT_INDEX|SPLINE|SQRT|SSQ|STACK|STATUS_PRINT|STEP|STOI|STOO|STOR|STR_CASE|STR_CHR|STR_COMPARE|STR_DATE|STR_DELETE|STR_FIND|STR_FIND_COUNT|STR_FIND_IN_STRINGS|STR_FIND_N|STR_INSERT|STR_IS_REAL|STR_IS_SPACE|STR_LENGTH|STR_MATCH|STR_PRINT|STR_REMOVE_WHITESPACE|STR_REPLACE_ALL|STR_SPLIT|STR_SPRINTF|STR_SUBSTR|STR_TIMESTAMP|STR_XLATE|SUM|SYS_INFO|TABLE_COLUMN_SELECTED_CELLS|TABLE_GET_CELLS|TABLE_GET_DIMENSION|TABLE_GET_REALS|TABLE_GET_SELECTED_COLS|TABLE_GET_SELECTED_ROWS|TAN|TANH|TERM_STATUS|THETA|TILDE|TIMER_CPU|TIMER_ELAPSED|TMAT3|TMAT|TRANSPOSE|TRIANGULAR|TRIANGULAR_WINDOW|UNIQUE|UNIQUE_FILE_NAME|UNIQUE_ID|UNIQUE_FULL_NAME|UNIQUE_LOCAL_NAME|UNIQUE_NAME|UNIQUE_NAME_IN_HIERARCHY|UNIQUE_PARTIAL_NAME|UNITS_STRING|UNITS_CONVERSION_FACTOR|UNITS_TYPE|UNITS_VALUE|UNWRAP|USER_STRING|VAL|VALAT|VALI|WELCH|WELCH_WINDOW|WRITE_T_O_OPEN_FILE|WRITE_T_O_CLOSE_FILE|WRITE_T_O_UNITS|WRITE_T_O_DATA_BLOCK|WRITE_T_O_SUBBLOCK|WRITE_T_O_INTEGER|WRITE_T_O_REAL|WRITE_T_O_REAL_ARRAY|WRITE_T_O_PUSH_PRECISION|WRITE_T_O_POP_PRECISION|WRITE_T_O_STRING|WRITE_T_O_TABLE_HEADER|WRITE_T_O_TABLE_REALS|WRITE_I_N_TABLE_REALS|WRITE_T_O_TABLE_LINE|WRITE_T_O_TABLE_STRING|WRITE_T_O_COMMENT|YAW)\\b"
+				}]
+		},
+		"variables": {
+			"patterns": [
+				{
+					"match": "(\\$_self)(\\.)([a-zA-Z0-9_]+)",
+					"captures": {
+						"1": {"name": "selfParameter"},
+						"2": {"name": "keyword.operator"},
+						"3": {"name": "variable"}
+					}
+				},
+				{
+					"name": "parameter.reference", 			
+					"match": "\\$(([A-Za-z]|_)*)\\b"				
+				},
+				{
+					"match": "^(:?\\!)(\\$[A-Za-z_]*)(:.*$)?",
+					"captures": {
+						"1": {"name": "parameter.definition"},
+						"2": {"name": "parameter.reference"},
+						"3": {"name": "parameter.definition"}
+					}												
+				}
+			]
+		},
+		"strings": {
+				"name": "string.quoted.double.adams_cmd",
+				"begin": "\"",
+				"end": "\"",
+				"patterns": [
+					{
+						"name": "parameter.reference", 			
+						"match": "\\$(([A-Za-z]|_)*)\\b"				
+					}
+				]
+			},
 		"comments": {
 			"name": "comment",
 			"begin": "^\\s*!",
