@@ -54,7 +54,7 @@ if condition = (eval($contact_obj.type)=="8")
       object = (eval(DB_DESCENDANTS(STOO($Analysis//"."//STR_SPLIT($contact_obj,sep_str)[3]//"."//STR_SPLIT($contact_obj.i_flex,sep_str)[3]),"result_set",1,1 )))
    variable set &
       variable_name = node_count &
-      integer = (eval(rows(contact_nodes)))
+      integer = (eval(len(contact_nodes)))
 	  
    ! Add Curves
    xy_plot curve create curve=(eval("."//plotname//".total_force")) &

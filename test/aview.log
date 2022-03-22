@@ -1,0 +1,183 @@
+! Adams View Adams 2021.2.2 (built Jul 26 2021)
+! Graphics:  OpenGL
+! Enter a command, '?', or 'help'.
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  Error detected on line number 6, character 44 of aviewAS.cmd.
+! ERROR:  Invalid input token
+! ERROR:    (eval(<<$>>_self.mod))
+! ERROR:  The command was not executed.
+! ERROR:  >> model merge model_name = (eval($_self.mod)) into_model_name = "$assembly_name" duplicate_parts = merge
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  Error detected on line number 7, character 24 of aviewAS.cmd.
+! ERROR:  Invalid character. Enter a legal character.
+! ERROR:  The command was not executed.
+! ERROR:  >> variable set variable=$_self.varname real=2
+! ERROR:  ---------------------------------------------------------------------
+! >> ! ----------------
+! >> ! Collate Contacts
+! >> ! ----------------
+! >> ! NOTE: This combines multiple contact tracks into one
+! >> analysis collate_contacts &
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  Error detected on line number 13, character 19 of aviewAS.cmd.
+! ERROR:  Invalid character. Enter a legal character.
+! ERROR:  The command was not executed.
+! ERROR:  &>    analysis_name=$Analysis &
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  Error detected on line number 14, character 12 of aviewAS.cmd.
+! ERROR:  '=' is not a valid keyword. You may have misspelled
+! ERROR:  the keyword or you may be missing a continuation character(&)
+! ERROR:  on the previous line.
+! ERROR:  The command was not executed.
+! ERROR:  >>    contact=$contact_obj
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  Error detected on line number 14, character 13 of aviewAS.cmd.
+! ERROR:  Invalid character. Enter a legal character.
+! ERROR:  The command was not executed.
+! ERROR:  >>    contact=$contact_obj
+! ERROR:  ---------------------------------------------------------------------
+! >> 
+! >> var set var=sep_str string='.' 
+! >> var set var=number real=.05
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  Error detected on line number 18, character 14 of aviewAS.cmd.
+! ERROR:  Invalid character. Enter a legal character.
+! ERROR:  The command was not executed.
+! ERROR:  >> var set var=$_self.varname real=(eval(abs())))
+! ERROR:  ---------------------------------------------------------------------
+! >> 
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  Error detected on line number 20, character 42 of aviewAS.cmd.
+! ERROR:  No Marker named 'my_part' was found.
+! ERROR:  The command was not executed.
+! ERROR:  >> mar create marker_name = .my_part.marker_1
+! ERROR:  ---------------------------------------------------------------------
+! >> 
+! >> ! Check if plot name already exists and add an incremental suffix if needed
+! >> 
+! ERROR:  ---------------------------------------------------------------------
+! ERROR:  Error detected on line number 24, character 65 of aviewAS.cmd.
+! ERROR:  "model" is not a known constant, function or variable
+! ERROR:    (.<<model>>.analysis != 1 || .model.analysis == 2 && )
+! ERROR:  The command was not executed.
+! ERROR:  >> if condition = (.model.analysis != 1 || .model.analysis == 2 && )
+! ERROR:  ---------------------------------------------------------------------
+! -1>> 
+! -1>> if condition = (DB_EXISTS(eval("."//"$New_plot_name")))
+! -1>>    variable set &
+! -1&>     variable_name = plotname &
+! -1&>     string = (UNIQUE_NAME(eval("$New_plot_name")))
+! -1>> else
+! -1>>    variable set & 
+! -1&>     variable_name = plotname &
+! -1&>     string = (eval("$New_plot_name"))
+! -1>> end
+! -1>> 
+! -1>> var set var=hello real=(eval(abs))
+! -1>> ! -----------
+! -1>> ! Create Plot
+! -1>> ! -----------
+! -1>> xy_plot template create plot=(eval("."//plotname)) &
+! -1&>    title = (eval("$New_plot_name")) &
+! -1&>    auto_subtitle=yes &
+! -1&>    auto_date=yes &
+! -1&>    auto_analysis_name=yes &
+! -1&>    table=no
+! -1>> 
+! -1>> ! -----------------------------
+! -1>> ! FLEX-TO-FLEX OR FLEX-TO-SOLID
+! -1>> ! -----------------------------
+! -1>> if condition = (eval($contact_obj.type)=="8")
+! -1>>    ! Find i_flex contact nodes
+! -1>>    variable set &
+! -1&>       variable_name = contact_nodes &
+! -1&>       object = (eval(DB_DESCENDANTS(STOO($Analysis//"."//STR_SPLIT($contact_obj,sep_str)[3]//"."//STR_SPLIT($contact_obj.i_flex,sep_str)[3]),"result_set",1,1 )))
+! -1>>    variable set &
+! -1&>       variable_name = node_count &
+! -1&>       integer = (eval(len(contact_nodes)))
+! -1>>    
+! -1>>    ! Add Curves
+! -1>>    xy_plot curve create curve=(eval("."//plotname//".total_force")) &
+! -1&>       create_page=no &
+! -1&>       calculate_axis_limits=no &
+! -1&>       y_expression=(eval(node_count//"*"//$contact_obj//".stiffness*abs("//contact_nodes[1]//".penetration.depth)**"//$contact_obj//".exponent-"//node_count//"*"//"STEP(abs("//contact_nodes[1]//".penetration.depth),0,0,"//$contact_obj//".dmax,"//$contact_obj//".damping)*"//contact_nodes[1]//".penetration.velocity")) &
+! -1&>       x_expression=(eval($Analysis.TIME)) &
+! -1&>       y_units = "force" &
+! -1&>       x_units = "time"
+! -1>>    plotcurve3d curve modify curve=(eval("."//plotname//".total_force")) legend="total_force"
+! -1>>    xy_plot curve create curve=(eval("."//plotname//".stiffness_force")) &
+! -1&>       create_page=no &
+! -1&>       calculate_axis_limits=no &
+! -1&>       y_expression=(eval(node_count//"*"//$contact_obj//".stiffness*abs("//contact_nodes[1]//".penetration.depth)**"//$contact_obj//".exponent")) &
+! -1&>       x_expression=(eval($Analysis.TIME)) &
+! -1&>       y_units = "force" &
+! -1&>       x_units = "time"
+! -1>>    plotcurve3d curve modify curve=(eval("."//plotname//".stiffness_force")) legend="stiffness_force"
+! -1>>    xy_plot curve create curve=(eval("."//plotname//".damping_force")) &
+! -1&>       create_page=no &
+! -1&>       calculate_axis_limits=no &
+! -1&>       y_expression=(eval(node_count//"*"//"-STEP(abs("//contact_nodes[1]//".penetration.depth),0,0,"//$contact_obj//".dmax,"//$contact_obj//".damping)*"//contact_nodes[1]//".penetration.velocity")) &
+! -1&>       x_expression=(eval($Analysis.TIME)) &
+! -1&>       y_units = "force" &
+! -1&>       x_units = "time"
+! -1>>    plotcurve3d curve modify curve=(eval("."//plotname//".damping_force")) legend="damping_force"
+! -1>>    
+! -1>>    variable delete &
+! -1&>       variable_name = contact_nodes
+! -1>>    
+! -1>>    variable delete &
+! -1&>       variable_name = node_count
+! -1>> 
+! -1>> ! --------------
+! -1>> ! SOLID-TO-SOLID
+! -1>> ! --------------
+! -1>> elseif condition = (eval($contact_obj.type)=="0")
+! -1>>    ! Add Curves
+! -1>>    xy_plot curve create curve=(eval("."//plotname//".total_force")) &
+! -1&>       create_page=no &
+! -1&>       calculate_axis_limits=no &
+! -1&>       y_expression=(eval($contact_obj//".stiffness*ABS("//$Analysis//"."//STR_SPLIT($contact_obj,sep_str)[3]//".TRACK_1.Penetration.Depth)**"//$contact_obj//".exponent-STEP(abs("//$Analysis//"."//STR_SPLIT($contact_obj,sep_str)[3]//".TRACK_1.Penetration.Depth),0,0,"//$contact_obj//".dmax,"//$contact_obj//".damping)*"//$Analysis//"."//STR_SPLIT($contact_obj,sep_str)[3]//".TRACK_1.Penetration.velocity")) &
+! -1&>       x_expression=(eval($Analysis.TIME)) &
+! -1&>       y_units = "force" &
+! -1&>       x_units = "time"
+! -1>>    plotcurve3d curve modify curve=(eval("."//plotname//".total_force")) legend="total_force"
+! -1>>    xy_plot curve create curve=(eval("."//plotname//".stiffness_force")) &
+! -1&>       create_page=no &
+! -1&>       calculate_axis_limits=no &
+! -1&>       y_expression=(eval($contact_obj//".stiffness*(-1*"//$Analysis//"."//STR_SPLIT($contact_obj,sep_str)[3]//".TRACK_1.Penetration.Depth)**"//$contact_obj//".exponent")) &
+! -1&>       x_expression=(eval($Analysis.TIME)) &
+! -1&>       y_units = "force" &
+! -1&>       x_units = "time"
+! -1>>    plotcurve3d curve modify curve=(eval("."//plotname//".stiffness_force")) legend="stiffness_force"
+! -1>>    xy_plot curve create curve=(eval("."//plotname//".damping_force")) &
+! -1&>       create_page=no &
+! -1&>       calculate_axis_limits=no &
+! -1&>       y_expression=(eval("-1*STEP(abs("//$Analysis//"."//STR_SPLIT($contact_obj,sep_str)[3]//".TRACK_1.Penetration.Depth),0,0,"//$contact_obj//".dmax,"//$contact_obj//".damping)*"//$Analysis//"."//STR_SPLIT($contact_obj,sep_str)[3]//".TRACK_1.Penetration.velocity")) &
+! -1&>       x_expression=(eval($Analysis.TIME)) &
+! -1&>       y_units = "force" &
+! -1&>       x_units = "time"
+! -1>>    plotcurve3d curve modify curve=(eval("."//plotname//".damping_force")) legend="damping_force"   
+! -1>>    
+! -1>>    variable delete &
+! -1&>       variable_name = contact_nodes
+! -1>>    
+! -1>>    variable delete &
+! -1&>       variable_name = node_count
+! -1>> end
+! -1>>  
+! -1>> ! -----------
+! -1>> ! Format Plot
+! -1>> ! -----------
+! -1>> xy_plots template &
+! -1&>    auto_zoom &
+! -1&>    plot_name=(eval("."//plotname))
+! -1>>    
+! -1>> xy_plot template &
+! -1&>    calculate_axis_limits &
+! -1&>    plot_name=(eval("."//plotname))
+! -1>>    
+! -1>>    
+! -1>> 
+! WARNING:  The preceding file or macro has an IF, WHILE, or FOR without a matching END.

@@ -1,7 +1,9 @@
 const path = require('path');
 const vscode = require('vscode');
 const fs = require('fs');
+const child_process = require("child_process");
 
+const view_launcher = path.normalize("C:/Program Files/MSC.Software/Adams/aview_mods_gen/open_with_adams_view.bat")
 
 // vscode.window.showInformationMessage(file)
 
@@ -93,8 +95,8 @@ function activate(context) {
 	// ---------------------------------------------------------------------------
 	// Commands
 	// ---------------------------------------------------------------------------
-	const command = 'msc_adams.macros.makeHeader';
-	const commandHandler = () => {
+	const mh_command = 'msc_adams.macros.makeHeader';
+	const mhCommandHandler = () => {
 		const activeEditor = vscode.window.activeTextEditor;
 		vscode.commands.executeCommand('editor.action.goToLocations', activeEditor.document.uri, vscode.P)
 		vscode.commands.executeCommand('editor.action.insertSnippet', {langeId: "adams_cmd", name: "Macro Header"});
@@ -104,12 +106,53 @@ function activate(context) {
 				//     	editBuilder.insert(editor.selection.active, text);
 				// 	});
 				// };
-			};
-	vscode.commands.registerCommand(command, commandHandler);
+	};
+	vscode.commands.registerCommand(mh_command, mhCommandHandler);
+
+	const oiv_command = 'msc_adams.openInView';
+	const oivCommandHandler = (uri) => {
+		
+		let dir_name = path.dirname(uri.fsPath);
+		let base_name = path.basename(uri.fsPath);
+
+		child_process.exec(`"${view_launcher}" "${base_name}"`, { cwd: dir_name }, (error, stdout, stderr) => {
+			if (error) {
+				console.log(`error: ${error.message}`);
+				return;
+			}
+			if (stderr) {
+				console.log(`stderr: ${stderr}`);
+				return;
+			}
+			console.log(`stdout: ${stdout}`);
+		});
+	};
+	vscode.commands.registerCommand(oiv_command, oivCommandHandler);
+
+
+	const ovh_command = 'msc_adams.openViewHere';
+	const ovhCommandHandler = (uri) => {
+		
+		let dir_name = path.dirname(uri.fsPath);
+		let base_name = path.basename(uri.fsPath);
+
+		child_process.exec('"%ADAMS_LAUNCH_COMMAND%" aview ru-s i', { cwd: uri.fsPath }, (error, stdout, stderr) => {
+			if (error) {
+				console.log(`error: ${error.message}`);
+				return;
+			}
+			if (stderr) {
+				console.log(`stderr: ${stderr}`);
+				return;
+			}
+			console.log(`stdout: ${stdout}`);
+		});
+	};
+	vscode.commands.registerCommand(ovh_command, ovhCommandHandler);
 
 	vscode.window.showInformationMessage('MSC Adams Extension Activated');
+	
 }
-
 
 function deactivate(context) {
 	
@@ -120,8 +163,8 @@ function deactivate(context) {
 	const section = vscode.workspace.getConfiguration('python', vscode.ConfigurationTarget.Workspace)
 	const current_setting = section.get('analysis.extraPaths').filter(item => ![stub_dir].includes(item));
 	section.update('analysis.extraPaths', current_setting, vscode.ConfigurationTarget.Workspace )
+	vscode.window.showInformationMessage('MSC Adams Extension Deactivated');
 }
-
 
 const command = 'msc_adams.activate';
 const commandHandler = () => {};

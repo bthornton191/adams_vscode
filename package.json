@@ -12,6 +12,8 @@
     "main": "./src/extension.ts",
     "activationEvents": [
         "onLanguage:adams_cmd",
+        "onLanguage:adams_adm",
+        "onLanguage:adams_acf",
         "onCommand:msc_adams.activate"
     ],
     "icon": "images/adams.png",
@@ -19,13 +21,37 @@
         "commands" : [
             {
                 "command": "msc_adams.macros.makeHeader",
-                "title": "Make Macro Header"
+                "title": "MSC Adams: Make Macro Header"
             },
             {
                 "command": "msc_adams.activate",
-                "title": "Activate MSC Adams Extenstion"
+                "title": "MSC Adams: Activate"
+            },
+            {
+                "command": "msc_adams.openInView",
+                "title": "Open In View",
+                "icon": "images/adams.svg"
+            },
+            {
+                "command": "msc_adams.openViewHere",
+                "title": "Open View",
+                "icon": "images/adams.svg"
             }
         ],
+        "menus": {
+            "explorer/context": [
+                {
+                    "command": "msc_adams.openInView",
+                    "when": "resourceExtname == .cmd",
+                    "group": "navigation"
+                },
+                {
+                    "command": "msc_adams.openViewHere",
+                    "when": "explorerResourceIsFolder == true",
+                    "group": "navigation"
+                }  
+            ]
+        },
         "capabilities": {
             "hoverProvider": "true"
         },
@@ -52,6 +78,17 @@
                     ".adm"
                 ],
                 "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "adams_acf",
+                "aliases": [
+                    "Adams ACF",
+                    "adams_acf"
+                ],
+                "extensions": [
+                    ".acf"
+                ],
+                "configuration": "./language-configuration.json"
             }
         ],
         "grammars": [
@@ -64,6 +101,11 @@
                 "language": "adams_adm",
                 "scopeName": "source.adm",
                 "path": "./syntaxes/adams_adm.tmLanguage.json"
+            },
+            {
+                "language": "adams_acf",
+                "scopeName": "source.acf",
+                "path": "./syntaxes/adams_acf.tmLanguage.json"
             }
         ],
         "snippets": [
