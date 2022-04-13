@@ -34,7 +34,7 @@
             },
             {
                 "command": "msc_adams.openViewHere",
-                "title": "Open View",
+                "title": "Open Adams View",
                 "icon": "images/adams.svg"
             }
         ],
