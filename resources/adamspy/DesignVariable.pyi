@@ -1,6 +1,6 @@
 import Manager
 import Object
-from typing import Any
+from typing import Any, Union, List
 
 class DesignVariableManager(Manager.SubclassManager):
     iDv: str
@@ -9,7 +9,11 @@ class DesignVariableManager(Manager.SubclassManager):
     oDv: str
     def createInteger(self, **kwargs): ...
     def createReal(self, **kwargs): ...
-    def createString(self, **kwargs): ...
+
+    def createString(self, name: str = '', value: Union[str, List[str]] = '', **kwargs):
+        """Creates a Design Variable of type `string`
+        """
+        ...
     def createObject(self, **kwargs): ...
 
 class DesignVariable(Object.ObjectComment, Object.ObjectAdamsId):

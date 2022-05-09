@@ -35,8 +35,8 @@ class ObjectSubBase(metaclass=ObjectMeta):
 
 class ObjectBase(ObjectSubBase):
     def __init__(self, _DBKey) -> None: ...
-    name: Any
-    full_name: Any
+    name: str
+    full_name: str
     def destroy(self): ...
     @property
     def info(self): ...
@@ -48,7 +48,7 @@ class ObjectComment(ObjectBase):
     comments: Any
 
 class ObjectAdamsId:
-    adams_id: Any
+    adams_id: int
 
 class Object(ObjectComment, ObjectAdamsId, AppearanceSettings.AppearanceSettings):
     def __init__(self, _DBKey) -> None: ...

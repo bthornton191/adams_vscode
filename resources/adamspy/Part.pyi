@@ -1,8 +1,10 @@
 import Manager
 import Object
 from DBAccess import set_locori_expression as set_locori_expression
+from Marker import MarkerManager, Marker
+from DesignPoint import DesignPointManager
 from Expression import AdamsExpr as AdamsExpr
-from typing import Any
+from typing import Any, List
 
 class PartManager(Manager.SubclassManager):
     def createRigidBody(self, **kwargs): ...
@@ -12,12 +14,12 @@ class PartManager(Manager.SubclassManager):
     def createFEPart(self, **kwargs): ...
 
 class Part(Object.Object):
-    Markers: Any
-    DesignPoints: Any
-    FloatingMarkers: Any
+    Markers: MarkerManager
+    DesignPoints: DesignPointManager
+    FloatingMarkers: MarkerManager
     def __init__(self, _DBKey) -> None: ...
-    ground_part: Any
-    is_flexible: Any
+    ground_part: bool
+    is_flexible: bool
     def destroy(self): ...
     relative_to: Any
     orientation: Any
@@ -26,64 +28,64 @@ class Part(Object.Object):
     in_plane_orientation: Any
 
 class RigidBody(Part):
-    mass: Any
-    cm: Any
-    cm_name: Any
-    im: Any
-    im_name: Any
-    vx: Any
-    vy: Any
-    vz: Any
-    ixx: Any
-    iyy: Any
-    izz: Any
-    ixy: Any
-    izx: Any
-    iyz: Any
-    wx: Any
-    wy: Any
-    wz: Any
-    wm: Any
-    wm_name: Any
-    vm: Any
-    vm_name: Any
-    exact_x: Any
-    exact_y: Any
-    exact_z: Any
-    exact_psi: Any
-    exact_theta: Any
-    exact_phi: Any
-    planar: Any
-    density: Any
+    mass: float
+    cm: Marker
+    cm_name: str
+    im: Marker
+    im_name: str
+    vx: float
+    vy: float
+    vz: float
+    ixx: float
+    iyy: float
+    izz: float
+    ixy: float
+    izx: float
+    iyz: float
+    wx: float
+    wy: float
+    wz: float
+    wm: float
+    wm_name: str
+    vm: float
+    vm_name: str
+    exact_x: float
+    exact_y: float
+    exact_z: float
+    exact_psi: float
+    exact_theta: float
+    exact_phi: float
+    planar: bool
+    density: float
     material_type: Any
     Geometries: Any
     def __init__(self, _DBKey) -> None: ...
-    inertia_values: Any
+    inertia_values: List[float]
     plane: Any
 
 class FlexBody(Part):
-    vx: Any
-    vy: Any
-    vz: Any
-    wx: Any
-    wy: Any
-    wz: Any
-    vm: Any
-    vm_name: Any
-    wm: Any
-    wm_name: Any
-    md_db_file_name: Any
+    vx: float
+    vy: float
+    vz: float
+    wx: float
+    wy: float
+    wz: float
+    vm: float
+    vm_name: str
+    wm: float
+    wm_name: str
+    md_db_file_name: str
     index_in_database: Any
-    damping_ratio: Any
+    damping_ratio: float
     damping_user_function: Any
     damping_routine: Any
     dynamic_limit: Any
-    exact_x: Any
-    exact_y: Any
-    exact_z: Any
-    exact_psi: Any
-    exact_theta: Any
-    exact_phi: Any
+    exact_x: float
+    exact_y: float
+    exact_z: float
+    exact_psi: float
+    exact_theta: float
+    exact_phi: float
     invariants: Any
     characteristic_length: Any
     stability_factor: Any
@@ -101,33 +103,33 @@ class FlexBody(Part):
     def disable_modes_by_strain_energy(self, analysis: Any | None = ..., analysis_name: Any | None = ..., energy_tolerance: float = ...) -> None: ...
 
 class PointMass(Part):
-    vx: Any
-    vy: Any
-    vz: Any
-    cm: Any
-    cm_name: Any
-    mass: Any
-    vm: Any
-    vm_name: Any
-    exact_x: Any
-    exact_y: Any
-    exact_z: Any
+    vx: float
+    vy: float
+    vz: float
+    cm: float
+    cm_name: str
+    mass: float
+    vm: float
+    vm_name: str
+    exact_x: float
+    exact_y: float
+    exact_z: float
     material_type: Any
-    density: Any
+    density: float
 
 class ExternalSystem(Part):
-    Markers: Any
+    Markers: MarkerManager
     def __init__(self, _DBKey) -> None: ...
-    vx: Any
-    vy: Any
-    vz: Any
-    wx: Any
-    wy: Any
-    wz: Any
-    wm: Any
-    vm: Any
-    modal_neutral_file_name: Any
-    md_db_file_name: Any
+    vx: float
+    vy: float
+    vz: float
+    wx: float
+    wy: float
+    wz: float
+    wm: float
+    vm: float
+    modal_neutral_file_name: str
+    md_db_file_name: str
     index_in_database: Any
     interface_routines: Any
     type: Any

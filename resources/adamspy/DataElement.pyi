@@ -1,46 +1,33 @@
 import Manager
 import Object
-from typing import Any
+from typing import Any, List
 
-class DataElementManager(Manager.SubclassManager):
-    def createCurveData(self, **kwargs): ...
-    def createSpline(self, **kwargs): ...
-    def createICArray(self, **kwargs): ...
-    def createGeneralArray(self, **kwargs): ...
-    def createXStateArray(self, **kwargs): ...
-    def createYOutputArray(self, **kwargs): ...
-    def createUInputArray(self, **kwargs): ...
-    def createMatrixFull(self, **kwargs): ...
-    def createMatrixSparse(self, **kwargs): ...
-    def createMatrixFile(self, **kwargs): ...
-    def createStateVariable(self, **kwargs): ...
-    def createString(self, **kwargs): ...
-    def createPInput(self, **kwargs): ...
-    def createPOutput(self, **kwargs): ...
-    def createPState(self, **kwargs): ...
 
-class DataElement(Object.Object): ...
+class DataElement(Object.Object):
+    ...
+
 
 class CurveData(DataElement):
-    closed: Any
+    closed: bool
     fit_type: Any
     tension: Any
     user_function: Any
     minimum_parameter: Any
     maximum_parameter: Any
     routine: Any
-    matrix_name: Any
+    matrix_name: str
     matrix: Any
 
+
 class Spline(DataElement):
-    x: Any
-    y: Any
-    z: Any
+    x: List[float]
+    y: List[float]
+    z: List[float]
     linear_extrapolate: Any
     channel: Any
     file_type: Any
-    block_name: Any
-    file_name: Any
+    block_name: str
+    file_name: str
     routine: Any
     units: Any
     x_units: Any
@@ -50,24 +37,35 @@ class Spline(DataElement):
     y_result_set_component: Any
     z_result_set_component: Any
 
+
 class Array(DataElement):
-    size: Any
+    size: int
+
 
 class ICArray(Array):
-    numbers: Any
+    numbers: List[float]
+
 
 class GeneralArray(Array):
-    numbers: Any
+    numbers: List[float]
 
-class XStateArray(Array): ...
-class YOutputArray(Array): ...
+
+class XStateArray(Array):
+    ...
+
+
+class YOutputArray(Array):
+    ...
+
 
 class UInputArray(Array):
-    variables: Any
+    variables: List[StateVariable]
+
 
 class Matrix(DataElement):
-    mtx_units_dict: Any
+    mtx_units_dict: dict
     units: Any
+
 
 class MatrixFull(Matrix):
     row_count: Any
@@ -75,33 +73,58 @@ class MatrixFull(Matrix):
     values: Any
     input_order: Any
 
+
 class MatrixSparse(Matrix):
     column_index: Any
     row_index: Any
     values: Any
     input_order: Any
 
+
 class MatrixFile(Matrix):
-    file: Any
-    name_of_matrix_in_file: Any
+    file: str
+    name_of_matrix_in_file: str
+
 
 class StateVariable(DataElement):
-    initial_condition: Any
-    user_function: Any
-    routine: Any
-    function: Any
+    initial_condition: float
+    user_function: str
+    routine: str
+    function: str
+
 
 class String(DataElement):
-    string: Any
+    string: str
+
 
 class PInput(DataElement):
-    variable_name: Any
-    variable: Any
+    variable_name: str
+    variable: StateVariable
+
 
 class POutput(DataElement):
-    variable_name: Any
-    variable: Any
+    variable_name: str
+    variable: StateVariable
+
 
 class PState(DataElement):
-    variable_name: Any
-    variable: Any
+    variable_name: str
+    variable: StateVariable
+
+
+class DataElementManager(Manager.SubclassManager):
+    def createCurveData(self, **kwargs) -> CurveData: ...
+    def createSpline(self, **kwargs) -> Spline: ...
+    def createICArray(self, **kwargs) -> ICArray: ...
+    def createGeneralArray(self, **kwargs) -> GeneralArray: ...
+    def createXStateArray(self, **kwargs) -> XStateArray: ...
+    def createYOutputArray(self, **kwargs) -> YOutputArray: ...
+    def createUInputArray(self, **kwargs) -> UInputArray: ...
+    def createMatrixFull(self, **kwargs) -> MatrixFull: ...
+    def createMatrixSparse(self, **kwargs) -> MatrixSparse: ...
+    def createMatrixFile(self, **kwargs) -> MatrixFile: ...
+    def createStateVariable(self, **kwargs) -> StateVariable: ...
+    def createString(self, **kwargs) -> String: ...
+    def createPInput(self, **kwargs) -> PInput: ...
+    def createPOutput(self, **kwargs) -> POutput: ...
+    def createPState(self, **kwargs) -> PState: ...

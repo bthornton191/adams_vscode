@@ -14,6 +14,7 @@
         "onLanguage:adams_cmd",
         "onLanguage:adams_adm",
         "onLanguage:adams_acf",
+        "onLanguage:adams_to",
         "onCommand:msc_adams.activate"
     ],
     "icon": "images/adams.png",
@@ -89,6 +90,17 @@
                     ".acf"
                 ],
                 "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "adams_to",
+                "aliases": [
+                    "Adams Tiem Orbit",
+                    "adams_to"
+                ],
+                "extensions": [
+                    ".mech"
+                ],
+                "configuration": "./language-configuration.json"
             }
         ],
         "grammars": [
@@ -106,6 +118,11 @@
                 "language": "adams_acf",
                 "scopeName": "source.acf",
                 "path": "./syntaxes/adams_acf.tmLanguage.json"
+            },
+            {
+                "language": "adams_to",
+                "scopeName": "source.to",
+                "path": "./syntaxes/adams_to.tmLanguage.json"
             }
         ],
         "snippets": [
