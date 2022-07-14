@@ -1,13 +1,14 @@
 import Object
 import Model
 from Expression import eval as eval, expression as expression
-from typing import Any, Literal
+from typing import Any, Dict, Literal
 
 DBRoot: Any
 
 class AdamsRoot(Object.Object): ...
 
-Models: Any
+
+Models: Dict[str, Model.Model]
 defaults: Any
 preferences: Any
 Groups: Any

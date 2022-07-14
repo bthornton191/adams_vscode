@@ -2,6 +2,40 @@
 !$Analysis:t=analysis:C=1
 !$New_plot_name: t=string: C=1: D=advanced_contact_plot
 
+data_element modify matrix full &
+   matrix_name = $model.rn_mtx &
+   ! row_count = (eval($_self.tooth*4) - 2) &
+   row_count = (eval($model.rn_mtx.row_count) + 6) &
+   values =    (eval($model.rn_mtx.values)), &
+               ($minor_d/2),           (eval($_self.stub_L) + (eval($_self.tooth) - 1)*$tooth_pitch),                                                                                                              0, &
+               ($tooth_pitch_diam/2),  (eval($_self.stub_L) + (eval($_self.tooth) - 1)*$tooth_pitch + eval($_self.bot_flnk_ofst)*($tooth_pitch_diam-$minor_d)/($major_d-$minor_d)),                                0, &
+               ($major_d/2),           (eval($_self.stub_L) + (eval($_self.tooth) - 1)*$tooth_pitch + eval($_self.bot_flnk_ofst)),                                                                                 0, &
+               ($major_d/2),           (eval($_self.stub_L) + (eval($_self.tooth) - 1)*$tooth_pitch + eval($_self.root_width) - eval($_self.top_flnk_ofst)),                                                       0, &
+               ($tooth_pitch_diam/2),  (eval($_self.stub_L) + (eval($_self.tooth) - 1)*$tooth_pitch + eval($_self.root_width) - eval($_self.top_flnk_ofst)*($tooth_pitch_diam-$minor_d)/($major_d-$minor_d)),      0, &
+               ($minor_d/2),           (eval($_self.stub_L) + (eval($_self.tooth) - 1)*$tooth_pitch + eval($_self.root_width)),                                                                                    0
+    
+
+
+var set var=$_self.pystr str="import os", &
+							"from pathlib import Path", &
+							"sys", &
+							"sys.path.insert(0, os.path.join('C:\\\\', 'Users', 'bthornt', 'Hexagon', 'NNL - Roller Nut Drive - Engineering', 'plugin', 'working_directory', 'modules'))", &
+							"from qual.utilities.spline import check_spline", &
+							eval(str_xlate(str_xlate("current_in=" // .rotating_assembly.torque_spln_mtx.values[*,1], "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("lag_in=" // .rotating_assembly.torque_6p0.xs, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("engagement_in=" // .rotating_assembly.torque_6p0.zs, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("torque_in =" // .rotating_assembly.torque_6p0.ys, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("torque_in+=" // .rotating_assembly.torque_8p0.ys, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("torque_in+=" // .rotating_assembly.torque_10p0.ys, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("torque_in+=" // .rotating_assembly.torque_12p0.ys, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("current_out=" // .rotating_assembly.Last_Run.current.Q.values, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("lag_out=" // .rotating_assembly.Last_Run.lag.Q.values, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("engagement_out=" // .rotating_assembly.Last_Run.engagement.Q.values, "{", "["), "}", "]")), &
+							eval(str_xlate(str_xlate("torque_out=" // .rotating_assembly.Last_Run.stator_torque.TY.values, "{", "["), "}", "]")), &
+							"check_spline(current_in, lag_in, engagement_in, torque_in, current_out, lag_out, engagement_out, torque_out)"
+
+
+
 def com echo=on
 model merge model_name = (eval($_self.mod)) into_model_name = "$assembly_name" duplicate_parts = merge
 variable set variable=$_self.varname real=2
