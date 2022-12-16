@@ -1,14 +1,15 @@
+from typing import Any, Dict, Literal
 import Object
 import Model
+from Model import ModelManager
 from Expression import eval as eval, expression as expression
-from typing import Any, Dict, Literal
 
 DBRoot: Any
 
 class AdamsRoot(Object.Object): ...
 
 
-Models: Dict[str, Model.Model]
+Models: ModelManager
 defaults: Any
 preferences: Any
 Groups: Any
@@ -33,6 +34,7 @@ def execute_cmd(cmd : str) -> None:
     ```
     """
     ...
+
 def evaluate_exp(exp : str) -> Any:
     """Evaluates and returns the value of the given expression. 
 

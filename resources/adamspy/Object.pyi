@@ -1,5 +1,6 @@
 import AppearanceSettings
 from typing import Any
+from DesignVariable import DesignVariableManager
 
 BUFFER_SIZE: int
 
@@ -21,7 +22,7 @@ class ObjectSubBase(metaclass=ObjectMeta):
     update: Any
     @property
     def properties(self): ...
-    parent: Any
+    parent: ObjectBase
     @property
     def info(self): ...
     def help(self, prop: Any | None = ...) -> None: ...
@@ -43,7 +44,7 @@ class ObjectBase(ObjectSubBase):
     def copy(self, new_name: Any | None = ...): ...
 
 class ObjectComment(ObjectBase):
-    DesignVariables: Any
+    DesignVariables: DesignVariableManager
     def __init__(self, _DBKey) -> None: ...
     comments: Any
 

@@ -13,7 +13,7 @@
         "prefix": "if ",         
         "body": [      
             "if condition=(eval($3))",
-            "   $0",
+            "\t$0",
             "end"
         ],
         "description": "For loop"
@@ -41,5 +41,26 @@
             "$0"
         ],
         "description": "Macro Header"        
+    },
+    "db_exists": {
+        "scope": "adams_cmd",
+        "prefix": "db_exists(",
+        "body":["db_exists(\"$0\")"]
+    },
+    "Run Python Code": {
+        "scope": "adams_cmd",
+        "prefix": "var set var=$_self.pystr",
+        "body": [
+            "var set var=${1|$_self.,.mdi.|}py_str str=\"$0\"",
+            "var set var=$1py_str str=(eval($1py_str)), \"\"",
+            "var set var=$1tmp_int int=(eval(run_python_code(str_merge_strings(\"\\\\\\n\", $1py_str))))"
+        ]
+    },
+    "Alert Box": {
+        "scope": "adams_cmd",
+        "prefix": "mdi gui_utl_alert_box_1",
+        "body": [
+            "mdi gui_utl_alert_box_1 type=${1|error,warning,info|} text=\"$0\""
+        ]
     }
 }

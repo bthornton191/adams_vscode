@@ -1,8 +1,10 @@
 import AppearanceSettings
 import Manager
+from Marker import Marker
 import Object
+from DesignVariable import DesignVariableManager
 from DBAccess import MultiTypeObjectValue as MultiTypeObjectValue
-from typing import Any
+from typing import Any, ItemsView, Iterable, List, Tuple
 
 class GeometryManager(Manager.SubclassManager):
     def __init__(self, managedClass, parent) -> None: ...
@@ -20,7 +22,7 @@ class GeometryManager(Manager.SubclassManager):
     def createOutline(self, **kwargs): ...
     def createSolid(self, **kwargs): ...
     def createExternal(self, **kwargs): ...
-    def createShell(self, **kwargs): ...
+    def createShell(self, file_name: str, ref_mkr: Marker, **kwargs) -> GeometryShell: ...
     def createPlate(self, **kwargs): ...
     def createLink(self, **kwargs): ...
     def createEllipse(self, **kwargs): ...
@@ -30,6 +32,10 @@ class GeometryManager(Manager.SubclassManager):
     def createCsg(self, **kwargs): ...
     def createSheet(self, **kwargs): ...
     def createNurbCurve(self, **kwargs): ...
+    def __getitem__(self, name) -> Geometry: ...
+    def __iter__(self, *args) -> Iterable[str]: ...
+    def items(self) -> ItemsView[str, Geometry]: ...
+    
 
 class GeometryModelManager(Manager.SubclassManager):
     type_map: Any
@@ -41,7 +47,7 @@ class GeometryModelManager(Manager.SubclassManager):
 class Geometry(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings):
     adams_id_id: int
     comment_id: int
-    DesignVariables: Any
+    DesignVariables: DesignVariableManager
     Features: Any
     def __init__(self, _DBKey) -> None: ...
 
@@ -217,14 +223,15 @@ class GeometryRevolution(Geometry):
     relative_to: Any
 
 class GeometryShell(Geometry):
-    comment_id: Any
-    file_name: Any
-    points: Any
-    scale: Any
-    reference_marker: Any
-    reference_marker_name: Any
-    wireframe_only: Any
-    connections: Any
+    comment_id: int
+    file_name: str
+    points: List[Tuple[float, float, float]]
+    scale: float
+    """Conversion factor to meters"""
+    reference_marker: Marker
+    reference_marker_name: str
+    wireframe_only: bool
+    connections: List[List[float]]
 
 class GeometryPlate(Geometry):
     comment_id: Any

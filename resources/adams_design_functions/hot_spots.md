@@ -14,7 +14,7 @@ Returns all of the spots on the Body that exceed the specified Threshold.
 : Name of analysis (optional)
 
 **Integer**
- array 
+: array 
 
 **Value**
 : Flag for value of stress or strain to use.
@@ -23,7 +23,7 @@ Returns all of the spots on the Body that exceed the specified Threshold.
 : Flag for stress (1) or strain (2) (optional). Default is stress (1).
 
 **Real**
- array 
+: array 
 
 **Threshold**
 : Return all hot spots that exceed this value.

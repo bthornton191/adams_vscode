@@ -1,0 +1,32 @@
+{
+    "Function to get an entities parent model" : {
+        "scope": "python",
+        "prefix": "def get_parent_model",
+        "body": [
+            "def get_parent_model(entity: Object):",
+            "    \"\"\"Returns the parent model of `entity`.",
+            "    ",
+            "    Parameters",
+            "    ----------",
+            "    entity : Object",
+            "        Adams Object",
+            "    ",
+            "    Returns",
+            "    -------",
+            "    Model",
+            "        Parent `Model` of `entity`",
+            "    \"\"\"",
+            "    if isinstance(entity.parent, Model):",
+            "        return entity.parent",
+            "    else:",
+            "        return get_parent_model(entity.parent)"
+        ]
+    },
+    "Import without linter warnings" : {
+        "scope": "python",
+        "prefix": "import ",
+        "body": [
+            "import $0  # type: ignore # noqa"
+        ]
+    }
+}

@@ -73,7 +73,7 @@ function activate(context) {
 			
 			// Commands
 			for (var command of commands) {
-				if (command.startsWith(line)) {
+				if (command.startsWith(line.trim())) {
 					let completion = new vscode.CompletionItem(command);
 					completion.kind = vscode.CompletionItemKind.Interface;
 					completions.push(completion);

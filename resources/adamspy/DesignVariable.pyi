@@ -1,6 +1,6 @@
 import Manager
 import Object
-from typing import Any, Union, List
+from typing import Any, ItemsView, Iterable, Union, List, ValuesView
 
 class DesignVariableManager(Manager.SubclassManager):
     iDv: str
@@ -15,6 +15,11 @@ class DesignVariableManager(Manager.SubclassManager):
         """
         ...
     def createObject(self, **kwargs): ...
+    
+    def __getitem__(self, name) -> Union[IntegerDesignVariable, RealDesignVariable, StringDesignVariable, ObjectDesignVariable]: ...
+    def __iter__(self, *args) -> Iterable[str]: ...
+    def items(self) -> ItemsView[str, Union[IntegerDesignVariable, RealDesignVariable, StringDesignVariable, ObjectDesignVariable]]: ...
+    def values(self) -> ValuesView[Union[IntegerDesignVariable, RealDesignVariable, StringDesignVariable, ObjectDesignVariable]]: ...
 
 class DesignVariable(Object.ObjectComment, Object.ObjectAdamsId):
     adams_id: Any
@@ -26,7 +31,7 @@ dv_objects: Any
 __: Any
 
 class IntegerDesignVariable(DesignVariable):
-    value: Any
+    value: List[int]
     range: Any
     allowed_values: Any
     delta_type: Any
@@ -35,7 +40,7 @@ class IntegerDesignVariable(DesignVariable):
     sensitivity: Any
 
 class RealDesignVariable(DesignVariable):
-    value: Any
+    value: List[float]
     range: Any
     sensitivity: Any
     allowed_values: Any
@@ -45,7 +50,7 @@ class RealDesignVariable(DesignVariable):
     units: Any
 
 class StringDesignVariable(DesignVariable):
-    value: Any
+    value: List[str]
 
 class ObjectDesignVariable(DesignVariable):
-    value: Any
+    value: List[Object.Object]

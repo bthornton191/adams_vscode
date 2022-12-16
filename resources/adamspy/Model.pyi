@@ -18,9 +18,10 @@ from Section import SectionManager
 from Group import GroupManager
 from Analysis import AnalysisManager
 from RuntimeFunction import RuntimeFunctionManager
+from Part import Part
 
 class ModelManager(Manager.AdamsManager):
-    def create(self, **kwargs): ...
+    def create(self, **kwargs)->Model: ...
     @staticmethod
     def newFromAdm(model_name, file_name): ...
 
@@ -49,7 +50,7 @@ class Model(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings)
     settings: Any
     UserDefinedInstances: Any
     def __init__(self, _DBKey) -> None: ...
-    ground_part: Any
+    ground_part: Part
     def exportAdmFile(self, file_name): ...
     def verify(self): ...
     num_parts: Any

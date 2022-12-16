@@ -1,5 +1,73 @@
-
 {
+    "mdi": [
+        "contact_force",
+        "acontrols",
+        "spring",
+        "torsion_spring",
+        "fbbuildargstrarray",
+        "fbevaluatemacro",
+        "fbcremodfunc",
+        "fbdisplay",
+        "is_timederiv",
+        "is_vector",
+        "cartesian_only",
+        "scalar_only",
+        "sel_list_update",
+        "simulation",
+        "create_macro",
+        "modify_macro",
+        "uitest_modify_execute_macro",
+        "activate_macro",
+        "rename_macro",
+        "default_instance",
+        "gui_utl_log_fil_fil",
+        "gui_utl_alert_box_1",
+        "gui_utl_display_cremod_dbox",
+        "gui_utl_execute_cremod_dbox",
+        "gui_utl_check_sim",
+        "toolbar",
+        "marker",
+        "make",
+        "exit_macro",
+        "measure",
+        "general_motion",
+        "settings",
+        "flexlink",
+        "check_measure_object",
+        "optimize",
+        "window",
+        "spl_utl_generate",
+        "spl_utl_spl_to_table",
+        "spl_utl_table_to_spl",
+        "spl_utl_slopes",
+        "spl_utl_tails",
+        "spl_utl_recompute",
+        "ppt_copy",
+        "ppt_paste",
+        "scattertable",
+        "flex_prev_mode",
+        "flex_next_mode",
+        "flex_enable_mode",
+        "flex_disable_mode",
+        "flex_enable_mode_freq",
+        "flex_disable_mode_freq",
+        "flex_enable_mode_range",
+        "flex_disable_mode_range",
+        "flex_check_name",
+        "cm_align",
+        "cm_align_flex",
+        "rigid_to_flex",
+        "cm_align_extsys",
+        "cm_align_flex_extsys",
+        "flx_unv2mnf",
+        "graphic_force",
+        "ppt_restore_gui_dimensions",
+        "insight",
+        "populate",
+        "check",
+        "ude_definition",
+        "delete_macro"
+    ],
     "analysis": [
         "collate_contacts",
         "create",
@@ -44,309 +112,360 @@
         "modify"
     ],
     "constraint" : {
-        
         "attributes": [],
         "copy": [],
-        "create" : {
-            "create" : {
-                "complex_joint" : [
-                    "coupler"
+        "create": {
+            "create": {
+                "complex_joint": [
+                    "coupler",
                     "gear"
-                ] 
-            create complex_joint gear
-            create general_constraint
-            create higher_pair_contact curve_curve
-            create higher_pair_contact point_curve
-            create joint convel
-            create joint cylindrical
-            create joint fixed
-            create joint hooke
-            create joint planar
-            create joint rackpin
-            create joint revolute
-            create joint screw
-            create joint spherical
-            create joint translational
-            create joint universal
-            create motion_generator
-            create primitive_joint at_point
-            create primitive_joint inline
-            create primitive_joint inplane
-            create primitive_joint orientation
-            create primitive_joint parallel_axis
-            create primitive_joint perpendicular
-            create primitive_joint point _point
-            create user_defined
+                ],
+                "general_constraint": [],
+                "higher_pair_contact": [
+                    "curve_curve",
+                    "point_curve"
+                ],
+                "joint": [
+                    "convel",
+                    "cylindrical",
+                    "fixed",
+                    "hooke",
+                    "planar",
+                    "rackpin",
+                    "revolute",
+                    "screw",
+                    "spherical",
+                    "translational",
+                    "universal"
+                ],
+                "motion_generator": [],
+                "primitive_joint": [
+                    "at_point",
+                    "inline",
+                    "inplane",
+                    "orientation",
+                    "parallel_axis",
+                    "perpendicular",
+                    "point_point"
+                ],
+                "user_defined": []
+            },
+            "delete": {},
+            "modify": {
+                "complex_joint": [
+                    "coupler",
+                    "gear"
+                ],
+                "general_constraint": [],
+                "higher_pair_contact": [
+                    "curve_curve",
+                    "point_curve"
+                ],
+                "joint": [
+                    "convel",
+                    "cylindrical",
+                    "fixed",
+                    "hooke",
+                    "planar",
+                    "rackpin",
+                    "revolute",
+                    "screw",
+                    "spherical",
+                    "translational",
+                    "universal"
+                ],
+                "motion_generator": [],
+                "primitive_joint": [
+                    "at_point",
+                    "inline",
+                    "inplane",
+                    "orientation",
+                    "parallel_axis",
+                    "perpendicular",
+                    "point_point"
+                ],
+                "user_defined": []
+            },
+            "contact": [
+                "copy",
+                "create",
+                "delete",
+                "modify"
+            ],
+            "continue": [],
+            "contour_plot": {
+                "legend": [
+                    "create",
+                    "delete",
+                    "modify",
+                    "reset"
+                ]
+            },
+            "data_element": {
+                "attributes": [],
+                "copy": [],
+                "create": {
+                    "array": [
+                        "general_array",
+                        "ic_array",
+                        "u_input_array",
+                        "x_state_array",
+                        "y_output_array"
+                    ],
+                    "curve": [],
+                    "matrix": [
+                        "file",
+                        "full",
+                        "sparse"
+                    ],
+                    "plant": [
+                        "input",
+                        "output",
+                        "state"
+                    ],
+                    "spline": [],
+                    "string": [],
+                    "variable": []
+                },
+                "delete": [],
+                "modify": {
+                    "array": [
+                        "general_array",
+                        "ic_array",
+                        "u_input_array",
+                        "x_state_array",
+                        "y_output_array"
+                    ],
+                    "curve": [],
+                    "matrix": [
+                        "file",
+                        "full",
+                        "sparse"
+                    ],
+                    "plant": [
+                        "input",
+                        "output",
+                        "state"
+                    ],
+                    "spline": [],
+                    "string": [],
+                    "variable": []
+                },
+                "defaults": {
+                    "adams_output": [],
+                    "analysis": [],
+                    "attributes": [],
+                    "command_file": [],
+                    "coordinate_system": [],
+                    "expert_fields": [],
+                    "force_graphics": [],
+                    "geometry": [],
+                    "hardcopy": [],
+                    "icon_naming command": [],
+                    "lights": [],
+                    "model": [],
+                    "orient_axis_and_plane": [],
+                    "page": [],
+                    "plot": [],
+                    "plt_attributes": [],
+                    "prompting_level": [],
+                    "report": [],
+                    "solver": [],
+                    "sprintf_precision": [],
+                    "units": [],
+                    "vector_plots": [],
+                    "view": [],
+                    "name_generation": [
+                        "constraint",
+                        "data_element",
+                        "force",
+                        "geometry",
+                        "layout",
+                        "marker",
+                        "model",
+                        "part",
+                        "postprocessing"
+                    ]
+                },
+                "display_attributes": {
+                    "color": [
+                        "constraint",
+                        "force",
+                        "geometry",
+                        "marker",
+                        "model",
+                        "part"
+                    ],
+                    "icon_size": [
+                        "constraint",
+                        "force",
+                        "marker",
+                        "model",
+                        "part"
+                    ],
+                    "rendering_mode": [],
+                    "scale": [
+                        "force_graphics",
+                        "torque_graphics"
+                    ],
+                    "visibility": [
+                        "constraint",
+                        "force",
+                        "geometry",
+                        "marker",
+                        "model",
+                        "part",
+                        "plot"
+                    ]
+                },
+                "else": [],
+                "elseif": [],
+                "end": [],
+                "entity": [
+                    "attributes",
+                    "copy",
+                    "delete",
+                    "modify"
+                ],
+                "executive_control": {
+                    "attributes": [
+                        "sensor"
+                    ],
+                    "copy": [
+                        "sensor"
+                    ],
+                    "create": [
+                        "sensor"
+                    ],
+                    "delete": [
+                        "sensor"
+                    ],
+                    "modify": [
+                        "sensor"
+                    ],
+                    "set": {
+                        "dynamics_parameters": [
+                            "coord_partitioning_parameters",
+                            "dynamic_solver",
+                            "integrator_parameters"
+                        ],
+                        "equilibrium_parameters": [],
+                        "easy_dynamics": [],
+                        "integrator_parameters": [
+                            "dstiff"
+                        ],
+                        "kinematics_parameters": [],
+                        "numerical_integration_parameters": [],
+                        "preferences": [],
+                        "solver_parameters": []
+                    }
+                },
+                "fepart_node": [
+                    "create"
+                ],
+                "file": {
+                    "adams_data_set": [
+                        "merge",
+                        "write"
+                    ],
+                    "analysis": [
+                        "read",
+                        "write"
+                    ],
+                    "binary": [
+                        "read",
+                        "write"
+                    ],
+                    "command": [
+                        "read",
+                        "write"
+                    ],
+                    "dac": [
+                        "read",
+                        "write"
+                    ],
+                    "enhanced_data_set": [
+                        "read",
+                        "write"
+                    ],
+                    "fea_loads": [
+                        "write"
+                    ],
+                    "geometry": [
+                        "read",
+                        "write"
+                    ],
+                    "graphics": [
+                        "read",
+                        "write"
+                    ],
+                    "html": [
+                        "write"
+                    ],
+                    "iges": [
+                        "read"
+                    ],
+                    "log_file": [],
+                    "mnfxform": [
+                        "mirror",
+                        "rotate",
+                        "translate"
+                    ],
+                    "parasolid": [
+                        "read",
+                        "write"
+                    ],
+                    "postprocessing": [],
+                    "render": [
+                        "read"
+                    ],
+                    "request": [
+                        "read",
+                        "write"
+                    ],
+                    "results": [
+                        "read",
+                        "write"
+                    ],
+                    "rpc": [
+                        "read",
+                        "write"
+                    ],
+                    "shell": [
+                        "write"
+                    ],
+                    "spread_sheet": [
+                        "write"
+                    ],
+                    "stereo_lithography": [
+                        "read"
+                    ],
+                    "table": [
+                        "write"
+                    ],
+                    "temporary_settings": [
+                        "apply",
+                        "write",
+                        "revert"
+                    ],
+                    "testdata": {
+                        "read": [
+                            "measures",
+                            "splines"
+                        ]
+                    },
+                    "text": [
+                        "close",
+                        "open",
+                        "write"
+                    ],
+                    "wavefront": [
+                        "read",
+                        "write"
+                    ]
+                }
 
-        }
-            
-        delete
-        modify complex_joint coupler
-        modify complex_joint gear
-        modify general_constraint
-        modify higher_pair_contact curve_curve
-        modify higher_pair_contact point_curve
-        modify joint cylindrical
-        modify joint fixed
-        modify joint hooke
-        modify joint planar
-        modify joint rackpin
-        modify joint revolute
-        modify joint screw
-        modify joint spherical
-        modify joint translational
-        modify joint universal
-        modify motion_generator
-        modify primitive_joint inplane
-        modify primitive_joint orientation
-        modify primitive_joint parallel_axis
-        modify primitive_joint perpendicular
-        modify primitive_joint point_point
-        modify user_defined
-    ]   
-    
-    
-    
-    contact
 
-    contact copy
-    contact create
-    contact delete
-    contact modify
-
-    continue
-
-    
-    contour_plot legend
-
-    contour_plot legend create
-    contour_plot legend delete
-    contour_plot legend modify
-    contour_plot legend reset
-
-
-    
-    data_element
-
-    data_element attributes
-    data_element copy
-    data_element create array general_array
-    data_element create array ic_array
-    data_element create array u_input_array
-    data_element create array x_state_array
-    data_element create array y_output_array
-    data_element create curve
-    data_element create matrix file
-    data_element create matrix full
-    data_element create matrix sparse
-    data_element create plant input
-    data_element create plant output
-    data_element create plant state
-    data_element create spline
-    data_element create string
-    data_element create variable
-    data_element delete
-    data_element modify array general_array
-    data_element modify array ic_array
-    data_element modify array u_input_array
-    data_element modify array x_state_array
-    data_element modify array y_output_array
-    data_element modify curve
-    data_element modify matrix file
-    data_element modify matrix full
-    data_element modify matrix sparse
-    data_element modify plant input
-    data_element modify plant output
-    data_element modify plant state
-    data_element modify spline
-    data_element modify string
-    data_element modify variable
-
-
-    
-    defaults
-
-    defaults adams_output
-    defaults analysis
-    defaults attributes
-    defaults command_file
-    defaults coordinate_system
-    defaults expert_fields
-    defaults force_graphics
-    defaults geometry
-    defaults hardcopy
-    defaults icon_naming command
-    default lights
-    defaults model
-    defaults name_generation constraint
-    defaults name_generation data_element
-    defaults name_generation force
-    defaults name_generation geometry
-    defaults name_generation layout
-    defaults name_generation marker
-    defaults name_generation model
-    defaults name_generation part
-    defaults name_generation postprocessing
-    defaults orient_axis_and_plane
-    defaults page
-    defaults plot
-    defaults plt_attributes
-    defaults prompting_level
-    defaults report
-    defaults solver
-    defaults sprintf_precision
-    defaults units
-    defaults vector_plots
-    defaults view
-
-
-    
-    display_attributes
-
-    display_attributes color constraint
-    display_attributes color force
-    display_attributes color geometry
-    display_attributes color marker
-    display_attributes color model
-    display_attributes color part
-    display_attributes icon_size constraint
-    display_attributes icon_size force
-    display_attributes icon_size marker
-    display_attributes icon_size model
-    display_attributes icon_size part
-    display_attributes rendering_mode
-    display_attributes scale force_graphics
-    display_attributes scale torque_graphics
-    display_attributes visibility constraint
-    display_attributes visibility force
-    display_attributes visibility geometry
-    display_attributes visibility marker
-    display_attributes visibility model
-    display_attributes visibility part
-    display_attributes visibility plot
-
-    else
-    elseif
-    end
-
-    
-    entity
-
-    entity attributes
-    entity copy
-    entity delete
-    entity modify
-
-
-    
-    executive_control
-
-    executive_control attributes sensor
-    executive_control copy sensor
-    executive_control create sensor
-    executive_control delete sensor
-    executive_control modify sensor
-    executive_control set dynamics_parameters coord_partitioning_parameters
-    executive_control set dynamics_parameters dynamic_solver
-    executive_control set dynamics_parameters integrator_parameters
-    executive_control set equilibrium_parameters
-    executive_control set easy_dynamics
-    executive_control set integrator_parameters dstiff
-    executive_control set kinematics_parameters
-    executive_control set numerical_integration_parameters
-    executive_control set preferences
-    executive_control set solver_parameters
-
-
-    
-    fepart_node
-    
-
-    FePart_Node create
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-    file
-
-    file adams_data_set merge
-    file adams_data_set write
-    file analysis read
-    file analysis write
-    file binary read
-    file binary write
-    file command read
-    file command write
-    file dac read
-    file dac write
-    file enhanced_data_set read (.eds)
-    file enhanced_data_set write (.eds)
-    file fea_loads write
-    file geometry read
-    file geometry write
-    file graphics read
-    file graphics write
-    file html write
-    file iges read
-    file log_file
-    file mnfxform mirror
-    file mnfxform rotate
-    file mnfxform translate
-    file parasolid write
-    file parasolid read
-    file postprocessing
-    file render read
-    file request read
-    file request write
-    file results read
-    file results write
-    file rpc read
-    file rpc write
-    file shell write
-    file spread_sheet write
-    file stereo_lithography read
-    file table write
-    file temporary_settings apply
-    file temporary_settings write
-    file temporary_settings revert
-    file testdata read measures
-    file testdata read splines
-    file text close
-    file text open
-    file text write
-    file wavefront read
-    file wavefront write
-
-
-    
     floating_marker
 
     floating_marker copy
@@ -356,7 +475,6 @@
 
     for
 
-    
     force
 
     force attributes
@@ -387,7 +505,6 @@
     force modify fe_load
 
 
-    
     function
 
     function create
@@ -395,7 +512,6 @@
     function modify
 
 
-    
     geometry
 
     geometry attributes
@@ -462,7 +578,6 @@
     geometry modify shape torus
 
 
-    
     graphic_results
 
     graphic_results animate
@@ -471,7 +586,6 @@
     graphic_results single_frame_display
 
 
-    
     group
 
     group attributes
@@ -491,7 +605,6 @@
     help
     highlight
 
-    
     hotspots
 
     hotspots display
@@ -500,7 +613,6 @@
 
     if
 
-    
     info_window
 
     info_window close
@@ -508,7 +620,6 @@
     info_window read
 
 
-    
     interface
 
     interface btn_stack create
@@ -691,13 +802,11 @@
     interface write
 
 
-    
     language
 
     language switch_to python
 
 
-    
     library
 
     library copy
@@ -706,7 +815,6 @@
     library modify
 
 
-    
     list_info
 
     list_info aggregate_mass
@@ -755,7 +863,6 @@
     list_info views
 
 
-    
     macro
 
     macro create
@@ -765,7 +872,6 @@
     macro write
 
 
-    
     marker
 
     marker attributes
@@ -775,7 +881,6 @@
     marker modify
 
 
-    
     material
 
     material copy
@@ -784,13 +889,10 @@
     material modify
 
 
-    
-    mdi
 
     marker delete_unused
 
 
-    
     measure
 
     measure attributes
@@ -816,7 +918,6 @@
     measure modify range
 
 
-    
     measure_display
 
     measure_display create
@@ -825,7 +926,6 @@
     measure_display save_curve
 
 
-    
     model
 
     model assemble
@@ -840,7 +940,6 @@
     model verify
 
 
-    
     move
 
     move control_panel
@@ -850,7 +949,6 @@
     move translation
 
 
-    
     multi_run_analysis
 
     multi_run analysis create
@@ -858,7 +956,6 @@
     multi_run analysis modify
 
 
-    
     notes
 
     notes attributes
@@ -868,7 +965,6 @@
     notes modify
 
 
-    
     numeric_results
 
     numeric_results component create
@@ -905,7 +1001,6 @@
     numeric_results write
 
 
-    
     optimize
 
     optimize constraint evaluate
@@ -913,7 +1008,6 @@
     optimize fit_response_surface
 
 
-    
     output_control
 
     output_control attributes femdata
@@ -937,7 +1031,6 @@
     output_control set results
 
 
-    
     panel
 
     panel set acf_twindow activate
@@ -1020,7 +1113,6 @@
     panel set twindow_function z_wdt
 
 
-    
     part
 
     part attributes
@@ -1070,7 +1162,6 @@
 
     pause
 
-    
     plot3D
 
     plot3D legend create
@@ -1084,14 +1175,12 @@
     plot3D surface delete
 
 
-    
     plugin
 
     plugin load
     plugin unload
 
 
-    
     point
 
     point attributes
@@ -1101,7 +1190,6 @@
     point modify
 
 
-    
     ptemplate
 
     ptemplate create
@@ -1109,7 +1197,6 @@
     ptemplate modify
 
 
-    
     report
 
     report create
@@ -1120,13 +1207,11 @@
 
     return
 
-    
     section
 
     section create
 
 
-    
     simulation
 
     simulation configuration restore
@@ -1184,7 +1269,6 @@
     submit
     system
 
-    
     time
 
     time animations
@@ -1197,7 +1281,6 @@
 
 
 
-    
     ude commands
 
     ude attributes
@@ -1217,7 +1300,6 @@
     ude sync
 
 
-    
     undo
 
     undo backward
@@ -1228,7 +1310,6 @@
     undo set
 
 
-    
     variable
 
     variable create
@@ -1239,7 +1320,6 @@
     variable set
 
 
-    
     view
 
     view activate
@@ -1264,7 +1344,6 @@
 
     while
 
-    
     xy_plots
 
     xy_plots auto_plot output_requests

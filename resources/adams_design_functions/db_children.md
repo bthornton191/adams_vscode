@@ -4,8 +4,9 @@ Returns an array of objects of a given type, that are children of the object you
 
 ## Format
 
+```java
 DB_CHILDREN (Object Name, Object Type)
-
+```
 ## Arguments
 
  

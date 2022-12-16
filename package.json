@@ -129,6 +129,10 @@
             {
                 "language": "adams_cmd",
                 "path": "./snippets/adams_cmd.json"
+            },
+            {
+                "language": "python",
+                "path": "./snippets/python.json"
             }
         ]
     },

@@ -24,5 +24,36 @@
         ["(", ")"],
         ["\"", "\""],
         ["'", "'"]
-    ]
+    ],
+    "indentationRules": {
+        "increaseIndentPattern": "^[ \\t]*((for[ \\t]* var.*)|(if[ \\t]* con.*)|(else[ \\t]*))$",
+        "decreaseIndentPattern": "^[ \\t]*(end|else)[ \\t]*$",
+        "indentNextLinePattern": "^.*&[ \\t]*$",
+        // "unIndentedLinePattern": "^.*=.*&[ \\t]$",
+    },
+    // "onEnterRules": [
+    //     {
+    //         // Indent after continuation character (&)
+    //         "beforeText": "^.*&[ \\t]*$",
+    //         "previousLineText": "^.*(?<!&)[ \\t]*$",
+    //         "action": {
+    //             "indent": "indent"
+    //         }
+    //     },
+    //     {
+    //         // Indent after for loop or if statement
+    //         "beforeText": "^[ \\t]*((for[ \\t]* var.*)|(if[ \\t]* con.*))$",
+    //         "action": {
+    //             "indent": "indent",
+    //         }
+    //     },
+    //     {
+    //         // Unindent after no continuation character (&)
+    //         "beforeText": "^.*(?!&)[ \\t]*$",
+    //         "previousLineText": "^.*&[ \\t]*$",
+    //         "action": {
+    //             "indent": "outdent"
+    //         }
+    //     }
+    // ]
 }

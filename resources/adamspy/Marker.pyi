@@ -1,6 +1,7 @@
 import Manager
 import Object
-from typing import Any, List
+from Part import Part
+from typing import Any, List, Union
 
 class Marker(Object.Object):
     def __init__(self, _DBKey) -> None: ...
@@ -39,4 +40,10 @@ class _loc_ori_provider:
 class MarkerManager(Manager.AdamsManager):
     @staticmethod
     def setDefault(key, type, o_rf) -> None: ...
-    def create(self, name=None, location=[0, 0, 0], **kwargs) -> Marker: ...
+
+    def create(self,
+               name=None,
+               location=[0, 0, 0],
+               orientation=[0, 0, 0],
+               relative_to: Union[Marker, Part] = None,
+               **kwargs) -> Marker: ...
