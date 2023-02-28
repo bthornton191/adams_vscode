@@ -2,7 +2,7 @@ import Manager
 import Object
 from DBAccess import ObjectName as ObjectName, ObjectValue as ObjectValue, RealArrayValue as RealArrayValue, RealValue as RealValue
 from ctypes import byref as byref, c_double as c_double
-from typing import Any, List, OrderedDict
+from typing import Any, ItemsView, Iterable, List, OrderedDict, ValuesView
 
 BUFFER_SIZE: int
 
@@ -10,6 +10,10 @@ class AnalysisManager(Manager.AdamsManager):
     def createFromFile(self, **kwargs): ...
 
     def __getitem__(self, name: str) -> Analysis: ...
+    def __iter__(self, *args) -> Iterable[str]: ...
+    def items(self) -> ItemsView[str, Analysis]: ...
+    def values(self) -> ValuesView[Analysis]: ...
+
 
 class ResultComponent(Object.ObjectBase):
     values: List[float]

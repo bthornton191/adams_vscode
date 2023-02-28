@@ -1,7 +1,7 @@
 import AppearanceSettings
 import Manager
 import Object
-from typing import Any
+from typing import Any, ItemsView, KeysView, ValuesView
 
 from DesignVariable import DesignVariableManager
 from SystemElement import SystemElementManager
@@ -24,6 +24,9 @@ class ModelManager(Manager.AdamsManager):
     def create(self, **kwargs)->Model: ...
     @staticmethod
     def newFromAdm(model_name, file_name): ...
+    def items(self) -> ItemsView[str, Model]: ...
+    def values(self) -> ValuesView[Model]: ...
+    def keys(self) -> KeysView[str]: ...
 
 class Model(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings):
     active: Any

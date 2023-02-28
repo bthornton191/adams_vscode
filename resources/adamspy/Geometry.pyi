@@ -4,7 +4,7 @@ from Marker import Marker
 import Object
 from DesignVariable import DesignVariableManager
 from DBAccess import MultiTypeObjectValue as MultiTypeObjectValue
-from typing import Any, ItemsView, Iterable, List, Tuple
+from typing import Any, ItemsView, Iterable, KeysView, List, Tuple, ValuesView
 
 class GeometryManager(Manager.SubclassManager):
     def __init__(self, managedClass, parent) -> None: ...
@@ -35,6 +35,8 @@ class GeometryManager(Manager.SubclassManager):
     def __getitem__(self, name) -> Geometry: ...
     def __iter__(self, *args) -> Iterable[str]: ...
     def items(self) -> ItemsView[str, Geometry]: ...
+    def values(self) -> ValuesView[Geometry]: ...
+    def keys(self) -> KeysView[str]: ...
     
 
 class GeometryModelManager(Manager.SubclassManager):
@@ -55,16 +57,16 @@ class GeometryLink(Geometry):
     comment_id: Any
     depth: Any
     width: Any
-    i_marker: Any
-    i_marker_name: Any
-    j_marker: Any
-    j_marker_name: Any
+    i_marker: Marker
+    i_marker_name: str
+    j_marker: Marker
+    j_marker_name: str
 
 class GeometryEllipse(Geometry):
     comment_id: Any
     adams_id_id: Any
-    center_marker: Any
-    center_marker_name: Any
+    center_marker: Marker
+    center_marker_name: str
     start_angle: Any
     end_angle: Any
     major_radius: Any
@@ -76,31 +78,31 @@ class GeometryTorus(Geometry, Object.ObjectAdamsId):
     angle_extent: Any
     side_count_for_perimeter: Any
     segment_count: Any
-    center_marker: Any
-    center_marker_name: Any
+    center_marker: Marker
+    center_marker_name: str
 
 class GeometryCircle(Geometry, Object.ObjectAdamsId):
     radius: Any
     segment_count: Any
-    center_marker: Any
-    center_marker_name: Any
+    center_marker: Marker
+    center_marker_name: str
     def setRefMarkerRadius(self, marker): ...
-    ref_radius_by_marker: Any
+    ref_radius_by_marker: Marker
 
 class GeometryPlane(Geometry):
-    x_minimum: Any
-    x_maximum: Any
-    y_minimum: Any
-    y_maximum: Any
-    ref_marker: Any
-    ref_marker_name: Any
+    x_minimum: float
+    x_maximum: float
+    y_minimum: float
+    y_maximum: float
+    ref_marker: Marker
+    ref_marker_name: str
 
 class GeometryBSpline(Geometry, Object.ObjectAdamsId):
     segment_count: Any
-    ref_marker: Any
-    ref_marker_name: Any
+    ref_marker: Marker
+    ref_marker_name: str
     ref_curve: Any
-    ref_curve_name: Any
+    ref_curve_name: str
     def setClosed(self, close): ...
     def getClosed(self): ...
     closed: Any
@@ -109,8 +111,8 @@ class GeometryBlock(Geometry):
     x: Any
     y: Any
     z: Any
-    corner_marker: Any
-    corner_marker_name: Any
+    corner_marker: Marker
+    corner_marker_name: str
 
 class GeometryChain(Geometry):
     comment_id: Any
@@ -118,37 +120,37 @@ class GeometryChain(Geometry):
     objects_in_chain: Any
 
 class GeometryCylinder(Geometry, Object.ObjectAdamsId):
-    center_marker: Any
-    center_marker_name: Any
+    center_marker: Marker
+    center_marker_name: str
     angle_extent: Any
     length: Any
     side_count_for_body: Any
     radius: Any
     segment_count_for_ends: Any
     def setRefMarkerRadius(self, marker): ...
-    ref_radius_by_marker: Any
+    ref_radius_by_marker: Marker
 
 class GeometryEllipsoid(Geometry):
     x_scale_factor: Any
     y_scale_factor: Any
     z_scale_factor: Any
-    center_marker: Any
-    center_marker_name: Any
+    center_marker: Marker
+    center_marker_name: str
 
 class GeometryForce(Geometry, Object.ObjectAdamsId):
     all_force_elements: Any
-    applied_at_marker: Any
-    applied_at_marker_name: Any
+    applied_at_marker: Marker
+    applied_at_marker_name: str
     force_element: Any
-    force_element_name: Any
+    force_element_name: str
     joint: Any
-    joint_name: Any
+    joint_name: str
     jprim: Any
-    jprim_name: Any
+    jprim_name: str
     curve_curve: Any
-    curve_curve_name: Any
+    curve_curve_name: str
     point_curve: Any
-    point_curve_name: Any
+    point_curve_name: str
 
 class GeometryGContact(Geometry):
     comment_id: Any
@@ -157,13 +159,13 @@ class GeometryGContact(Geometry):
     force_display: Any
 
 class GeometryArc(Geometry, Object.ObjectAdamsId):
-    center_marker: Any
-    center_marker_name: Any
+    center_marker: Marker
+    center_marker_name: str
     radius: Any
     angle_extent: Any
     segment_count: Any
     def setRefMarkerRadius(self, marker): ...
-    ref_radius_by_marker: Any
+    ref_radius_by_marker: Marker
     type_close: Any
     def setClose(self, closure): ...
     def getClose(self): ...
@@ -176,13 +178,13 @@ class GeometryFrustum(Geometry, Object.ObjectAdamsId):
     length: Any
     side_count_for_body: Any
     segment_count_for_ends: Any
-    center_marker: Any
-    center_marker_name: Any
+    center_marker: Marker
+    center_marker_name: str
 
 class GeometryOutline(Geometry, Object.ObjectAdamsId):
     visibility_between_markers: Any
-    marker: Any
-    marker_name: Any
+    marker: Marker
+    marker_name: str
 
 class GeometrySpringDamper(Geometry, Object.ObjectAdamsId):
     diameter_of_spring: Any
@@ -193,10 +195,10 @@ class GeometrySpringDamper(Geometry, Object.ObjectAdamsId):
     tip_length_at_j: Any
     cup_length_at_i: Any
     cup_length_at_j: Any
-    i_marker: Any
-    i_marker_name: Any
-    j_marker: Any
-    j_marker_name: Any
+    i_marker: Marker
+    i_marker_name: str
+    j_marker: Marker
+    j_marker_name: str
 
 class GeometryExtrusion(Geometry, Object.ObjectAdamsId):
     def __init__(self, _DBKey) -> None: ...
@@ -206,8 +208,8 @@ class GeometryExtrusion(Geometry, Object.ObjectAdamsId):
     path_points: Any
     profile_curve: Any
     path_curve: Any
-    reference_marker: Any
-    reference_marker_name: Any
+    reference_marker: Marker
+    reference_marker_name: str
     relative_to: Any
 
 class GeometryRevolution(Geometry):
@@ -215,9 +217,9 @@ class GeometryRevolution(Geometry):
     angle_extent: Any
     analytical: Any
     profile_curve: Any
-    profile_curve_name: Any
-    reference_marker: Any
-    reference_marker_name: Any
+    profile_curve_name: str
+    reference_marker: Marker
+    reference_marker_name: str
     number_of_sides: Any
     points_for_profile: Any
     relative_to: Any
@@ -240,8 +242,8 @@ class GeometryPlate(Geometry):
     radius: Any
 
 class GeometryPoint(Geometry):
-    ref_marker: Any
-    ref_marker_name: Any
+    ref_marker: Marker
+    ref_marker_name: str
 
 class GeometryCsg(Geometry):
     comment_id: Any
@@ -250,9 +252,9 @@ class GeometryCsg(Geometry):
     def setCsgExplode(self, val): ...
     explode: Any
     base_object: Any
-    base_object_name: Any
+    base_object_name: str
     object: Any
-    object_name: Any
+    object_name: str
     csg_type: Any
 
 class GeometrySolid(Geometry): ...
@@ -260,7 +262,7 @@ class GeometrySolid(Geometry): ...
 class GeometryExternal(Geometry):
     solid_id: Any
     rm: Any
-    ref_marker_name: Any
+    ref_marker_name: str
     faceting_tolerance: Any
     file: Any
     element: Any

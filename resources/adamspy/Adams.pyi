@@ -2,6 +2,7 @@ from typing import Any, Dict, Literal
 import Object
 import Model
 from Model import ModelManager
+from Group import GroupManager
 from Expression import eval as eval, expression as expression
 
 DBRoot: Any
@@ -12,7 +13,7 @@ class AdamsRoot(Object.Object): ...
 Models: ModelManager
 defaults: Any
 preferences: Any
-Groups: Any
+Groups: GroupManager
 Libraries: Any
 AttributesLibraries: Any
 Colors: Any
