@@ -1,3 +1,4 @@
+
 # AVIEW_EDIT_FILE
 
 This function will invoke given file, open in notepad window for the user to edit as they see fit. Also this function can be used to view status of the file. View/edit the specified configuration file, input file and so on. The program used to open the file depends on the environment variable: 

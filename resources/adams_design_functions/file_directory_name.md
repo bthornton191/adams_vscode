@@ -1,25 +1,33 @@
-# FILE_DIRECTORY_NAME
-Returns a directory name from the file specification.
+# FILE_EXISTS
+Returns a 1 if a file exists, and a 0 if it doesn't.
 
 ## Format
 ```java
-FILE_DIRECTORY_NAME(file_name)
+FILE_EXISTS(file_name)
 ```
 
 ## Argument
  
 **file_name**
-: Character string containing the local or full-file name.
+: The name of the file you're looking for.
 
 ## Example
-The following example illustrates the use of the `FILE_DIRECTORY_NAME` function:
+For the following examples, assume that a file named aview.log% exists, and avkiew.log% does not.
 
 ### Function
 ```java
-var set var=$_self.dir string_value=
-(eval (FILE_DIRECTORY_NAME ("my_dir/my_file.dat")))
+FILE_EXISTS(aview.log%)
 ```
 ### Returns
 ```java
-"my_dir"
+1
+```
+
+### Function
+```java
+FILE_EXISTS(avkiew.log%)
+```
+### Returns
+```java
+0
 ```

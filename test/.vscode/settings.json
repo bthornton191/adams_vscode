@@ -49,6 +49,7 @@
         ]
     },
     "python.analysis.extraPaths": [
-        "c:\\Users\\bthornt\\.vscode\\extensions\\adams_vscode\\resources\\adamspy"
+        "c:\\Users\\bthornt\\.vscode\\extensions\\adams_vscode\\resources\\adamspy",
+        "c:\\Users\\ben.thornton\\code\\adams_vscode\\resources\\adamspy"
     ]
 }

@@ -1,7 +1,7 @@
 import AppearanceSettings
 import Manager
 import Object
-from typing import Any, ItemsView, KeysView, ValuesView
+from typing import Any, ItemsView, Iterable, KeysView, ValuesView
 
 from DesignVariable import DesignVariableManager
 from SystemElement import SystemElementManager
@@ -27,6 +27,8 @@ class ModelManager(Manager.AdamsManager):
     def items(self) -> ItemsView[str, Model]: ...
     def values(self) -> ValuesView[Model]: ...
     def keys(self) -> KeysView[str]: ...
+    def __getitem__(self, name) -> Model: ...
+    def __iter__(self, *args) -> Iterable[str]: ...
 
 class Model(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings):
     active: Any
