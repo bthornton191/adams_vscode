@@ -1,55 +1,11 @@
-{    
-    "editor.tokenColorCustomizations": {
-        "textMateRules": [
-            {
-                "scope": "parameter.reference",
-                "settings": {
-                    "foreground": "#b9edfd",
-                    "fontStyle": "bold"
-                }
-            },
-            {
-                "scope": "variable",
-                "settings": {
-                    "foreground": "#b9edfd"
-                }
-            },
-            {
-                "scope": "parameter.definition",
-                "settings": {
-                    "foreground": "#b9edfd9c",
-                    "fontStyle": "bold"
-                }
-            },
-            {
-                "scope": "selfParameter",
-                "settings": {
-                    "foreground": "#775194"
-                }
-            },
-            {
-                "scope": "command.command",
-                "settings": {
-                    "foreground": "#d3a7fd",
-                    "fontStyle": "bold"
-                }
-            },
-            {
-                "scope": "command.control",
-                "settings": {
-                    "foreground": "#d3a7fd"
-                }
-            },
-            {
-                "scope": "command.argument",
-                "settings": {
-                    "foreground": "#8ec7f0"
-                }
-            }
-        ]
-    },
+{
     "python.analysis.extraPaths": [
-        "c:\\Users\\bthornt\\.vscode\\extensions\\adams_vscode\\resources\\adamspy",
+        "C:\\Users\\ben.thornton\\Code\\thornpy",
+        "C:\\Users\\ben.thornton\\Code\\adamspy",
+        "C:\\Users\\ben.thornton\\Code\\aviewpy",
+        "C:\\Users\\ben.thornton\\Code\\adams_shell_wear",
+        "c:\\Users\\ben.thornton\\.vscode\\extensions\\savvyanalyst.msc-adams-0.0.1\\resources\\adamspy",
+        "c:\\Users\\ben.thornton\\.vscode\\extensions\\savvyanalyst.msc-adams-0.0.3\\resources\\adamspy",
         "c:\\Users\\ben.thornton\\code\\adams_vscode\\resources\\adamspy"
     ]
 }

@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "0.0.2",
+    "version": "0.0.4",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -139,7 +139,153 @@
                 "language": "python",
                 "path": "./snippets/python.json"
             }
-        ]
+        ],
+        "configuration":[
+            {
+                "title": "MSC Adams",
+                "properties": {
+                    "msc-adams.adams_launch_command": {
+                        "type": "string",
+                        "default": "mdi.bat",
+                        "description": "Path to the mdi.bat file in your Adams installation. Located in the common folder."
+                    }
+                }
+            }
+        ],
+        "configurationDefaults": {
+            "editor.tokenColorCustomizations": {     
+                "[*Light*]": {
+                    "textMateRules": [
+                        {
+                            "scope": "parameter.reference",
+                            "settings": {
+                                "foreground": "#41a189",
+                                "fontStyle": "bold"
+                            }
+                        },
+                        {
+                            "scope": "variable",
+                            "settings": {
+                                "foreground": "#41a189"
+                            }
+                        },
+                        {
+                            "scope": "constant",
+                            "settings": {
+                                "foreground": "#bd785b",
+                                "fontStyle": "bold"
+                            }
+                        },
+                        {
+                            "scope": "arguments",
+                            "settings": {
+                                "foreground": "#41a189"
+                            }
+                        },
+                        {
+                            "scope": "parameter.definition",
+                            "settings": {
+                                "foreground": "#41a189",
+                                "fontStyle": "bold"
+                            }
+                        },
+                        {
+                            "scope": "selfParameter",
+                            "settings": {
+                                "foreground": "#775194"
+                            }
+                        },
+                        {
+                            "scope": "command.command",
+                            "settings": {
+                                "foreground": "#c07dff",
+                                "fontStyle": "bold"
+                            }
+                        },
+                        {
+                            "scope": "command.control",
+                            "settings": {
+                                "foreground": "#c07dff"
+                            }
+                        },
+                        {
+                            "scope": "command.argument",
+                            "settings": {
+                                "foreground": "#3b8cd8",
+                                "fontStyle": "bold"
+                            }
+                        },
+                        {
+                            "scope": "command.argument.continued",
+                            "settings": {
+                                "foreground": "#8ba7c2"
+                            }
+                        }
+                    ]
+                },
+                "textMateRules": [
+                    {
+                        "scope": "parameter.reference",
+                        "settings": {
+                            "foreground": "#b9edfd",
+                            "fontStyle": "bold"
+                        }
+                    },
+                    {
+                        "scope": "variable",
+                        "settings": {
+                            "foreground": "#b9edfd"
+                        }
+                    },
+                    {
+                        "scope": "parameter.definition",
+                        "settings": {
+                            "foreground": "#b9edfd9c",
+                            "fontStyle": "bold"
+                        }
+                    },
+                    {
+                        "scope": "selfParameter",
+                        "settings": {
+                            "foreground": "#775194"
+                        }
+                    },
+                    {
+                        "scope": "command.command",
+                        "settings": {
+                            "foreground": "#d3a7fd",
+                            "fontStyle": "bold"
+                        }
+                    },
+                    {
+                        "scope": "command.command.positional",
+                        "settings": {
+                            "foreground": "#9574b4",
+                            "fontStyle": ""
+                        }
+                    },
+                    {
+                        "scope": "command.control",
+                        "settings": {
+                            "foreground": "#d3a7fd"
+                        }
+                    },
+                    {
+                        "scope": "command.argument",
+                        "settings": {
+                            "foreground": "#8ec7f0"
+                        }
+                    },
+                    {
+                        "scope": "command.argument.continued",
+                        "settings": {
+                            "foreground": "#6b97b4"
+                        }
+                    }
+                ]
+
+            }
+        }
     },
     "devDependencies": {
         "@types/node": "^17.0.2"

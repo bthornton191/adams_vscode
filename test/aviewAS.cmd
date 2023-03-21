@@ -62,12 +62,28 @@ mar create marker_name = .my_part.marker_1
 
 ! Check if plot name already exists and add an incremental suffix if needed
 
-if condition = (.model.analysis != 1 || .model.analysis == 2 && )
+
+if condition=(db_exists)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 if condition = (DB_EXISTS(eval("."//"$New_plot_name")))
-   variable set &
-	   variable_name = plotname &
-	   string = (UNIQUE_NAME(eval("$New_plot_name")))
+
+    variable set &
+        variable_name = plotname &
+        string = (UNIQUE_NAME(eval("$New_plot_name")))
+
 else
    variable set & 
 	   variable_name = plotname &

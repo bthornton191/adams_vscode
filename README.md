@@ -2,7 +2,6 @@
 
 > This is an early version. If you are interested in using it, please [reach out](mailto:ben.thornton@hexgagon.com) and let me know. Thanks!
 
-<!-- Professional Messeage explaining that this is an early version and people should let me know if they are interested in using it so i can make it better  -->
 
 ## Features
 
@@ -10,16 +9,24 @@
   * Adams View Command Languange (.cmd)
   * Adams Solver Dataset Files (.adm)
   * Adams Solver Command Files (.acf)
+- Adams Function Completion Provider
+- Adams Function Documentation Hover Provider
+
+    ![of Adams Function Documentation Hover Provider Example](doc/autocomplete_function.gif)
 - Snippets
 - Stub files for Adams View Python Interface
+    ![adams python autocomplete](doc/adams_python_autocomplete.gif)
 
 ## Requirements
 
-- [MSC Adams](https://bit.ly/41Is9jf)
+- [MSC Adams](https://hexagon.com/products/product-groups/computer-aided-engineering-software/adams)
 
 ## Extension Settings
 
 ## Known Issues
+
+This extension contributes the following settings:
+  * msc-adams.adams_launch_command: Path to the mdi.bat file in your Adams installation.
 
 
 ## Release Notes

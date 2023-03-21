@@ -2,8 +2,9 @@ const path = require('path');
 const vscode = require('vscode');
 const fs = require('fs');
 const child_process = require("child_process");
-
-const view_launcher = path.normalize("C:/Program Files/MSC.Software/Adams/aview_mods_gen/open_with_adams_view.bat")
+ 
+//Create output channel
+const output_channel = vscode.window.createOutputChannel("MSC Adams");
 
 // vscode.window.showInformationMessage(file)
 
@@ -114,17 +115,26 @@ function activate(context) {
 		
 		let dir_name = path.dirname(uri.fsPath);
 		let base_name = path.basename(uri.fsPath);
+        
+        const view_launcher = context.asAbsolutePath('resources/scripts/open_with_adams_view.bat')
+        const adams_launch_command = vscode.workspace.getConfiguration('msc-adams').get('adams_launch_command');
 
-		child_process.exec(`"${view_launcher}" "${base_name}"`, { cwd: dir_name }, (error, stdout, stderr) => {
+	    console.log(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`);
+        output_channel.appendLine(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`);
+
+		child_process.exec(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`, { cwd: dir_name }, (error, stdout, stderr) => {
 			if (error) {
 				console.log(`error: ${error.message}`);
+                output_channel.appendLine(`error: ${error.message}`);
 				return;
 			}
 			if (stderr) {
 				console.log(`stderr: ${stderr}`);
+                output_channel.appendLine(`stderr: ${stderr}`);
 				return;
 			}
 			console.log(`stdout: ${stdout}`);
+            output_channel.appendLine(`stdout: ${stdout}`);
 		});
 	};
 	vscode.commands.registerCommand(oiv_command, oivCommandHandler);
@@ -135,17 +145,24 @@ function activate(context) {
 		
 		let dir_name = path.dirname(uri.fsPath);
 		let base_name = path.basename(uri.fsPath);
+        const adams_launch_command = vscode.workspace.getConfiguration('msc-adams').get('adams_launch_command');
 
-		child_process.exec('"%ADAMS_LAUNCH_COMMAND%" aview ru-s i', { cwd: uri.fsPath }, (error, stdout, stderr) => {
+        
+	    console.log(`"${adams_launch_command}" aview ru-s i`);
+        output_channel.appendLine(`"${adams_launch_command}" aview ru-s i`);
+		child_process.exec(`"${adams_launch_command}" aview ru-s i`, { cwd: uri.fsPath }, (error, stdout, stderr) => {
 			if (error) {
 				console.log(`error: ${error.message}`);
+                output_channel.appendLine(`error: ${error.message}`);
 				return;
 			}
 			if (stderr) {
 				console.log(`stderr: ${stderr}`);
+                output_channel.appendLine(`stderr: ${stderr}`);
 				return;
 			}
 			console.log(`stdout: ${stdout}`);
+            output_channel.appendLine(`stdout: ${stdout}`);
 		});
 	};
 	vscode.commands.registerCommand(ovh_command, ovhCommandHandler);

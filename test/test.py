@@ -2,6 +2,7 @@
 import sys
 import Adams
 
+
 Adams.read_geometry_file()
 
 
@@ -14,3 +15,7 @@ pd.DataFrame()
 
 arr = np.array([1,2,3])
 arr.size()
+
+for x in list(range(0, 10)):
+    print(x)
+
