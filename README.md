@@ -12,18 +12,18 @@
 - Adams Function Completion Provider
 - Adams Function Documentation Hover Provider
 
-    ![of Adams Function Documentation Hover Provider Example](doc/autocomplete_function.gif)
+    ![Example of Adams Function Documentation Hover Provider Example](doc/autocomplete_function.gif)
 - Snippets
-- Stub files for Adams View Python Interface
+- Intellisense support for Adams View Python Interface
     ![adams python autocomplete](doc/adams_python_autocomplete.gif)
 
 ## Requirements
 
 - [MSC Adams](https://hexagon.com/products/product-groups/computer-aided-engineering-software/adams)
 
-## Extension Settings
-
 ## Known Issues
+
+## Extension Settings
 
 This extension contributes the following settings:
   * msc-adams.adams_launch_command: Path to the mdi.bat file in your Adams installation.
