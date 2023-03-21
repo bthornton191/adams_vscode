@@ -119,6 +119,14 @@ function activate(context) {
         const view_launcher = context.asAbsolutePath('resources/scripts/open_with_adams_view.bat')
         const adams_launch_command = vscode.workspace.getConfiguration('msc-adams').get('adams_launch_command');
 
+        if (!fs.existsSync(adams_launch_command)) {
+            vscode.window.showErrorMessage("Adams launch command not found!", "Open Settings")
+            .then((selection) => {
+                if (selection === "Open Settings") {
+                    vscode.commands.executeCommand('workbench.action.openSettings', 'msc-adams.adams_launch_command');
+                }
+            });
+        }
 	    console.log(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`);
         output_channel.appendLine(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`);
 
@@ -147,6 +155,14 @@ function activate(context) {
 		let base_name = path.basename(uri.fsPath);
         const adams_launch_command = vscode.workspace.getConfiguration('msc-adams').get('adams_launch_command');
 
+        if (!fs.existsSync(adams_launch_command)) {
+            vscode.window.showErrorMessage("Adams launch command not found!", "Open Settings")
+            .then((selection) => {
+                if (selection === "Open Settings") {
+                    vscode.commands.executeCommand('workbench.action.openSettings', 'msc-adams.adams_launch_command');
+                }
+            });
+        }
         
 	    console.log(`"${adams_launch_command}" aview ru-s i`);
         output_channel.appendLine(`"${adams_launch_command}" aview ru-s i`);
