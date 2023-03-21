@@ -23,23 +23,20 @@ data_element modify matrix full &
     
 
 
-! var set var=$_self.pystr str="import os", &
-! 							"from pathlib import Path", &
-! 							"sys", &
-! 							"sys.path.insert(0, os.path.join('C:\\\\', 'Users', 'bthornt', 'Hexagon', 'NNL - Roller Nut Drive - Engineering', 'plugin', 'working_directory', 'modules'))", &
-! 							"from qual.utilities.spline import check_spline", &
-! 							eval(str_xlate(str_xlate("current_in=" // .rotating_assembly.torque_spln_mtx.values[*,1], "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("lag_in=" // .rotating_assembly.torque_6p0.xs, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("engagement_in=" // .rotating_assembly.torque_6p0.zs, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("torque_in =" // .rotating_assembly.torque_6p0.ys, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("torque_in+=" // .rotating_assembly.torque_8p0.ys, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("torque_in+=" // .rotating_assembly.torque_10p0.ys, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("torque_in+=" // .rotating_assembly.torque_12p0.ys, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("current_out=" // .rotating_assembly.Last_Run.current.Q.values, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("lag_out=" // .rotating_assembly.Last_Run.lag.Q.values, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("engagement_out=" // .rotating_assembly.Last_Run.engagement.Q.values, "{", "["), "}", "]")), &
-! 							eval(str_xlate(str_xlate("torque_out=" // .rotating_assembly.Last_Run.stator_torque.TY.values, "{", "["), "}", "]")), &
-! 							"check_spline(current_in, lag_in, engagement_in, torque_in, current_out, lag_out, engagement_out, torque_out)"
+
+interface dialog_box create  &
+   dialog_box_name = .gui.dbox_mydbox  &
+   title = "My Dialog Box"  &
+   start_commands = "Commands in this string run when the dialog box opens", &
+                    "var set var=.mdi.tmp_int int=1"
+
+! "
+
+   
+
+
+
+
 
 
 
