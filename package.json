@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "0.0.4",
+    "version": "0.0.5",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -20,7 +20,9 @@
         "onLanguage:adams_adm",
         "onLanguage:adams_acf",
         "onLanguage:adams_to",
-        "onCommand:msc_adams.activate"
+        "onCommand:msc_adams.activate",
+        "onCommand:msc_adams.openInView",
+        "onCommand:msc_adams.openViewHere"
     ],
     "icon": "images/adams.png",
     "contributes": {
