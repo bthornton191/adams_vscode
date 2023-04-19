@@ -8,6 +8,7 @@ from SystemElement import SystemElementManager
 from Constraint import ConstraintManager
 from DataElement import DataElementManager
 from Force import ForceManager
+from Manager import AdamsManager
 from Measure import MeasureManager
 from Part import PartManager
 from Material import MaterialManager
@@ -19,6 +20,7 @@ from Group import GroupManager
 from Analysis import AnalysisManager
 from RuntimeFunction import RuntimeFunctionManager
 from Part import Part
+from Simulation import SimulationManager
 
 class ModelManager(Manager.AdamsManager):
     def create(self, **kwargs)->Model: ...
@@ -43,7 +45,7 @@ class Model(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings)
     Parts: PartManager
     Materials: MaterialManager
     Geometries: GeometryManager
-    Sensors: Any
+    Sensors: AdamsManager
     FloatingMarkers: MarkerManager
     Contacts: ContactManager
     Sections: SectionManager
@@ -51,7 +53,7 @@ class Model(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings)
     Groups: GroupManager
     Analyses: AnalysisManager
     RuntimeFunctions: RuntimeFunctionManager
-    Simulations: Any
+    Simulations: SimulationManager
     settings: Any
     UserDefinedInstances: Any
     def __init__(self, _DBKey) -> None: ...

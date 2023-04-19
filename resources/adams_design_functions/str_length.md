@@ -25,7 +25,7 @@ STR_LENGTH ("Hello there")
 The following function returns 10 because the double slash marks (//) concatenated the two strings into one:
  
 ### Function
-```java
+```julia
 STR_LENGTH ("Hello" // "there")
 ```
 ### Result

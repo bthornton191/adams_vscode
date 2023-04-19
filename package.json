@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "0.0.6",
+    "version": "0.1.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -20,6 +20,7 @@
         "onLanguage:adams_adm",
         "onLanguage:adams_acf",
         "onLanguage:adams_to",
+        "onLanguage:python",
         "onCommand:msc_adams.activate",
         "onCommand:msc_adams.openInView",
         "onCommand:msc_adams.openViewHere"
@@ -29,21 +30,30 @@
         "commands" : [
             {
                 "command": "msc_adams.macros.makeHeader",
-                "title": "MSC Adams: Make Macro Header"
+                "title": "MSC Adams: Make Macro Header",
+                "icon": "images/adams.png"
+            },
+            {
+                "command": "msc_adams.debugInAdams",
+                "title": "MSC Adams: Debug Python Script in Adams",
+                "icon": {
+                    "light": "images/adams_debug_light.png",
+                    "dark": "images/adams_debug_dark.png"}
             },
             {
                 "command": "msc_adams.activate",
-                "title": "MSC Adams: Activate"
+                "title": "MSC Adams: Activate",
+                "icon": "images/adams.png"
             },
             {
                 "command": "msc_adams.openInView",
                 "title": "Open In View",
-                "icon": "images/adams.svg"
+                "icon": "images/adams.png"
             },
             {
                 "command": "msc_adams.openViewHere",
                 "title": "Open Adams View",
-                "icon": "images/adams.svg"
+                "icon": "images/adams.png"
             }
         ],
         "menus": {
@@ -58,6 +68,13 @@
                     "when": "explorerResourceIsFolder == true",
                     "group": "navigation"
                 }  
+            ],
+            "editor/title": [
+                {
+                    "command": "msc_adams.debugInAdams",
+                    "when": "resourceExtname == .py",
+                    "group": "navigation"
+                }
             ]
         },
         "capabilities": {
@@ -291,5 +308,9 @@
     },
     "devDependencies": {
         "@types/node": "^17.0.2"
-    }
+    },
+    "extensionDependencies": [
+        "ms-python.vscode-pylance",
+        "ms-python.python"
+    ]
 }
