@@ -1,7 +1,7 @@
 import Adams
 
 mod = Adams.getCurrentModel()
+part = mod.Parts['PART_2']
 
-part = mod.Parts.createRigidBody("test")
-
-
+mass = part.mass
+print(mass) 
