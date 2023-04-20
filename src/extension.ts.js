@@ -6,7 +6,6 @@ const child_process = require("child_process");
 //Create output channel
 const output_channel = vscode.window.createOutputChannel("MSC Adams");
 
-// vscode.window.showInformationMessage(file)
 
 function activate(context) {
 	
@@ -16,12 +15,10 @@ function activate(context) {
 	const func_files = fs.readdirSync(func_dir);
 	
 	for (var file of func_files) {
-		if (fs.lstatSync([func_dir, file].join('/')).isFile()) {
+		if (fs.lstatSync([func_dir, file].join('/')).isFile()) { 
 			var text = fs.readFileSync([func_dir, file].join('/'),'utf8');
 			var function_name = path.parse(file).name
 			function_names.set(function_name, text)
-			// vscode.window.showInformationMessage(path.parse(function_name).name)
-
 		}
 	}
 	
@@ -48,7 +45,6 @@ function activate(context) {
 	// ---------------------------------------------------------------------------
 	// Completion
 	// ---------------------------------------------------------------------------
-	
 	const cmd_files_json = context.asAbsolutePath('resources/adams_view_commands/unstructured.json');
 	const commands = JSON.parse(fs.readFileSync(cmd_files_json))
 	vscode.languages.registerCompletionItemProvider('adams_cmd', {
@@ -85,15 +81,7 @@ function activate(context) {
 		}
 	});
 	
-	// ---------------------------------------------------------------------------
-	// Add stub files to extra python analysis paths
-	// ---------------------------------------------------------------------------
-	const stub_dir = context.asAbsolutePath('resources/adamspy');
-	const section = vscode.workspace.getConfiguration('python', vscode.ConfigurationTarget.WorkspaceFolder);
-	const current_setting = section.get('analysis.extraPaths').filter(item => ![stub_dir].includes(item));
-	section.update('analysis.extraPaths', current_setting.concat([stub_dir]))
-	
-	// ---------------------------------------------------------------------------
+    // ---------------------------------------------------------------------------
 	// Commands
 	// ---------------------------------------------------------------------------
 	const mh_command = 'msc_adams.macros.makeHeader';
@@ -111,7 +99,7 @@ function activate(context) {
 		let base_name = path.basename(uri.fsPath);
         
         const view_launcher = context.asAbsolutePath('resources/scripts/open_with_adams_view.bat')
-        const adams_launch_command = vscode.workspace.getConfiguration('msc-adams').get('adams_launch_command');
+        const adams_launch_command = vscode.workspace.getConfiguration('msc-adams').get('adamsLaunchCommand');
 
         if (!fs.existsSync(adams_launch_command)) {
             vscode.window.showErrorMessage("Adams launch command not found!", "Open Settings")
@@ -122,21 +110,22 @@ function activate(context) {
             });
         }
 	    console.log(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`);
-        output_channel.appendLine(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`);
+        // Write to output channel with timestamp
+        output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: "${view_launcher}" "${base_name}" "${adams_launch_command}"`);
 
 		child_process.exec(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`, { cwd: dir_name }, (error, stdout, stderr) => {
 			if (error) {
 				console.log(`error: ${error.message}`);
-                output_channel.appendLine(`error: ${error.message}`);
+                output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: error: ${error.message}`);
 				return;
 			}
 			if (stderr) {
 				console.log(`stderr: ${stderr}`);
-                output_channel.appendLine(`stderr: ${stderr}`);
+                output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: stderr: ${stderr}`);
 				return;
 			}
 			console.log(`stdout: ${stdout}`);
-            output_channel.appendLine(`stdout: ${stdout}`);
+            output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: stdout: ${stdout}`);
 		});
 	};
 	vscode.commands.registerCommand(oiv_command, oivCommandHandler);
@@ -147,36 +136,135 @@ function activate(context) {
 		
 		let dir_name = path.dirname(uri.fsPath);
 		let base_name = path.basename(uri.fsPath);
-        const adams_launch_command = vscode.workspace.getConfiguration('msc-adams').get('adams_launch_command');
+        const adams_launch_command = vscode.workspace.getConfiguration('msc-adams').get('adamsLaunchCommand');
 
         if (!fs.existsSync(adams_launch_command)) {
             vscode.window.showErrorMessage("Adams launch command not found!", "Open Settings")
             .then((selection) => {
                 if (selection === "Open Settings") {
-                    vscode.commands.executeCommand('workbench.action.openSettings', 'msc-adams.adams_launch_command');
+                    vscode.commands.executeCommand('workbench.action.openSettings', 'msc-adams.adamsLaunchCommand');
                 }
             });
         }
         
 	    console.log(`"${adams_launch_command}" aview ru-s i`);
-        output_channel.appendLine(`"${adams_launch_command}" aview ru-s i`);
+        output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: "${adams_launch_command}" aview ru-s i`);
 		child_process.exec(`"${adams_launch_command}" aview ru-s i`, { cwd: uri.fsPath }, (error, stdout, stderr) => {
 			if (error) {
 				console.log(`error: ${error.message}`);
-                output_channel.appendLine(`error: ${error.message}`);
+                output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: error: ${error.message}`);
 				return;
 			}
 			if (stderr) {
 				console.log(`stderr: ${stderr}`);
-                output_channel.appendLine(`stderr: ${stderr}`);
+                output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: stderr: ${stderr}`);
 				return;
 			}
 			console.log(`stdout: ${stdout}`);
-            output_channel.appendLine(`stdout: ${stdout}`);
+            output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: stdout: ${stdout}`);
 		});
 	};
 	vscode.commands.registerCommand(ovh_command, ovhCommandHandler);
 
+    const lsf_command = 'msc_adams.loadStubFiles';
+    const lsfCommandHandler = async () => {
+        
+        const adams_stub_dir = context.asAbsolutePath('resources/adamspy');
+        // const adams_stub_files = fs.readdirSync(adams_stub_dir);
+        var extra_paths = vscode.workspace.getConfiguration('python').get('analysis.extraPaths', null);
+        // If the stub directory is not already in the extra paths, add it
+        if (!extra_paths.includes(adams_stub_dir)) {
+            extra_paths.push(adams_stub_dir);
+            output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Adding "${adams_stub_dir}" to python.autoComplete.extraPaths`);
+        }
+        if (vscode.workspace.workspaceFolders == undefined) {
+            vscode.workspace.getConfiguration('python').update('analysis.extraPaths', extra_paths, true);
+        }
+        else {
+            vscode.workspace.getConfiguration('python').update('analysis.extraPaths', extra_paths, null);
+        }
+        
+        // ---------------------------------------------------------------------------
+        // Add all files in stub_dir to the current stubs path setting
+        // ---------------------------------------------------------------------------
+        // const load_stub_files = vscode.workspace.getConfiguration('msc-adams').get('loadStubFiles')
+
+        // if (load_stub_files == true) {
+        //     // Get the current stub directory setting
+        //     const stub_dir_name = vscode.workspace.getConfiguration('python').get('analysis.stubPath', null);s
+
+        //     // If the stub dir is empty, warn the user and tell them to set it
+        //     if (stub_dir_name == "") {
+        //         vscode.window.showErrorMessage("Python Stub directory not set!", "Open Settings")
+        //         .then((selection) => {
+        //             if (selection === "Open Settings") {
+        //                 vscode.commands.executeCommand('workbench.action.openSettings', 'python.analysis.stubPath');
+        //             }
+        //         });
+        //         return;
+        //     }
+        // }
+
+
+            // if (vscode.workspace.workspaceFolders == undefined) {
+                
+                // If there are no open workspaces
+                // Add adams_stub_dir to python.analysis.extraPaths
+                
+                // If the stub directory is not already in the extra paths, add it
+                // if (!extra_paths.includes(adams_stub_dir)) {
+                //     extra_paths.push(adams_stub_dir);
+                // }
+                // vscode.workspace.getConfiguration('python').update('analysis.extraPaths', extra_paths, true);
+            // }
+            // else {
+                // If there are open workspaces
+                // Loop over all the workspace folders to add the stub files to each one
+                // for (var folder of vscode.workspace.workspaceFolders) {
+                //     var stub_dir = [folder.uri.fsPath, stub_dir_name].join('/');
+
+                //     // Create the stub directory if it does not exist
+                //     if (!fs.existsSync(stub_dir)) {
+                //         fs.mkdirSync(stub_dir);
+                //     }
+
+                //     // Add the stub_dir to the current stub path setting
+                //     // loop over all the files in stub_dir and add them to the stub directory
+                //     // if they are not already in the directory
+                    
+                //     output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Copying Stub Files to ${stub_dir}`);
+                //     const overwrite = false
+                //     for (var file of adams_stub_files) {
+                //         if (stub_dir.includes(file) && overwrite == false) {
+
+                //             // If the file already exists, ask user if they want to overwrite it
+                //             const selection = await vscode.window.showInformationMessage(`Some of the Adams Python Interface stub files already exist in ${stub_dir}. Do you want to overwrite them?`, "Yes", "No")
+                //             if (selection == "Yes") {
+                //                 overwrite = true
+                //             }
+                //         }
+
+                //         if (!stub_dir.includes(file) || overwrite == true) {
+
+                //             // Copy file to stub path
+                //             const file_path = [adams_stub_dir, file].join('/');
+                //             const new_file_path = [stub_dir, file].join('/');
+                            
+                //             output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Copying ${file_path} to ${new_file_path}`);
+                //             fs.copyFileSync(file_path, new_file_path);
+                //         }
+                //     }
+                // }
+            // }
+        // }
+    }
+	vscode.commands.registerCommand(lsf_command, lsfCommandHandler);
+    
+    // Set to run whenever the loadStubFiles setting is changed
+    // vscode.workspace.onDidChangeConfiguration(lsfCommandHandler);
+
+    // run the command handler once to load the stub files
+    lsfCommandHandler();
 
 	const debug_command = 'msc_adams.debugInAdams';
 	const debugCommandHandler = async () => {
@@ -207,7 +295,7 @@ function activate(context) {
         // If there are no running processes, show an error message
         if (aview_pids.length == 0) {
             vscode.window.showErrorMessage("No aview Processes Found!");
-            output_channel.appendLine(`No aview Processes Found!`);
+            output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: No aview Processes Found!`);
             return;
         }
 
@@ -233,22 +321,22 @@ function activate(context) {
         if (parseInt(aview_version) >= 2023) {
             // let selection = await 
             
-            output_channel.appendLine(`Unsupported aview version: ${aview_version}. Awaiting User Selection...`);
+            output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Unsupported aview version: ${aview_version}. Awaiting User Selection...`);
             // Warn the user that this version is not supported
             let selection = await vscode.window.showQuickPick(["No", "Yes"], {title: "Unsupported Adams version", placeHolder: "Debugging is not supported in Adams 2023 and later. Do you want to continue?"})
 
             if (selection === "No") {
-                output_channel.appendLine(`User selected to not continue with aview version: ${aview_version}`);
+                output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: User selected to not continue with aview version: ${aview_version}`);
                 return;
             }
             else {
-                output_channel.appendLine(`User selected to continue with aview version: ${aview_version}`);
+                output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: User selected to continue with aview version: ${aview_version}`);
             }
         }
         
         // Log the process
         console.log(`Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`);
-        output_channel.appendLine(`Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`);
+        output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`);
 
         // Attach python debugger to selected process
         await vscode.debug.startDebugging(undefined, {
@@ -268,14 +356,6 @@ function activate(context) {
 }
 
 function deactivate(context) {
-	
-	// ---------------------------------------------------------------------------
-	// Remove stub files to extra python analysis paths
-	// ---------------------------------------------------------------------------
-	const stub_dir = context.asAbsolutePath('resources/adamspy');
-	const section = vscode.workspace.getConfiguration('python', vscode.ConfigurationTarget.WorkspaceFolder)
-	const current_setting = section.get('analysis.extraPaths').filter(item => ![stub_dir].includes(item));
-	section.update('analysis.extraPaths', current_setting, vscode.ConfigurationTarget.WorkspaceFolder )
 	vscode.window.showInformationMessage('MSC Adams Extension Deactivated');
 }
 
