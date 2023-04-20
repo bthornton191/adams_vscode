@@ -23,7 +23,17 @@ know which features you are most interested in. Thanks!
 ![adams python autocomplete](doc/adams_python_autocomplete.gif)
 
 ## Support for debugging python scripts in Adams View
-You can debug python scripts in Adams View using the [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python). This extension provides a convenient command to attach the debugger to an existing Adams View process. 
+You can debug python scripts in Adams View using the [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python). This extension provides a convenient button to attach the debugger to an existing Adams View process. 
+
+### Steps to debug a python script in Adams View
+1. Open an Adams View session
+2. Open the python script you want to debug in Visual Studio Code
+3. Click the **Debug Python Script in Adams** button in the top right of the editor
+   - Note: If you have multiple Adams View sessions open, you will be prompted to select one
+4. Set breakpoints in the python script
+5. In the Adams View session, import the python script
+6. The python script will break at the breakpoints.
+
 ![debugging a python script in adams](doc/debug_adams.gif)
 
 
