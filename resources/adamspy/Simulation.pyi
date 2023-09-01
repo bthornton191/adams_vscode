@@ -22,29 +22,42 @@ class Simulation(Object.ObjectComment):
     simulation_object=model_object.Simulations.create(name='sim0', [optional_arguments]) #create a simulation object
     ```
 
-    Example
-    -------
-
+    Examples
+    --------
+    
+    Run a simple simulation with default end_time and number_of_steps
     ```python
-    m=Adams.defaults.model
+    mod = Adams.defaults.model
 
-    s1=m.Simulations.create(name='sim1') 
-    s1.simulate() #run a simple simulation with default end_time and number_of_steps
-
-    s2=m.Simulations.create(name='sim2', end_time=1.25, initial_static=True, number_of_steps=50)
-    s2.simulate() #run this simple simulation with specified properties values
-
-    s3=m.Simulations.create(name='sim3')
-    s3.script_type='solver_commands'
-    s3.script="file/command=sim_test.acf"
-    s3.simulate() #run simulation using acf commands in sim_test.acf file
-
-    s4_sim_script=["simulate/transient,duration=10, dtout=0.01","linear/statemat,file=model.mat"]
-    s4=m.Simulations.create(name='sim4', script_type='solver_commands', script=s4_sim_script)
-    s4.simulate() #run simulation with inlined acf commands
-
-    s5=m.Simulations.create(name='sim5', script_type='commands', script="simulation single_run transient type=auto_select initial_static=no end_time=5.0 number_of_steps=50")
-    s5.simulate() #run simulation with inlined cmd
+    s1 = mod.Simulations.create(name = 'sim1') 
+    s1.simulate()
+    ```
+    
+    Run this simple simulation with specified properties values
+    ```python
+    s2 = mod.Simulations.create(name = 'sim2', end_time = 1.25, initial_static = True, number_of_steps = 50)
+    s2.simulate()
+    ```
+    
+    Run simulation using acf commands in sim_test.acf file
+    ```python
+    s3 = mod.Simulations.create(name = 'sim3')
+    s3.script_type = 'solver_commands'
+    s3.script = "file/command = sim_test.acf"
+    s3.simulate()
+    ```
+    
+    Run simulation with inlined acf commands
+    ```python
+    s4_sim_script = ["simulate/transient,duration = 10, dtout = 0.01","linear/statemat,file=model.mat"]
+    s4 = mod.Simulations.create(name = 'sim4', script_type = 'solver_commands', script = s4_sim_script)
+    s4.simulate()
+    ```
+    
+    Run simulation with inlined cmd
+    ```python
+    s5 = mod.Simulations.create(name = 'sim5', script_type = 'commands', script = "simulation single_run transient type = auto_select initial_static = no end_time = 5.0 number_of_steps = 50")
+    s5.simulate() 
     ```
     """
 

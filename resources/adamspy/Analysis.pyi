@@ -7,7 +7,21 @@ from typing import Any, ItemsView, Iterable, List, OrderedDict, ValuesView
 BUFFER_SIZE: int
 
 class AnalysisManager(Manager.AdamsManager):
-    def createFromFile(self, **kwargs): ...
+    def createFromFile(self, *, file_name: str, name:str =None)->Analysis: 
+        """Create an analysis from a .res, .req or .gra file 
+        
+        Parameters
+        ----------
+        file_name : str
+            The name of the file to load
+        name : str, optional
+            The name to give the analysis, by default the base name of the file is used
+        
+        Returns
+        -------
+        Analysis
+            The analysis object
+        """
 
     def __getitem__(self, name: str) -> Analysis: ...
     def __iter__(self, *args) -> Iterable[str]: ...

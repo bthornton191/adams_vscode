@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -24,6 +24,7 @@
         "onLanguage:adams_cmd",
         "onLanguage:adams_adm",
         "onLanguage:adams_acf",
+        "onLanguage:adams_msg",
         "onLanguage:adams_to",
         "onLanguage:python",
         "onCommand:msc_adams.activate",
@@ -43,7 +44,8 @@
                 "title": "MSC Adams: Debug Python Script in Adams",
                 "icon": {
                     "light": "images/adams_debug_light.png",
-                    "dark": "images/adams_debug_dark.png"}
+                    "dark": "images/adams_debug_dark.png"
+                }
             },
             {
                 "command": "msc_adams.activate",
@@ -72,7 +74,7 @@
                     "command": "msc_adams.openViewHere",
                     "when": "explorerResourceIsFolder == true",
                     "group": "navigation"
-                }  
+                }
             ],
             "editor/title": [
                 {
@@ -121,6 +123,28 @@
                 "configuration": "./language-configuration.json"
             },
             {
+                "id": "adams_msg",
+                "aliases": [
+                    "Adams Message",
+                    "adams_msg"
+                ],
+                "extensions": [
+                    ".msg"
+                ],
+                "configuration": "./language-configuration.json"
+            },
+            {
+                "id": "adams_log",
+                "aliases": [
+                    "Adams View Log",
+                    "adams_log"
+                ],
+                "filenamePatterns": [
+                    "*aview*.log"
+                ],
+                "configuration": "./language-configuration.json"
+            },
+            {
                 "id": "adams_to",
                 "aliases": [
                     "Adams Tiem Orbit",
@@ -134,23 +158,39 @@
         ],
         "grammars": [
             {
+                "language": "adams_log",
+                "scopeName": "source.adams_log",
+                "path": "./syntaxes/adams_log.tmLanguage.json",
+                "embeddedLanguages": {
+                    "meta.embedded.line.adams_cmd": "adams_cmd"
+                }
+            },
+            {
                 "language": "adams_cmd",
-                "scopeName": "source.cmd",
-                "path": "./syntaxes/adams_cmd.tmLanguage.json"
+                "scopeName": "source.adams_cmd",
+                "path": "./syntaxes/adams_cmd.tmLanguage.json",
+                "embeddedLanguages": {
+                    "meta.embedded.block.python": "python"
+                }
             },
             {
                 "language": "adams_adm",
-                "scopeName": "source.adm",
+                "scopeName": "source.adams_adm",
                 "path": "./syntaxes/adams_adm.tmLanguage.json"
             },
             {
                 "language": "adams_acf",
-                "scopeName": "source.acf",
+                "scopeName": "source.adams_acf",
                 "path": "./syntaxes/adams_acf.tmLanguage.json"
             },
             {
+                "language": "adams_msg",
+                "scopeName": "source.adams_msg",
+                "path": "./syntaxes/adams_msg.tmLanguage.json"
+            },
+            {
                 "language": "adams_to",
-                "scopeName": "source.to",
+                "scopeName": "source.adams_to",
                 "path": "./syntaxes/adams_to.tmLanguage.json"
             }
         ],
@@ -164,7 +204,7 @@
                 "path": "./snippets/python.json"
             }
         ],
-        "configuration":[
+        "configuration": [
             {
                 "title": "MSC Adams",
                 "properties": {
@@ -173,12 +213,21 @@
                         "title": "Adams Launch Command",
                         "default": "mdi.bat",
                         "description": "Path to the mdi.bat file in your Adams installation. Located in the common folder."
+                    },
+                    "msc-adams.debugOptions": {
+                        "type": "object",
+                        "title": "Debug Options",
+                        "description": "Options to pass to the python debugger.",
+                        "default": {
+                            "justMyCode": true,
+                            "subProcess": false
+                        }
                     }
                 }
             }
         ],
         "configurationDefaults": {
-            "editor.tokenColorCustomizations": {     
+            "editor.tokenColorCustomizations": {
                 "[*Light*]": {
                     "textMateRules": [
                         {
@@ -306,9 +355,35 @@
                         "settings": {
                             "foreground": "#6b97b4"
                         }
+                    },
+                    {
+                        "scope": "msg.error",
+                        "settings": {
+                            "foreground": "#f50000",
+                            "fontStyle": "bold"
+                        }
+                    },
+                    {
+                        "scope": "msg.warning",
+                        "settings": {
+                            "foreground": "#f5c800",
+                            "fontStyle": "bold"
+                        }
+                    },
+                    {
+                        "scope": "msg.success",
+                        "settings": {
+                            "foreground": "#00bb19",
+                            "fontStyle": "bold"
+                        }
+                    },
+                    {
+                        "scope": "msg.command",
+                        "settings": {
+                            "fontStyle": "bold"
+                        }
                     }
                 ]
-
             }
         }
     },

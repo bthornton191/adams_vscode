@@ -21,6 +21,7 @@ from Analysis import AnalysisManager
 from RuntimeFunction import RuntimeFunctionManager
 from Part import Part
 from Simulation import SimulationManager
+from UDE import UserDefinedInstanceManager
 
 class ModelManager(Manager.AdamsManager):
     def create(self, **kwargs)->Model: ...
@@ -55,7 +56,7 @@ class Model(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings)
     RuntimeFunctions: RuntimeFunctionManager
     Simulations: SimulationManager
     settings: Any
-    UserDefinedInstances: Any
+    UserDefinedInstances: UserDefinedInstanceManager
     def __init__(self, _DBKey) -> None: ...
     ground_part: Part
     def exportAdmFile(self, file_name): ...

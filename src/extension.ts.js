@@ -339,16 +339,17 @@ function activate(context) {
         output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`);
 
         // Attach python debugger to selected process
-        await vscode.debug.startDebugging(undefined, {
-            "name": "Attach to aview.exe",
-            "type": "python",
-            "request": "attach",
-            "processId": aview_pid
-        });
-        
+        await vscode.debug.startDebugging(undefined,
+            Object.assign({}, {
+                "name": "Attach to aview.exe",
+                "type": "python",
+                "request": "attach",
+                "processId": aview_pid
+            }, vscode.workspace.getConfiguration('msc-adams').get('debugOptions')));
+
         vscode.window.showInformationMessage('The debugger has been attached. Set a breakpoint, then run the python script in Adams');
 
-	};
+    };
 	vscode.commands.registerCommand(debug_command, debugCommandHandler);
 
 	vscode.window.showInformationMessage('MSC Adams Extension Activated');
