@@ -16,17 +16,28 @@
             "\t$0",
             "end"
         ],
-        "description": "For loop"
+        "description": "If Statement"
     },
     "For loop" : { 
         "scope": "adams_cmd",       
         "prefix": "for ",         
         "body": [      
             "for var=${1:\\$_self.${2:idx}} ${3|start_value=1 end_value=, obj=|}",
-            "   $0",
+            "\t$0",
             "end"
         ],
         "description": "For loop"
+    },
+    "Integer For loop" : { 
+        "scope": "adams_cmd",       
+        "prefix": "for ",         
+        "body": [      
+            "for var=${1:\\$_self.idx}_ start_value=${2:1} end_value=$3",
+            "\tvar set var=$1 int=(eval(nint($1_)))",
+            "\t$0",
+            "end"
+        ],
+        "description": "Integer For loop"
     },
     "Macro Header" : {
         "scope": "adams_cmd",
@@ -61,6 +72,33 @@
         "prefix": "mdi gui_utl_alert_box_1",
         "body": [
             "mdi gui_utl_alert_box_1 type=${1|error,warning,info|} text=\"$0\""
+        ]
+    },
+    "Create Request": {
+        "scope" : "adams_cmd",
+        "prefix": "output_control create request",
+        "body": [
+            "output_control create request &",
+            "\trequest_name =  $1 &",
+            "\tresults_name = ${1/.*?(\\w+)\\W*$/$1/} &",
+            "\tcomponent_names = \"\", \"$0\", \"\", \"\", \"\", \"\", \"\", \"\" &",
+            "\tcomponent_units = \"no_units\", \"no_units\", \"no_units\", \"no_units\", \"no_units\", \"no_units\", \"no_units\", \"no_units\"  &",
+            "\t$LINE_COMMENT Only use component_labels if you want to override the default unit labels ",
+            "\tcomponent_labels = \"\", \"\", \"\", \"\", \"\", \"\", \"\", \"\" &",
+            "\tf2 = \"\" &",
+            "\tf3 = \"\" &",
+            "\tf4 = \"\" &",
+            "\tf6 = \"\" &",
+            "\tf7 = \"\" &",
+            "\tf8 = \"\""
+        ]
+    },
+    "Wrap Delete Statement": {
+        "scope": "adams_cmd",
+        "body": [
+            "${TM_SELECTED_TEXT/^(\\s*?).*$/$1/}if condition=(eval(db_exists(\"${TM_SELECTED_TEXT/^.*(?<==)\\s*[\"']?([^\\s&'\"]+)[\"']?$/$1/}\")))",
+            "\t$TM_SELECTED_TEXT",
+            "${TM_SELECTED_TEXT/^(\\s*?).*$/$1/}end"
         ]
     }
 }

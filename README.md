@@ -12,7 +12,7 @@ know which features you are most interested in. Thanks!
 - Adams Function Completion Provider
 - Adams Function Documentation Hover Provider
 
-![Example of Adams Function Documentation Hover Provider Example](doc/autocomplete_function.gif)
+![Example of Adams Function Documentation Hover Provider Example](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/autocomplete_function.gif)
 
 
 ## Intellisense support for Adams View Python Interface
@@ -20,7 +20,7 @@ know which features you are most interested in. Thanks!
 * Function signature help provider
 * Type hinting
 > Note: You may need to manually activate the extension using `msc_adams.activate` for these features to work
-![adams python autocomplete](doc/adams_python_autocomplete.gif)
+![adams python autocomplete](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/adams_python_autocomplete.gif)
 
 ## Support for debugging python scripts in Adams View
 You can debug python scripts in Adams View using the [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python). This extension provides a convenient button to attach the debugger to an existing Adams View process. 
@@ -34,20 +34,20 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 5. In the Adams View session, import the python script
 6. The python script will break at the breakpoints.
 
-![debugging a python script in adams](doc/debug_adams.gif)
+![debugging a python script in adams](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/debug_adams.gif)
 
 
 ## Open Adams View From Explorer
 * Open Adams View in a directory from the Explorer by right clicking and selecting **Open View**
-  ![Example of opening adams view in a directory](doc/open_vscode_in_folder.gif)
+  ![Example of opening adams view in a directory](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/open_vscode_in_folder.gif)
 
 * Open a .cmd model file in Adams View from the Explorer by right clicking and selecting **Open In View**
-  ![Example of opening adams view in a directory](doc/open_in_view.gif)
+  ![Example of opening adams view in a directory](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/open_in_view.gif)
 
 ## Snippets
 - Adams View Command Language Snippets
 - Adams View Python Interface Snippets
-- 
+  
 ## Extension Settings
 
 This extension contributes the following settings:
@@ -101,7 +101,7 @@ highlighting for the rest of the file.
 
 > A workaround is to add `!"` after the line with the equal sign. As shown below.
 
-![Animation of issue when an equal sign is in a string on a continuation line](doc/issue_equal_in_continuation_line.gif)
+![Animation of issue when an equal sign is in a string on a continuation line](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/issue_equal_in_continuation_line.gif)
 
 
 ## Contributing

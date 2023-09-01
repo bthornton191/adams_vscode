@@ -1,0 +1,67 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Adams msg",
+    "patterns": [
+        {
+            "include": "#numerics"
+        },
+        {
+            "include": "#commands"
+        },
+        {
+            "include": "#messages"
+        }
+    ],
+    "repository": {
+        "commands": {
+            "match": "( command: )(.*$)",
+            "captures": {
+                "1": {
+                    "name": "markup.heading"
+                },
+                "2": {
+                    "name": "msg.command",
+                    "patterns": [
+                        {
+                            "include": "#numerics"
+                        },
+                        {
+                            "name": "comment",
+                            "match": "(?i)(?<= command: )\\s*!.*$"
+                        },
+                        {
+                            "name": "emphasis",
+                            "match": "(?i)(?<= command: )\\s*.*$"
+                        }
+                    ]
+                }
+            }
+        },
+        "messages": {
+            "patterns": [
+                {
+                    "name": "invalid",
+                    "begin": "(?i)-+ start: error -+$",
+                    "end": "(?i)-+ end: error -+$"
+                },
+                {
+                    "name": "msg.success",
+                    "match": "(?i).*solution converged.*"
+                },
+                {
+                    "name": "msg.warning",
+                    "match": "(?i).*solution failed to converge.*"
+                }
+            ]
+        },
+        "numerics": {
+            "patterns": [
+                {
+                    "name": "constant.numeric",
+                    "match": "\\b[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?(d|D)?\\b"
+                }
+            ]
+        }
+    },
+    "scopeName": "source.adams_msg"
+}

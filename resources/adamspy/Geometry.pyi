@@ -272,7 +272,13 @@ class GeometryPolyline(Geometry):
     comment_id: Any
     geom_type: Any
     path_curve: Any
-    location: Any
+    location: List[float]
+    """Locations of the points defining the line.
+    
+    Note
+    ----
+    When setting this variable, you must use global coordinates.
+    """
     close: Any
     relative_to: Any
 

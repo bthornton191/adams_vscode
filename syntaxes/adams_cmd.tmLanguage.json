@@ -6,6 +6,9 @@
 			"include": "#numerics"
 		},
 		{
+			"include": "#py"
+		},
+		{
 			"include": "#keywords"
 		},
 		{
@@ -34,6 +37,22 @@
 		}
 	],
 	"repository": {
+        "py": {
+            "patterns": [
+                {
+                    "begin": "((?i)^ *language switch_to python *$)",
+                    "beginCaptures": {
+                        "1": {"patterns": [{"include": "#commands"}]}
+                    },
+                    "end": "^ *Adams\\.switchToCmd\\(\\) *$",
+                    "name": "meta.embedded.block.python",
+                    "patterns": [
+                        {"include": "source.python"},
+                        {"include": "#comments"}
+                    ]
+                }
+            ]
+        },
 		"commands": {
 			"patterns": [
 				{
@@ -141,21 +160,36 @@
 				{
 					"name": "variable.builtin",
 					"match": "(?i)\\b(pi|dtor|rtod|time)\\b"
-				}
-			]
-		},
-		"strings": {
-				"name": "string.quoted.double.adams_cmd",
-				"begin": "\"",
-				"end": "\"",
-                "patterns": [
-					{
-						"name": "variable.patterns.parameter.reference", 			
-                        "match": "\\$('?)([a-zA-Z0-9_]*)\\1"	
-					}
-				]
-			},
-		"comments": {
+                }
+            ]
+        },
+        "strings": {
+            "patterns": [
+                {
+                    "name": "string.quoted.double.adams_cmd",
+                    "begin": "\"",
+                    "end": "\"",
+                    "patterns": [
+                        {
+                            "name": "variable.patterns.parameter.reference",
+                            "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
+                        }
+                    ]
+                },
+                {
+                    "name": "string.quoted.single.adams_cmd",
+                    "begin": "'",
+                    "end": "'",
+                    "patterns": [
+                        {
+                            "name": "variable.patterns.parameter.reference",
+                            "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
+                        }
+                    ]
+                }
+            ]
+        },
+        "comments": {
 			"name": "comment",
 			"begin": "^\\s*!",
 			"end": "$",
@@ -167,5 +201,5 @@
 			]
 		}
 	},
-	"scopeName": "source.cmd"
+	"scopeName": "source.adams_cmd"
 }

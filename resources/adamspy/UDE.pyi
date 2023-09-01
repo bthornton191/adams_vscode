@@ -1,6 +1,7 @@
 import Manager
 import Object
-from typing import Any
+from DesignVariable import DesignVariable
+from typing import Any, ItemsView, Iterable, KeysView, List, ValuesView
 
 UdeModifyMacroDict: Any
 
@@ -11,28 +12,39 @@ class UDEDesignVariableProps:
     def __set__(self, instance, val) -> None: ...
     def __delete__(self, instance) -> None: ...
 
-class UserDefinedElementManager(Manager.AdamsManager): ...
-class UserDefinedInstanceManager(Manager.AdamsManager): ...
+class UserDefinedElementManager(Manager.AdamsManager):
+    def items(self) -> ItemsView[str, UserDefinedElement]: ...
+    def values(self) -> ValuesView[UserDefinedElement]: ...
+    def keys(self) -> KeysView[str]: ...
+    def __getitem__(self, name) -> UserDefinedElement: ...
+    def __iter__(self, *args) -> Iterable[str]: ...
+
+class UserDefinedInstanceManager(Manager.AdamsManager):
+    def items(self) -> ItemsView[str, UserDefinedInstance]: ...
+    def values(self) -> ValuesView[UserDefinedInstance]: ...
+    def keys(self) -> KeysView[str]: ...
+    def __getitem__(self, name) -> UserDefinedInstance: ...
+    def __iter__(self, *args) -> Iterable[str]: ...
 
 class UserDefinedElement(Object.ObjectBase):
-    definition_name: Any
-    input_parameters: Any
+    definition_name: str
+    input_parameters: List[DesignVariable]
     isa: Any
-    objects: Any
-    output_parameters: Any
-    parameters: Any
+    objects: List[Object.ObjectBase]
+    output_parameters: List[DesignVariable]
+    parameters: List[DesignVariable]
 
 class UserDefinedInstance(Object.ObjectBase):
-    definition_name: Any
-    definition: Any
-    objects: Any
-    input_parameters: Any
-    output_parameters: Any
-    parameters: Any
-    inst_name: Any
-    instance_name: Any
-    location: Any
-    orientation: Any
+    definition_name: str
+    definition: str
+    objects: List[Object.ObjectBase]
+    input_parameters: List[DesignVariable]
+    output_parameters: List[DesignVariable]
+    parameters: List[DesignVariable]
+    inst_name: str
+    instance_name: str
+    location: List[float]
+    orientation: List[float]
     params: Any
     def setProperties(self, **inDct) -> None: ...
     update: Any

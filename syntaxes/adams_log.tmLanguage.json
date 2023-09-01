@@ -1,0 +1,73 @@
+{
+    "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+    "name": "Adams log",
+    "patterns": [
+        {
+            "include": "#numerics"
+        },
+        {
+            "include": "#commands"
+        },
+        {
+            "include": "#messages"
+        }
+    ],
+    "repository": {
+        "commands": {
+            "patterns": [
+                {
+                    "match": "^! *([+\\d>\\&]*>) *([^+\\-\\d>\\&].*)$",
+                    "captures": {
+                        "1": {
+                            "name": "markup.inserted"
+                        },
+                        "2": {
+                            "name": "meta.embedded.line.adams_cmd",
+                            "patterns": [{"include": "source.adams_cmd"}]
+                        }
+                    }
+                },
+                {
+                    "match": "^! *(\\-[\\d>\\&]*>) *([^+\\-\\d>\\&].*)$",
+                    "captures": {
+                        "1": {
+                            "name": "markup.inserted"
+                        },
+                        "2": {
+                            "name": "comment"
+                        }
+                    }
+                }
+            ]
+        },
+        "messages": {
+            "patterns": [
+                {
+                    "name": "invalid",
+                    "match": "^.*ERROR:  .*$"
+                },
+                {
+                    "name": "msg.warning",
+                    "match": "^.*WARNING:  .*$"
+                },
+                {
+                    "match": "^! (?<![+\\-\\d>\\&]) *([^+\\-\\d>\\&].*)$",
+                    "captures": {
+                        "1": {
+                            "name": "markup.heading"
+                        }
+                    }
+                }
+            ]
+        },
+        "numerics": {
+            "patterns": [
+                {
+                    "name": "constant.numeric",
+                    "match": "\\b[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?(d|D)?\\b"
+                }
+            ]
+        }
+    },
+    "scopeName": "source.adams_log"
+}

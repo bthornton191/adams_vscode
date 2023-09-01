@@ -1,7 +1,8 @@
 import Manager
 import Object
-from Marker import _i_j_parts_from_markers as _i_j_parts, _loc_ori_provider as _loc_ori
-from typing import Any, ItemsView, Iterable, ValuesView
+from Marker import _i_j_parts_from_markers as _i_j_parts, _loc_ori_provider as _loc_ori, Marker
+from typing import Any, ItemsView, Iterable, List, ValuesView
+from Part import Part
 
 class ForceManager(Manager.SubclassManager):
     def createGravity(self, **kwargs): ...
@@ -10,7 +11,24 @@ class ForceManager(Manager.SubclassManager):
     def createRotationalSpringDamper(self, **kwargs): ...
     def createTranslationalSpringDamper(self, **kwargs): ...
     def createBushing(self, **kwargs): ...
-    def createSingleComponentForce(self, **kwargs): ...
+    
+    def createSingleComponentForce(self,
+                                   name: str,
+                                   function: str='',
+                                   i_marker: Marker=None,
+                                   j_marker: Marker=None,
+                                   i_marker_name: str=None,
+                                   j_marker_name: str=None,
+                                   i_part: Part=None,
+                                   j_part: Part=None,
+                                   i_part_name: str=None,
+                                   j_part_name: str=None,
+                                   action_only: bool=None,
+                                   location: List[float]=None,
+                                   orientation: List[float]=None,
+                                   type_of_freedom: str='translational',
+                                   relative_to: Marker=None,
+                                   **kwargs): ...
     def createAppliedTorque(self, **kwargs): ...
     def createAppliedForce(self, **kwargs): ...
     def createBeam(self, **kwargs): ...
@@ -33,29 +51,29 @@ class _force_i_j_parts(_i_j_parts):
 class Force(Object.Object): ...
 
 class Gravity(Force):
-    xyz_component_gravity: Any
+    xyz_component_gravity: List[float]
 
 class ForceVector(Force):
-    i_marker_name: Any
-    i_marker: Any
-    j_floating_marker_name: Any
-    j_floating_marker: Any
-    ref_marker_name: Any
-    ref_marker: Any
-    x_force_function: Any
-    y_force_function: Any
-    z_force_function: Any
-    user_function: Any
-    routine: Any
-    xyz_force_function: Any
+    i_marker_name: str
+    i_marker: Marker
+    j_floating_marker_name: str
+    j_floating_marker: Marker
+    ref_marker_name: str
+    ref_marker: Marker
+    x_force_function: str
+    y_force_function: str
+    z_force_function: str
+    user_function: str
+    routine: str
+    xyz_force_function: str
 
 class TorqueVector(Force):
-    i_marker_name: Any
-    i_marker: Any
-    j_floating_marker_name: Any
-    j_floating_marker: Any
-    ref_marker_name: Any
-    ref_marker: Any
+    i_marker_name: str
+    i_marker: Marker
+    j_floating_marker_name: str
+    j_floating_marker: Marker
+    ref_marker_name: str
+    ref_marker: Marker
     x_torque_function: Any
     y_torque_function: Any
     z_torque_function: Any
@@ -64,10 +82,10 @@ class TorqueVector(Force):
     xyz_torque_function: Any
 
 class RotationalSpringDamper(Force, _force_i_j_parts, _loc_ori):
-    i_marker: Any
-    j_marker: Any
-    i_marker_name: Any
-    j_marker_name: Any
+    i_marker: Marker
+    j_marker: Marker
+    i_marker_name: str
+    j_marker_name: str
     displacement_at_preload: Any
     torque_preload: Any
     angle: Any
@@ -75,20 +93,20 @@ class RotationalSpringDamper(Force, _force_i_j_parts, _loc_ori):
     r_stiff: Any
 
 class TranslationalSpringDamper(Force, _force_i_j_parts, _loc_ori):
-    i_marker: Any
-    j_marker: Any
-    i_marker_name: Any
-    j_marker_name: Any
+    i_marker: Marker
+    j_marker: Marker
+    i_marker_name: str
+    j_marker_name: str
     force_preload: Any
     stiffness: Any
     damping: Any
     displacement_at_preload: Any
 
 class Bushing(Force, _force_i_j_parts, _loc_ori):
-    i_marker: Any
-    j_marker: Any
-    i_marker_name: Any
-    j_marker_name: Any
+    i_marker: Marker
+    j_marker: Marker
+    i_marker_name: str
+    j_marker_name: str
     force_preload: Any
     stiffness: Any
     damping: Any
@@ -97,10 +115,10 @@ class Bushing(Force, _force_i_j_parts, _loc_ori):
     torque_preload: Any
 
 class SingleComponentForce(Force, _force_i_j_parts, _loc_ori):
-    i_marker: Any
-    j_marker: Any
-    i_marker_name: Any
-    j_marker_name: Any
+    i_marker: Marker
+    j_marker: Marker
+    i_marker_name: str
+    j_marker_name: str
     user_function: Any
     function: Any
     action_only: Any
@@ -108,10 +126,10 @@ class SingleComponentForce(Force, _force_i_j_parts, _loc_ori):
     type_of_freedom: Any
 
 class Beam(Force, _force_i_j_parts, _loc_ori):
-    i_marker: Any
-    j_marker: Any
-    i_marker_name: Any
-    j_marker_name: Any
+    i_marker: Marker
+    j_marker: Marker
+    i_marker_name: str
+    j_marker_name: str
     length: Any
     damping_ratio: Any
     matrix_of_damping_terms: Any
@@ -126,10 +144,10 @@ class Beam(Force, _force_i_j_parts, _loc_ori):
     formulation: Any
 
 class Field(Force, _force_i_j_parts, _loc_ori):
-    i_marker: Any
-    j_marker: Any
-    i_marker_name: Any
-    j_marker_name: Any
+    i_marker: Marker
+    j_marker: Marker
+    i_marker_name: str
+    j_marker_name: str
     force_preload: Any
     torque_preload: Any
     damping_ratio: Any
@@ -182,12 +200,12 @@ class ModalForce(Force):
     force_function: Any
 
 class GeneralForce(Force):
-    i_marker_name: Any
-    j_floating_marker_name: Any
-    ref_marker_name: Any
-    i_marker: Any
-    j_floating_marker: Any
-    ref_marker: Any
+    i_marker_name: str
+    j_floating_marker_name: str
+    ref_marker_name: str
+    i_marker: Marker
+    j_floating_marker: Marker
+    ref_marker: Marker
     x_force_function: Any
     y_force_function: Any
     z_force_function: Any
@@ -201,9 +219,9 @@ class GeneralForce(Force):
 
 class MultiPointForce(Force):
     i_marker_names: Any
-    j_marker_name: Any
+    j_marker_name: str
     i_markers: Any
-    j_marker: Any
+    j_marker: Marker
     stiffness_matrix_name: Any
     damping_matrix_name: Any
     stiffness_matrix: Any
