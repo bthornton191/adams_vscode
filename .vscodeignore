@@ -5,6 +5,5 @@ vsc-extension-quickstart.md
 .mypy_cache/**
 _ADAMSDEV2_/**
 test/**
-CHANGELOG.md
 **aview.log
 doc/figures.pptx
