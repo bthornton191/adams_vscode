@@ -1,5 +1,9 @@
 # MSC Adams Extension for Visual Studio Code
 
+![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/savvyanalyst.msc-adams.svg?style=flat-square)
+![Visual Studio Marketplace Rating Stars](https://img.shields.io/visual-studio-marketplace/stars/savvyanalyst.msc-adams.svg?style=flat-square)
+![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/savvyanalyst.msc-adams.svg?style=flat-square)
+
 > This is an early version. If you are interested in using it, please [reach out](mailto:ben.thornton@hexgagon.com) and let me 
 know which features you are most interested in. Thanks!
 
