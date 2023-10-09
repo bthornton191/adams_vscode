@@ -399,13 +399,19 @@
         }
     },
     "devDependencies": {
-        "@types/node": "^17.0.2"
+        "@types/node": "^16.11.7",
+        "@types/vscode": "^1.73.0",
+        "@typescript-eslint/eslint-plugin": "^5.42.0",
+        "@typescript-eslint/parser": "^5.42.0",
+        "eslint": "^8.26.0",
+        "typescript": "^5.0.2"
     },
     "extensionDependencies": [
         "ms-python.vscode-pylance",
         "ms-python.python"
     ],
     "dependencies": {
-        "temp": "^0.9.4"
+        "temp": "^0.9.4",
+        "vscode": "^1.1.37"
     }
 }
