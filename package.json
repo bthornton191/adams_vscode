@@ -33,7 +33,7 @@
     ],
     "icon": "images/adams.png",
     "contributes": {
-        "commands" : [
+        "commands": [
             {
                 "command": "msc_adams.macros.makeHeader",
                 "title": "MSC Adams: Make Macro Header",
@@ -46,6 +46,10 @@
                     "light": "images/adams_debug_light.png",
                     "dark": "images/adams_debug_dark.png"
                 }
+            },
+            {
+                "command": "msc_adams.runSelection",
+                "title": "MSC Adams: Run Selection in Adams View"
             },
             {
                 "command": "msc_adams.activate",
@@ -81,6 +85,13 @@
                     "command": "msc_adams.debugInAdams",
                     "when": "resourceExtname == .py",
                     "group": "navigation"
+                }
+            ],
+            "editor/context": [
+                {
+                    "command": "msc_adams.runSelection",
+                    "when": "editorTextFocus && editorHasSelection && (resourceLangId == adams_cmd || resourceLangId == python)",
+                    "group": "execution"
                 }
             ]
         },
@@ -393,5 +404,8 @@
     "extensionDependencies": [
         "ms-python.vscode-pylance",
         "ms-python.python"
-    ]
+    ],
+    "dependencies": {
+        "temp": "^0.9.4"
+    }
 }
