@@ -9,3 +9,7 @@ test/**
 doc/figures.pptx
 analytics.py
 stats.csv
+adams_vscode.vsix
+**/__pycache__
+stats.csv
+stats.html

@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "0.3.1",
+    "version": "0.4.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -14,12 +14,13 @@
     },
     "qna": "marketplace",
     "engines": {
-        "vscode": "^1.42.0"
+        "vscode": "^1.63.0"
     },
     "categories": [
         "Programming Languages"
     ],
     "main": "./src/extension.ts",
+    
     "activationEvents": [
         "onLanguage:adams_cmd",
         "onLanguage:adams_adm",
@@ -31,20 +32,20 @@
         "onCommand:msc_adams.openInView",
         "onCommand:msc_adams.openViewHere"
     ],
-    "icon": "images/adams.png",
+    "icon": "./images/adams.png",
     "contributes": {
         "commands": [
             {
                 "command": "msc_adams.macros.makeHeader",
                 "title": "MSC Adams: Make Macro Header",
-                "icon": "images/adams.png"
+                "icon": "resources/icons/adams.svg"
             },
             {
                 "command": "msc_adams.debugInAdams",
                 "title": "MSC Adams: Debug Python Script in Adams",
                 "icon": {
-                    "light": "images/adams_debug_light.png",
-                    "dark": "images/adams_debug_dark.png"
+                    "light": "resources/icons/adams_debug_light.svg",
+                    "dark": "resources/icons/adams_debug_dark.svg"
                 }
             },
             {
@@ -52,19 +53,27 @@
                 "title": "MSC Adams: Run Selection in Adams View"
             },
             {
+                "command": "msc_adams.runFile",
+                "title": "MSC Adams: Run File in Adams View",
+                "icon": {
+                    "light": "resources/icons/adams_run_light.svg",
+                    "dark": "resources/icons/adams_run_dark.svg"
+                }
+            },
+            {
                 "command": "msc_adams.activate",
                 "title": "MSC Adams: Activate",
-                "icon": "images/adams.png"
+                "icon": "resources/icons/adams.svg" 
             },
             {
                 "command": "msc_adams.openInView",
                 "title": "Open In View",
-                "icon": "images/adams.png"
+                "icon": "resources/icons/adams.svg"
             },
             {
                 "command": "msc_adams.openViewHere",
                 "title": "Open Adams View",
-                "icon": "images/adams.png"
+                "icon": "resources/icons/adams.svg"
             }
         ],
         "menus": {
@@ -93,8 +102,27 @@
                     "when": "editorTextFocus && editorHasSelection && (resourceLangId == adams_cmd || resourceLangId == python)",
                     "group": "execution"
                 }
+            ],
+            "editor/title/run": [
+                {
+                    "command": "msc_adams.runFile",
+                    "when": "resourceLangId == adams_cmd || resourceLangId == python",
+                    "group": "execution"
+                }
             ]
         },
+        "keybindings": [
+            {
+                "command": "msc_adams.runSelection",
+                "when": "editorHasSelection && (resourceLangId == adams_cmd || resourceLangId == python)",
+                "key": "ctrl+k ctrl+r"
+            },
+            {
+                "command": "msc_adams.runFile",
+                "when": "editorTextFocus && (resourceLangId == adams_cmd || resourceLangId == python)",
+                "key": "ctrl+k ctrl+r"
+            }
+        ],
         "capabilities": {
             "hoverProvider": "true"
         },
@@ -233,6 +261,18 @@
                             "justMyCode": true,
                             "subProcess": false
                         }
+                    },
+                    "msc-adams.runInAdams.substituteSelf": {
+                        "type": "string",
+                        "title": "Substitute $_self",
+                        "description": "Substitute $_self in the current selection when running the selection in Adams View with the name of the current file.",
+                        "default": ".mdi"
+                    },
+                    "msc-adams.runInAdams.substituteParams": {
+                        "type": "boolean",
+                        "title": "Substitute macro parameters",
+                        "description": "Substitute macro parameter references with their default values if they are defined.",
+                        "default": true
                     }
                 }
             }
@@ -399,19 +439,13 @@
         }
     },
     "devDependencies": {
-        "@types/node": "^16.11.7",
-        "@types/vscode": "^1.73.0",
-        "@typescript-eslint/eslint-plugin": "^5.42.0",
-        "@typescript-eslint/parser": "^5.42.0",
-        "eslint": "^8.26.0",
-        "typescript": "^5.0.2"
+        "@types/node": "^17.0.2"
     },
     "extensionDependencies": [
         "ms-python.vscode-pylance",
         "ms-python.python"
     ],
     "dependencies": {
-        "temp": "^0.9.4",
-        "vscode": "^1.1.37"
+        "temp": "^0.9.4"
     }
 }

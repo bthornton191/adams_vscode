@@ -3,13 +3,27 @@
 ! MACRO NAME:  test.mac
 ! DESCRIPTION:  description   
 ! AUTHOR:       Ben Thornton (ben.thornton@hexagon.com)
+!$param1:t=int:d=100
+!$part_name:t=str:d="part"
 !END_OF_PARAMETERS
 
-var set var=$_self.varname str=(eval(db_)) 
-var set var=$_self.varname str=(eval(db_default_name()))
+var set var=$_self.varname str=(eval(db_default(system_defaults, "model")))
+
+var set var=$_self.tmp_int int=$param1
 
 
 
+variable set variable_name=$_self.tmpstr string_value=(eval(str_print('Hello!')))
 
 
+model create model_name="model_1"
+
+
+for var=$_self.idx_ start_value=1 end_value=10
+    var set var=$_self.idx int=(eval(nint($_self.idx_)))
+    var set var=$_self.varname str=(eval(str_print("$param1 " // $_self.idx)))
     
+    part create rigid_body name_and_position &
+        part_name=(eval("$part_name" // $_self.idx))
+end
+

@@ -7,3 +7,5 @@ doc/figures.pptx
 analytics.py
 stats.csv
 stats.html
+adams_vscode.vsix
+test/working_directory/mylog.log

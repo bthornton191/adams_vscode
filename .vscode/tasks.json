@@ -7,6 +7,26 @@
             "command": "vsce publish",
             "group": {
                 "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Publish to VS Code Marketplace (Pre-Release)",
+            "command": "vsce publish --pre-release",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Build Locally",
+            "command": "vsce package -o adams_vscode.vsix --pre-release",
+            "group": {
+                "kind": "build",
                 "isDefault": true
             },
             "problemMatcher": []
