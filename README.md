@@ -72,9 +72,15 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 * Run File in Adams View (This *works for both CMD and Python files*)
   ![Run CMD File in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_file_in_adams.gif)
 
-  > **Note**: For python files, the button is located within the existing python run button stack.!
+  > [!NOTE] 
+  > For python files, the button is located within the existing python run button stack.!
   > ![Alt text](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_python_file_in_adams.png)
-  
+
+> [!TIP]
+> Add `command_server start` to your startup macro (*aviewAS.cmd* or *aview.cmd*) to automatically 
+> start the command server when Adams View is opened. This will allow you to run python scripts in  
+> Adams View without having to manually start the command server.
+
 ## Open Adams View From Explorer
 * Open Adams View in a directory from the Explorer by right clicking and selecting **Open View**
   ![Example of opening adams view in a directory](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/open_vscode_in_folder.gif)
