@@ -119,7 +119,7 @@
             },
             {
                 "command": "msc_adams.runFile",
-                "when": "editorTextFocus && (resourceLangId == adams_cmd || resourceLangId == python)",
+                "when": "editorTextFocus && !editorHasSelection && (resourceLangId == adams_cmd || resourceLangId == python)",
                 "key": "ctrl+k ctrl+r"
             }
         ],

@@ -4,8 +4,8 @@
 ![Visual Studio Marketplace Rating Stars](https://img.shields.io/visual-studio-marketplace/stars/savvyanalyst.msc-adams.svg?style=flat-square)
 ![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/savvyanalyst.msc-adams.svg?style=flat-square)
 
-> This is an early version. If you are interested in using it, please [reach out](https://github.com/bthornton191/adams_vscode) and let me 
-know which features you are most interested in. Thanks!
+> This is an early version. If you are interested in using it, please [reach out](https://github.com/bthornton191/adams_vscode/discussions) and let me 
+> know which features you are most interested in. Thanks!
 
 # Table of Contents
 - [MSC Adams Extension for Visual Studio Code](#msc-adams-extension-for-visual-studio-code)
@@ -36,7 +36,7 @@ know which features you are most interested in. Thanks!
 - Adams View Command Languange (.cmd)
 - Adams Solver Dataset Files (.adm)
 - Adams Solver Command Files (.acf)
-
+``
 ## Adams View Command Language Intellisense
 - Adams Function Completion Provider
 - Adams Function Documentation Hover Provider
@@ -68,11 +68,12 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 
 ## Run in Adams View
 * Run selection in Adams View (*works for both CMD and Python files*)
-![Run CMD Selection in Adams View](doc/run_selection_in_adams.gif)
+  ![Run CMD Selection in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_selection_in_adams.gif)
 * Run File in Adams View (This *works for both CMD and Python files*)
-![Run CMD File in Adams View](doc/run_file_in_adams.gif)
+  ![Run CMD File in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_file_in_adams.gif)
 
-  > **Note**: For python files, the button is located within the existing python run button stack.![Alt text](doc/run_python_file_in_adams.png)
+  > **Note**: For python files, the button is located within the existing python run button stack.!
+  > ![Alt text](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_python_file_in_adams.png)
   
 ## Open Adams View From Explorer
 * Open Adams View in a directory from the Explorer by right clicking and selecting **Open View**

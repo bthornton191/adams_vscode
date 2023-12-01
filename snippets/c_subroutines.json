@@ -1,0 +1,21 @@
+{
+	"Vfosub": {
+		"prefix": "Vfosub",
+		"body": [
+            "#include <stdio.h>",
+            "#include \"slv_c_utils.h\"",
+            "                    ",
+            "adams_c_Vfosub Vfosub;",
+            "                    ",
+            "/**",
+             "* @brief ${1:description}.",
+             "*/",
+            "void Vfosub(const struct sAdamsVforce *vfo, double TIME, int DFLAG, int IFLAG, double *values)",
+            "{",
+            "   ${2|int,double,char|} ${3:variable}=vfo->PAR[0];",
+            "}",
+            ""
+		],
+		"description": "Prints a message to the console"
+	}
+}
