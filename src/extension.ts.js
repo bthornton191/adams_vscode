@@ -9,6 +9,7 @@ const { debug_in_adams } = require('./debug_in_adams.ts');
 const { make_macro_header } = require('./make_macro_header.ts');
 const { cmd_completion_provider } = require('./cmd_completion_provider.ts');
 const { cmd_hover_provider } = require('./cmd_hover_provider.ts');
+const { terminal_profile_provider } = require('./terminal_profile_provider.ts');
 
 //Create output channel
 const output_channel = vscode.window.createOutputChannel("MSC Adams");
@@ -40,6 +41,15 @@ function activate(context) {
 	const view_commands = JSON.parse(fs.readFileSync(cmd_files_json))
 	vscode.languages.registerCompletionItemProvider('adams_cmd', cmd_completion_provider(view_functions, view_commands));
 	
+    // ---------------------------------------------------------------------------
+    // Terminal Provider
+    // ---------------------------------------------------------------------------
+    vscode.window.registerTerminalProfileProvider('msc-adams.terminal-profile', {
+        provideTerminalProfile(token) {
+            return terminal_profile_provider(token);
+        }
+    });
+
     // ---------------------------------------------------------------------------
 	// Commands
 	// ---------------------------------------------------------------------------
