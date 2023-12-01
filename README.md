@@ -50,8 +50,10 @@
 * Completion provider
 * Function signature help provider
 * Type hinting
-> Note: You may need to manually activate the extension using `msc_adams.activate` for these features to work
-![adams python autocomplete](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/adams_python_autocomplete.gif)
+
+> [!NOTE]
+> You may need to manually activate the extension using `msc_adams.activate` for these features to work
+> ![adams python autocomplete](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/adams_python_autocomplete.gif)
 
 ## Support for debugging python scripts in Adams View
 You can debug python scripts in Adams View using the [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python). This extension provides a convenient button to attach the debugger to an existing Adams View process. 
@@ -160,7 +162,8 @@ part modify rigid_body mass_properties part=$part mass=$mass
 When running a macro or a selection of a macro, the extension will substitute `$_self` with the 
 a user defined value. The default is `.mdi`. This is useful when the macro uses local variables.
 
-> **NOTE**: It is common convention to clear out local variables at the end of a macro using 
+> [!NOTE]
+> It is common convention to clear out local variables at the end of a macro using 
 > `var del var=$_self.*`. If using this convention, you should not use the default `.mdi`. Instead,
 > it is recommended to create an empty library in adams view and set the value of 
 > `msc-adams.runInAdams.substituteSelf` to the name of the library.
