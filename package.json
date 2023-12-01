@@ -20,7 +20,6 @@
         "Programming Languages"
     ],
     "main": "./src/extension.ts",
-    
     "activationEvents": [
         "onLanguage:adams_cmd",
         "onLanguage:adams_adm",
@@ -30,7 +29,8 @@
         "onLanguage:python",
         "onCommand:msc_adams.activate",
         "onCommand:msc_adams.openInView",
-        "onCommand:msc_adams.openViewHere"
+        "onCommand:msc_adams.openViewHere",
+        "onTerminalProfile:msc-adams.terminal-profile"
     ],
     "icon": "./images/adams.png",
     "contributes": {
@@ -63,7 +63,7 @@
             {
                 "command": "msc_adams.activate",
                 "title": "MSC Adams: Activate",
-                "icon": "resources/icons/adams.svg" 
+                "icon": "resources/icons/adams.svg"
             },
             {
                 "command": "msc_adams.openInView",
@@ -436,6 +436,15 @@
                     }
                 ]
             }
+        },
+        "terminal": {
+            "profiles": [
+                {
+                    "title": "Adams (Extension)",
+                    "id": "msc-adams.terminal-profile",
+                    "icon": "gear"
+                }
+            ]
         }
     },
     "devDependencies": {
@@ -446,6 +455,7 @@
         "ms-python.python"
     ],
     "dependencies": {
+        "@types/vscode": "^1.84.2",
         "temp": "^0.9.4"
     }
 }
