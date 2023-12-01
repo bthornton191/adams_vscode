@@ -6,12 +6,13 @@
 
 - **Added**: Run selection in Adams View
   - This works for both CMD and Python files
-![Run CMD Selection in Adams View](images/run_selection_in_adams.gif)
+    ![Run CMD Selection in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_selection_in_adams.gif)
 - **Added**: Run File in Adams View
   - This works for both CMD and Python files
-![Run CMD File in Adams View](images/run_file_in_adams.gif)
+    ![Run CMD File in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_file_in_adams.gif)
 
-  > **Note**: For python files, the button is located within the existing python run button stack.![Alt text](images/run_python_file_in_adams.png)
+    > **Note**: For python files, the button is located within the existing python run button stack.
+    > ![Alt text](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_python_file_in_adams.png)
 
 ## 0.3.0 (September 1st 2023)
 ### Syntax Highlighting
@@ -21,11 +22,11 @@
 ### Snippets
 - **Added**: Integer For Loop
   
-  ![int_for_loop_snippet](images/int_for_loop_snippet.gif)
+  ![int_for_loop_snippet](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/int_for_loop_snippet.gif)
 
 - **Added**: Request
   
-  ![request_snippet](images/req_snippet.gif)
+  ![request_snippet](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/req_snippet.gif)
 
 ### Improvements to the Adams View Python stub files
 Improved type hints and doc strings.

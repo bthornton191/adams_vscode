@@ -8,21 +8,12 @@ CEIL(x)
 ```
 ## Argument 
 
- 
-
-
-
 **x**
 : Any valid expression that evaluates to a real number.  
-
 
 ## Example 
 
 The following example illustrates the use of the `CEIL` function:
-
- 
-
-
 
 ### Function  
 ```java
