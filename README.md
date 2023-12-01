@@ -70,9 +70,9 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 
 ## Run in Adams View
 
-These features utilize the Adams View command server. 
-**The command server must be running for these features to work**. The demos below show how to 
-start the command server. 
+> [!IMPORTANT]
+> **The command server must be running for these features to work**. The demos below show how to 
+> start the command server. 
 
 > [!TIP]
 > Add `command_server start` to your startup macro (*aviewAS.cmd* or *aview.cmd*) to automatically 
