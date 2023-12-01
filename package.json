@@ -241,6 +241,22 @@
             {
                 "language": "python",
                 "path": "./snippets/python.json"
+            },
+            {
+                "language": "FortranFixedForm",
+                "path": "./snippets/fortran_subroutines.json"
+            },
+            {
+                "language": "FortranFreeForm",
+                "path": "./snippets/fortran_subroutines.json"
+            },
+            {
+                "language": "c",
+                "path": "./snippets/c_subroutines.json"
+            },
+            {
+                "language": "cpp",
+                "path": "./snippets/c_subroutines.json"
             }
         ],
         "configuration": [
