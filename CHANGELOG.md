@@ -1,18 +1,33 @@
 # Changelog
 
-## 0.4.0 (??????? ?? ????)
+- [Changelog](#changelog)
+  - [0.4.1 (December 1st 2023)](#041-december-1st-2023)
+    - [Run in Adams View](#run-in-adams-view)
+      - [**Added**: Run selection in Adams View](#added-run-selection-in-adams-view)
+      - [**Added**: Run File in Adams View](#added-run-file-in-adams-view)
+  - [0.3.0 (September 1st 2023)](#030-september-1st-2023)
+    - [Syntax Highlighting](#syntax-highlighting)
+    - [Snippets](#snippets)
+    - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
+    - [Improvements to Debugger](#improvements-to-debugger)
 
-## Run in Adams View
 
-- **Added**: Run selection in Adams View
-  - This works for both CMD and Python files
-    ![Run CMD Selection in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_selection_in_adams.gif)
-- **Added**: Run File in Adams View
-  - This works for both CMD and Python files
-    ![Run CMD File in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_file_in_adams.gif)
+## 0.4.1 (December 1st 2023)
 
-    > **Note**: For python files, the button is located within the existing python run button stack.
-    > ![Alt text](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_python_file_in_adams.png)
+### Run in Adams View
+
+#### **Added**: Run selection in Adams View
+
+This works for both CMD and Python files
+![Run CMD Selection in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_selection_in_adams.gif)
+
+#### **Added**: Run File in Adams View
+This works for both CMD and Python files
+![Run CMD File in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_file_in_adams.gif)
+
+> [!NOTE]
+> For python files, the button is located within the existing python run button stack.
+> ![button to run python file in adams](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_python_file_in_adams.png)
 
 ## 0.3.0 (September 1st 2023)
 ### Syntax Highlighting
