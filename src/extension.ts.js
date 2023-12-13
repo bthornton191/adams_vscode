@@ -52,7 +52,7 @@ function activate(context) {
     vscode.commands.registerCommand('msc_adams.loadStubFiles', load_stub_files(context, output_channel));
     // Set to run whenever the loadStubFiles setting is changed
     // vscode.workspace.onDidChangeConfiguration(load_stub_files(context, output_channel));
-    load_stub_files(context, output_channel); // run the command handler once to load the stub files
+    vscode.commands.executeCommand('msc_adams.loadStubFiles')
 
     vscode.window.showInformationMessage('MSC Adams Extension Activated');
 }

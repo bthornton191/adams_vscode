@@ -1,6 +1,9 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [0.4.2 (December 6th 2023)](#042-december-6th-2023)
+    - [Intellisense support for Adams View Python Interface](#intellisense-support-for-adams-view-python-interface)
+      - [**Fixed**: Fixed a bug preventing python intellisense from working properly](#fixed-fixed-a-bug-preventing-python-intellisense-from-working-properly)
   - [0.4.1 (December 1st 2023)](#041-december-1st-2023)
     - [Run in Adams View](#run-in-adams-view)
       - [**Added**: Run selection in Adams View](#added-run-selection-in-adams-view)
@@ -10,6 +13,12 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+
+## 0.4.2 (December 6th 2023)
+
+### Intellisense support for Adams View Python Interface
+#### **Fixed**: Fixed a bug preventing python intellisense from working properly
 
 
 ## 0.4.1 (December 1st 2023)

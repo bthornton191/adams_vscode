@@ -8,7 +8,6 @@
 > know which features you are most interested in. Thanks!
 
 # Table of Contents
-- [MSC Adams Extension for Visual Studio Code](#msc-adams-extension-for-visual-studio-code)
 - [Table of Contents](#table-of-contents)
 - [Features](#features)
   - [Syntax highlighting](#syntax-highlighting)
