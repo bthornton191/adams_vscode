@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "0.4.2",
+    "version": "0.4.3",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -278,6 +278,12 @@
                         "type": "boolean",
                         "title": "Substitute macro parameters",
                         "description": "Substitute macro parameter references with their default values if they are defined.",
+                        "default": true
+                    },
+                    "msc-adams.runInAdams.autoLoadAdamspyStubs": {
+                        "type": "boolean",
+                        "title": "Auto Load adamspy Stubs",
+                        "description": "Automatically load adamspy stub files when the extension is activated.",
                         "default": true
                     }
                 }
