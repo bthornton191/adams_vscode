@@ -22,9 +22,11 @@ from RuntimeFunction import RuntimeFunctionManager
 from Part import Part
 from Simulation import SimulationManager
 from UDE import UserDefinedInstanceManager
+from Sensor import SensorManager
+
 
 class ModelManager(Manager.AdamsManager):
-    def create(self, **kwargs)->Model: ...
+    def create(self, **kwargs) -> Model: ...
     @staticmethod
     def newFromAdm(model_name, file_name): ...
     def items(self) -> ItemsView[str, Model]: ...
@@ -32,6 +34,7 @@ class ModelManager(Manager.AdamsManager):
     def keys(self) -> KeysView[str]: ...
     def __getitem__(self, name) -> Model: ...
     def __iter__(self, *args) -> Iterable[str]: ...
+
 
 class Model(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings):
     active: Any
@@ -46,7 +49,7 @@ class Model(Object.ObjectComment, AppearanceSettings.GeometryAppearanceSettings)
     Parts: PartManager
     Materials: MaterialManager
     Geometries: GeometryManager
-    Sensors: AdamsManager
+    Sensors: SensorManager
     FloatingMarkers: MarkerManager
     Contacts: ContactManager
     Sections: SectionManager

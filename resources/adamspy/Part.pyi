@@ -7,18 +7,20 @@ from Geometry import GeometryManager
 from Expression import AdamsExpr as AdamsExpr
 from typing import Any, ItemsView, Iterable, KeysView, List, ValuesView
 
+
 class PartManager(Manager.SubclassManager):
-    def createRigidBody(self, **kwargs)->RigidBody: ...
-    def createFlexBody(self, **kwargs)->FlexBody: ...
-    def createPointMass(self, **kwargs)->PointMass: ...
-    def createExternalSystem(self, **kwargs)->ExternalSystem: ...
-    def createFEPart(self, **kwargs)->FEPart: ...
+    def createRigidBody(self, **kwargs) -> RigidBody: ...
+    def createFlexBody(self, **kwargs) -> FlexBody: ...
+    def createPointMass(self, **kwargs) -> PointMass: ...
+    def createExternalSystem(self, **kwargs) -> ExternalSystem: ...
+    def createFEPart(self, **kwargs) -> FEPart: ...
     def __getitem__(self, name) -> Part: ...
     def __iter__(self, *args) -> Iterable[str]: ...
     def items(self) -> ItemsView[str, Part]: ...
     def values(self) -> ValuesView[Part]: ...
     def keys(self) -> KeysView[str]: ...
-    
+
+
 class Part(Object.Object):
     Markers: MarkerManager
     DesignPoints: DesignPointManager
@@ -33,6 +35,8 @@ class Part(Object.Object):
     location: Any
     along_axis_orientation: Any
     in_plane_orientation: Any
+    cm: Marker
+
 
 class RigidBody(Part):
     mass: float
@@ -69,6 +73,7 @@ class RigidBody(Part):
     def __init__(self, _DBKey) -> None: ...
     inertia_values: List[float]
     plane: Any
+
 
 class FlexBody(Part):
     vx: float
@@ -109,6 +114,7 @@ class FlexBody(Part):
     representation: Any
     def disable_modes_by_strain_energy(self, analysis: Any | None = ..., analysis_name: Any | None = ..., energy_tolerance: float = ...) -> None: ...
 
+
 class PointMass(Part):
     vx: float
     vy: float
@@ -123,6 +129,7 @@ class PointMass(Part):
     exact_z: float
     material_type: Any
     density: float
+
 
 class ExternalSystem(Part):
     Markers: MarkerManager
@@ -141,6 +148,7 @@ class ExternalSystem(Part):
     interface_routines: Any
     type: Any
     input_file_name: Any
+
 
 class FEPart(Part):
     def addNode(self, s, **kwargs) -> None: ...

@@ -2,11 +2,12 @@ import Manager
 import Marker
 import Object
 from typing import Any, ItemsView, Iterable, KeysView, List, ValuesView
+from Part import Part
 
 class ConstraintManager(Manager.SubclassManager):
-    def createCoupler(self,name: str=None, **kwargs): ...
-    def createGear(self,name: str=None, **kwargs): ...
-    def createGeneral(self,name: str=None, **kwargs): ...
+    def createCoupler(self,name: str=None, **kwargs)->CouplerConstraint: ...
+    def createGear(self,name: str=None, **kwargs)->GearConstraint: ...
+    def createGeneral(self,name: str=None, **kwargs)->GeneralConstraint: ...
     def createMotion(self,
                      name: str=None, 
                      joint: Joint=None, 
@@ -18,7 +19,7 @@ class ConstraintManager(Manager.SubclassManager):
                      time_derivative: str=None,
                      function: str='',
                      type_of_freedom: str=None, 
-                     **kwargs): 
+                     **kwargs)->Motion: 
         """Creates a Motion constraint
 
         Parameters
@@ -28,7 +29,7 @@ class ConstraintManager(Manager.SubclassManager):
         time_derivative : str
             The time derivative of the constraint. Can be 'displacement' or 'velocity'.
         """
-    def createPointMotion(self,name: str=None, **kwargs): ...
+    def createPointMotion(self,name: str=None, **kwargs)->PointMotion: ...
     def createJointMotion(self,
                           name: str=None, 
                           joint: Joint=None, 
@@ -36,7 +37,7 @@ class ConstraintManager(Manager.SubclassManager):
                           time_derivative: str=None,
                           function: str='',
                           type_of_freedom: str=None, 
-                          **kwargs): 
+                          **kwargs)->JointMotion: 
         """Creates a Motion constraint on a Joint
 
         Parameters
@@ -86,8 +87,8 @@ class ConstraintManager(Manager.SubclassManager):
 class Constraint(Object.Object): ...
 
 class _constraint_i_j_parts(_i_j_m):
-    i_part: Any
-    j_part: Any
+    i_part: Part
+    j_part: Part
     i_part_name: str
     j_part_name: str
 
