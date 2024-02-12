@@ -25,29 +25,27 @@ function run_selection(output_channel, entire_file=false) {
         if (editor.document.languageId == 'adams_cmd') {
 
             // If the current file is an Adams command file, do some formatting
-            var suffix = '.cmd';
             text = format_adams_cmd(text, editor.document.getText());
+            let temp_file = temp.openSync({ suffix: '.cmd' });
+            fs.writeSync(temp_file.fd, text);
+            fs.closeSync(temp_file.fd);
+            var line = `file command read file_name = "${temp_file.path}"`;
 
         } else if (editor.document.languageId == 'python') {
 
             // If the current file is a Python file
-            var suffix = '.py';
+
+            // Get the current file name
+            let file = vscode.window.activeTextEditor.document.fileName;
+            var line = `file python read file_name = "${file}"`;
+
         } else {
 
             // If the current file is not an Adams or Python file, show an error message
             vscode.window.showErrorMessage('The current file is not an Adams or Python file');
             return;
         };
-        let temp_file = temp.openSync({ suffix: suffix });
-        fs.writeSync(temp_file.fd, text);
-        fs.closeSync(temp_file.fd);
 
-
-        if (editor.document.languageId == 'adams_cmd') {
-            var line = `file command read file_name = "${temp_file.path}"`;
-        } else if (editor.document.languageId == 'python') {
-            var line = `file python read file_name = "${temp_file.path}"`;
-        };
 
         // Create a tcp/ip socket and connect to 5002 on localhost
         const client = new net.Socket();
