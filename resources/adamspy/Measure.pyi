@@ -10,7 +10,16 @@ class MeasureManager(Manager.SubclassManager):
     def createOrient(self, **kwargs): ...
     def createPoint(self, **kwargs): ...
     def createRange(self, **kwargs): ...
-    def createFunction(self, **kwargs): ...
+    def createFunction(self, 
+                       name:str=None,
+                       function:str=None,
+                       user_function:str=None,
+                       routine:str=None,
+                       units:str=None,
+                       legend:str=None,
+                       create_measure_display:str=None,
+                       comments:str=None,
+                       **kwargs)->FunctionMeasure: ...
 
 class Measure(Object.ObjectComment):
     adams_id_id: int
@@ -80,10 +89,10 @@ class RangeMeasure(Measure):
     create_measure_display: Any
 
 class FunctionMeasure(Measure):
-    comment_id: Any
-    legend: Any
-    function: Any
-    user_function: Any
-    routine: Any
-    units: Any
-    create_measure_display: Any
+    comment_id: int
+    legend: str
+    function: str
+    user_function: str
+    routine: str
+    units: str
+    create_measure_display: str

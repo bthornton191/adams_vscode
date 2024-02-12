@@ -4,54 +4,135 @@ from Marker import _i_j_parts_from_markers as _i_j_parts, _loc_ori_provider as _
 from typing import Any, ItemsView, Iterable, List, ValuesView
 from Part import Part
 
+
 class ForceManager(Manager.SubclassManager):
     def createGravity(self, **kwargs): ...
-    def createForceVector(self, **kwargs): ...
+
+    def createForceVector(self,
+                          name: str,
+                          adams_id: int,
+                          comments: str,
+                          i_marker: Marker = None,
+                          i_marker_name: str = None,
+                          j_floating_marker: Marker = None,
+                          j_floating_marker_name: str = None,
+                          j_part: Part = None,
+                          j_part_name: str = None,
+                          ref_marker: Marker = None,
+                          ref_marker_name: str = None,
+                          x_force_function: str = None,
+                          y_force_function: str = None,
+                          z_force_function: str = None,
+                          x_torque_function: str = None,
+                          y_torque_function: str = None,
+                          z_torque_function: str = None,
+                          xyz_force_function: str = None,
+                          xyz_torque_function: str = None,
+                          user_function: str = None,
+                          routine: str = None,
+                          **kwargs) -> GeneralForce: ...
+
     def createTorqueVector(self, **kwargs): ...
     def createRotationalSpringDamper(self, **kwargs): ...
     def createTranslationalSpringDamper(self, **kwargs): ...
-    def createBushing(self, **kwargs): ...
-    
+
+    def createBushing(self,
+                      i_marker: Marker = None,
+                      j_marker: Marker = None,
+                      i_marker_name: str = None,
+                      j_marker_name: str = None,
+                      force_preload: List[float] = None,
+                      stiffness: List[float] = None,
+                      damping: List[float] = None,
+                      tdamping: List[float] = None,
+                      tstiffness: List[float] = None,
+                      torque_preload: List[float] = None,
+                      **kwargs) -> Bushing: ...
+
     def createSingleComponentForce(self,
                                    name: str,
-                                   function: str='',
-                                   i_marker: Marker=None,
-                                   j_marker: Marker=None,
-                                   i_marker_name: str=None,
-                                   j_marker_name: str=None,
-                                   i_part: Part=None,
-                                   j_part: Part=None,
-                                   i_part_name: str=None,
-                                   j_part_name: str=None,
-                                   action_only: bool=None,
-                                   location: List[float]=None,
-                                   orientation: List[float]=None,
-                                   type_of_freedom: str='translational',
-                                   relative_to: Marker=None,
-                                   **kwargs): ...
+                                   function: str = '',
+                                   i_marker: Marker = None,
+                                   j_marker: Marker = None,
+                                   i_marker_name: str = None,
+                                   j_marker_name: str = None,
+                                   i_part: Part = None,
+                                   j_part: Part = None,
+                                   i_part_name: str = None,
+                                   j_part_name: str = None,
+                                   action_only: bool = None,
+                                   location: List[float] = None,
+                                   orientation: List[float] = None,
+                                   type_of_freedom: str = 'translational',
+                                   relative_to: Marker = None,
+                                   **kwargs) -> SingleComponentForce: ...
+
     def createAppliedTorque(self, **kwargs): ...
     def createAppliedForce(self, **kwargs): ...
-    def createBeam(self, **kwargs): ...
+
+    def createBeam(self,
+                   name: str,
+                   i_marker: Marker = None,
+                   j_marker: Marker = None,
+                   i_marker_name: str = None,
+                   j_marker_name: str = None,
+                   length: float = None,
+                   damping_ratio: float = None,
+                   matrix_of_damping_terms: List[float] = None,
+                   shear_modulus: float = None,
+                   youngs_modulus: float = None,
+                   ixx: float = None,
+                   iyy: float = None,
+                   izz: float = None,
+                   area_of_cross_section: float = None,
+                   y_shear_area_ratio: float = None,
+                   z_shear_area_ratio: float = None,
+                   formulation: str = None,
+                   **kwargs) -> Beam: ...
+
     def createField(self, **kwargs): ...
     def createFriction(self, **kwargs): ...
     def createModalForce(self, **kwargs): ...
-    def createGeneralForce(self, **kwargs): ...
+
+    def createGeneralForce(self,
+                           name: str,
+                           adams_id: int,
+                           comments: str,
+                           i_marker: Marker = None,
+                           i_marker_name: str = None,
+                           j_floating_marker: Marker = None,
+                           j_floating_marker_name: str = None,
+                           ref_marker: Marker = None,
+                           ref_marker_name: str = None,
+                           x_force_function: str = None,
+                           y_force_function: str = None,
+                           z_force_function: str = None,
+                           xyz_force_function: str = None,
+                           user_function: str = None,
+                           routine: str = None,
+                           **kwargs) -> ForceVector: ...
+
     def createMultiPointForce(self, **kwargs): ...
     def __getitem__(self, name) -> Force: ...
     def __iter__(self, *args) -> Iterable[str]: ...
     def items(self) -> ItemsView[str, Force]: ...
     def values(self) -> ValuesView[Force]: ...
 
-class _force_i_j_parts(_i_j_parts):
-    i_part: Any
-    j_part: Any
-    i_part_name: Any
-    j_part_name: Any
 
-class Force(Object.Object): ...
+class _force_i_j_parts(_i_j_parts):
+    i_part: Part
+    j_part: Part
+    i_part_name: str
+    j_part_name: str
+
+
+class Force(Object.Object):
+    ...
+
 
 class Gravity(Force):
     xyz_component_gravity: List[float]
+
 
 class ForceVector(Force):
     i_marker_name: str
@@ -67,6 +148,7 @@ class ForceVector(Force):
     routine: str
     xyz_force_function: str
 
+
 class TorqueVector(Force):
     i_marker_name: str
     i_marker: Marker
@@ -81,6 +163,7 @@ class TorqueVector(Force):
     routine: Any
     xyz_torque_function: Any
 
+
 class RotationalSpringDamper(Force, _force_i_j_parts, _loc_ori):
     i_marker: Marker
     j_marker: Marker
@@ -92,6 +175,7 @@ class RotationalSpringDamper(Force, _force_i_j_parts, _loc_ori):
     r_damp: Any
     r_stiff: Any
 
+
 class TranslationalSpringDamper(Force, _force_i_j_parts, _loc_ori):
     i_marker: Marker
     j_marker: Marker
@@ -102,46 +186,50 @@ class TranslationalSpringDamper(Force, _force_i_j_parts, _loc_ori):
     damping: Any
     displacement_at_preload: Any
 
+
 class Bushing(Force, _force_i_j_parts, _loc_ori):
     i_marker: Marker
     j_marker: Marker
     i_marker_name: str
     j_marker_name: str
-    force_preload: Any
-    stiffness: Any
-    damping: Any
-    tdamping: Any
-    tstiffness: Any
-    torque_preload: Any
+    force_preload: List[float]
+    stiffness: List[float]
+    damping: List[float]
+    tdamping: List[float]
+    tstiffness: List[float]
+    torque_preload: List[float]
+
 
 class SingleComponentForce(Force, _force_i_j_parts, _loc_ori):
     i_marker: Marker
     j_marker: Marker
     i_marker_name: str
     j_marker_name: str
-    user_function: Any
-    function: Any
-    action_only: Any
-    routine: Any
-    type_of_freedom: Any
+    user_function: str
+    function: str
+    action_only: bool
+    routine: str
+    type_of_freedom: str
+
 
 class Beam(Force, _force_i_j_parts, _loc_ori):
     i_marker: Marker
     j_marker: Marker
     i_marker_name: str
     j_marker_name: str
-    length: Any
-    damping_ratio: Any
-    matrix_of_damping_terms: Any
-    shear_modulus: Any
-    youngs_modulus: Any
-    ixx: Any
-    iyy: Any
-    izz: Any
-    area_of_cross_section: Any
-    y_shear_area_ratio: Any
-    z_shear_area_ratio: Any
-    formulation: Any
+    length: float
+    damping_ratio: float
+    matrix_of_damping_terms: List[float]
+    shear_modulus: float
+    youngs_modulus: float
+    ixx: float
+    iyy: float
+    izz: float
+    area_of_cross_section: float
+    y_shear_area_ratio: float
+    z_shear_area_ratio: float
+    formulation: str
+
 
 class Field(Force, _force_i_j_parts, _loc_ori):
     i_marker: Marker
@@ -159,6 +247,7 @@ class Field(Force, _force_i_j_parts, _loc_ori):
     length_tol: Any
     translation_at_preload: Any
     rotation_at_preload: Any
+
 
 class Friction(Force):
     joint_types: Any
@@ -189,6 +278,7 @@ class Friction(Force):
     reaction_force: Any
     inactive_during_static: Any
 
+
 class ModalForce(Force):
     flexible_body: Any
     flexible_body_name: Any
@@ -198,6 +288,7 @@ class ModalForce(Force):
     scale_function: Any
     load_case: Any
     force_function: Any
+
 
 class GeneralForce(Force):
     i_marker_name: str
@@ -216,6 +307,7 @@ class GeneralForce(Force):
     routine: Any
     xyz_force_function: Any
     xyz_torque_function: Any
+
 
 class MultiPointForce(Force):
     i_marker_names: Any
