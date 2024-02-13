@@ -1,4 +1,4 @@
-! Adams View Adams 2021.1 (built Mar 24 2021)
+! Adams View Adams 2022.1 (built Mar 30 2022)
 ! Graphics:  OpenGL
 
 ! >> 
@@ -78,6 +78,8 @@ int push_button undisplay push_button_name = .gui.main.standard_toolbar.view_zoo
 ! .gui.main.standard_toolbar.tinc_f, .gui.main.standard_toolbar.zinc_f
 int field display field_name = .gui.main.standard_toolbar.*
 ! >> int field display field_name = .gui.main.standard_toolbar.*
+
+! >> 
 ! ---------------------------------------------------------------------
 ! >> ! ---------------------------------------------------------------------
 ! Run Startup Scripts
@@ -311,6 +313,68 @@ default report base_font_size=5
 ! >> default report base_font_size=5
 
 ! >> 
+! Add Plotting Hotkeys
+! >> ! Add Plotting Hotkeys
+for var=.mdi.menu_bar  obj=.gui.ppt_main.anim_mbar, .gui.ppt_main.report_mbar, .gui.ppt_main.plot3d_mbar, .gui.ppt_main.plot4d_mbar, .gui.ppt_main.plotcurve3d_mbar, .gui.ppt_main.mbar
+! >> for var=.mdi.menu_bar  obj=.gui.ppt_main.anim_mbar, .gui.ppt_main.report_mbar, .gui.ppt_main.plot3d_mbar, .gui.ppt_main.plot4d_mbar, .gui.ppt_main.plotcurve3d_mbar, .gui.ppt_main.mbar
+    interface separator create separator_name=.gui.ppt_main.anim_mbar.tools.hotkeys_sep
+! +1>>     interface separator create separator_name=.gui.ppt_main.anim_mbar.tools.hotkeys_sep
+    interface push_button create &
+! +1>>     interface push_button create &
+        push_button_name=.gui.ppt_main.anim_mbar.tools.btn_plot_tracking &
+! +1&>         push_button_name=.gui.ppt_main.anim_mbar.tools.btn_plot_tracking &
+        label = "Plot Tracking::Ctrl+T" &
+! +1&>         label = "Plot Tracking::Ctrl+T" &
+        commands = "interface push_button execute push_button_name = .gui.ppt_main.ppt_tbar1.plotting_cont.tracking action = single_click"
+! +1&>         commands = "interface push_button execute push_button_name = .gui.ppt_main.ppt_tbar1.plotting_cont.tracking action = single_click"
+
+! +1>> 
+    interface push_button create   &
+! +1>>     interface push_button create   &
+        push_button_name=.gui.ppt_main.anim_mbar.tools.btn_treeview_visibility &
+! +1&>         push_button_name=.gui.ppt_main.anim_mbar.tools.btn_treeview_visibility &
+        label = "Toggle Sidebar::Shift+Ctrl+E" &
+! +1&>         label = "Toggle Sidebar::Shift+Ctrl+E" &
+        commands = "if condition=(.gui.ppt_main.sash1.treeview.displayed)", &
+! +1&>         commands = "if condition=(.gui.ppt_main.sash1.treeview.displayed)", &
+                "    mdi toolbar display toolbar=treeview state=off", &
+! +1&>                 "    mdi toolbar display toolbar=treeview state=off", &
+                "    int tog set state=off tog=.gui.ppt_main.ppt_tbar1.treeview_visibility", &
+! +1&>                 "    int tog set state=off tog=.gui.ppt_main.ppt_tbar1.treeview_visibility", &
+                    "else", &
+! +1&>                     "else", &
+                    "    mdi toolbar display toolbar=treeview state=on", &
+! +1&>                     "    mdi toolbar display toolbar=treeview state=on", &
+                    "    int tog set state=on tog=.gui.ppt_main.ppt_tbar1.treeview_visibility", &
+! +1&>                     "    int tog set state=on tog=.gui.ppt_main.ppt_tbar1.treeview_visibility", &
+                    "end" !"
+! +1&>                     "end" !"
+
+! +1>> 
+    interface push_button create &
+! +1>>     interface push_button create &
+        push_button_name=.gui.ppt_main.anim_mbar.tools.btn_cockpit_visibility &
+! +1&>         push_button_name=.gui.ppt_main.anim_mbar.tools.btn_cockpit_visibility &
+        label = "Toggle Sidebar::Ctrl+J" &
+! +1&>         label = "Toggle Sidebar::Ctrl+J" &
+        commands = "if condition=(.gui.ppt_main.sash1.sash2.cockpit.displayed)", &
+! +1&>         commands = "if condition=(.gui.ppt_main.sash1.sash2.cockpit.displayed)", &
+                "    mdi toolbar display toolbar=dashboard state=off", &
+! +1&>                 "    mdi toolbar display toolbar=dashboard state=off", &
+                "    int tog set state=off tog=.gui.ppt_main.ppt_tbar1.cockpit_visibility", &
+! +1&>                 "    int tog set state=off tog=.gui.ppt_main.ppt_tbar1.cockpit_visibility", &
+                    "else", &
+! +1&>                     "else", &
+                    "    mdi toolbar display toolbar=dashboard state=on", &
+! +1&>                     "    mdi toolbar display toolbar=dashboard state=on", &
+                    "    int tog set state=on tog=.gui.ppt_main.ppt_tbar1.cockpit_visibility", &
+! +1&>                     "    int tog set state=on tog=.gui.ppt_main.ppt_tbar1.cockpit_visibility", &
+                    "end" !"
+! +1&>                     "end" !"
+end
+! +1>> end
+
+! >> 
 ! ---------------------------------------------------------------------
 ! >> ! ---------------------------------------------------------------------
 ! Run Python Setup
@@ -327,12 +391,445 @@ file python read file="C:\Program Files\MSC.Software\Adams\aview_mods_gen\setup.
 ! >> ! Load user aviewBS.cmd
 ! ---------------------------------------------------------------------
 ! >> ! ---------------------------------------------------------------------
-if condition=0
-! >> if condition=0
- file command read file_name=(eval(getenv("MSC_ADAMS_STARTIN_DIR") // "\\aviewBS.cmd"))
-! -1>>  file command read file_name=(eval(getenv("MSC_ADAMS_STARTIN_DIR") // "\\aviewBS.cmd"))
+if condition=1
+! >> if condition=1
+ file command read file_name="C:\Users\ben.thornton\aviewBS.cmd"
+! +1>>  file command read file_name="C:\Users\ben.thornton\aviewBS.cmd"
+! +1>> ! AVIEW_SETTINGS_90 : aviewBS.cmd : 2022/07/24,11:22:50
+! +1>> !
+! +1>> ! Warning: This file will be overwritten by the 'settings save' command.
+! +1>> !
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> !-------------------------------------------
+! +1>> ! Units
+! +1>> default units &
+! +1&>    length=inch &
+! +1&>    mass=pound_mass &
+! +1&>    force=pound_force &
+! +1&>    time=second &
+! +1&>    angle=degrees &
+! +1&>    frequency=hz
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Working Grid
+! +1>> !-------------------------------------------
+! +1>> interface grid modify &
+! +1&>    dots_vis    = yes &
+! +1&>    dot_color   = .colors.NO_COLOR &
+! +1&>    dot_size    = 1 &
+! +1&>    lines_vis   = no &
+! +1&>    line_weight = 1 &
+! +1&>    line_style  = solid &
+! +1&>    line_color  = .colors.CYAN &
+! +1&>    axes_vis    = yes &
+! +1&>    axis_weight = 1 &
+! +1&>    axis_color  = .colors.NO_COLOR &
+! +1&>    triad_vis   = no &
+! +1&>    extent      = 12.0,12.0 &
+! +1&>    spacing     = 1.0,1.0
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Icons
+! +1>> !-------------------------------------------
+! +1>> default attributes &
+! +1&>    icon_vis=off &
+! +1&>    size_of_icons=0.500000
+! +1>> geometry attributes geometry_name=.icons.part_axis visibility=off
+! +1>> geometry attributes geometry_name=.icons.part_cg visibility=off
+! +1>> default icon_naming show_as=partial_name 
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Colors
+! +1>> !-------------------------------------------
+! +1>> .colors.NO_COLOR.components = 0, 0, 0
+! +1>> .colors.BLACK.components = 0, 0, 0
+! +1>> .colors.WHITE.components = 1, 1, 1
+! +1>> .colors.RED.components = 1, 0, 0
+! +1>> .colors.GREEN.components = 0, 1, 0
+! +1>> .colors.BLUE.components = 0, 0, 1
+! +1>> .colors.CYAN.components = 0, 1, 1
+! +1>> .colors.MAGENTA.components = 1, 0, 0.61
+! +1>> .colors.YELLOW.components = 1, 1, 0
+! +1>> .colors.SKYBLUE.components = 0.44, 0.85, 1
+! +1>> .colors.MIDNIGHT_BLUE.components = 0, 0, 0.36
+! +1>> .colors.BLUE_GRAY.components = 0.16, 0.46, 0.65
+! +1>> .colors.DARK_GRAY.components = 0.325, 0.325, 0.325
+! +1>> .colors.SILVER.components = 0.72, 0.72, 0.72
+! +1>> .colors.PEACH.components = 1, 0.64, 0.49
+! +1>> .colors.MAIZE.components = 1, 0.67, 0
+! +1>> .colors.Background.components = 0.245, 0.479, 0.553
+! +1>> .colors.Background.gradient = 2
+! +1>> .colors.Aquamarine.components = 0, 0.95, 0.84
+! +1>> .colors.BlueViolet.components = 0.541, 0.169, 0.886
+! +1>> .colors.Brown.components = 0.43, 0.33, 0.33
+! +1>> .colors.CadetBlue.components = 0.372, 0.62, 0.627
+! +1>> .colors.ClayRed.components = 0.42, 0.224, 0.224
+! +1>> .colors.Coral.components = 1, 0.447, 0.337
+! +1>> .colors.CornflowerBlue.components = 0.42, 0.42, 1
+! +1>> .colors.DkGreen.components = 0, 0.65, 0
+! +1>> .colors.DkOliveGreen.components = 0.319, 0.319, 0
+! +1>> .colors.DkOrchid.components = 0.6, 0.196, 0.8
+! +1>> .colors.DkSlateBlue.components = 0.22, 0.294, 0.4
+! +1>> .colors.DkSlateGray.components = 0.184, 0.31, 0.31
+! +1>> .colors.DkTurquoise.components = 0, 0.364, 0.416
+! +1>> .colors.DkYellow.components = 0.9, 0.8, 0.15
+! +1>> .colors.DkRed.components = 0.65, 0, 0
+! +1>> .colors.DimGray.components = 0.412, 0.412, 0.412
+! +1>> .colors.Firebrick.components = 0.557, 0.137, 0.137
+! +1>> .colors.ForestGreen.components = 0, 0.23, 0.05
+! +1>> .colors.Goldenrod.components = 0.855, 0.647, 0.126
+! +1>> .colors.Gray.components = 0.494, 0.494, 0.494
+! +1>> .colors.GreenYellow.components = 0.808, 1, 0
+! +1>> .colors.Khaki.components = 0.702, 0.702, 0.494
+! +1>> .colors.LtBlue.components = 0.69, 0.886, 1
+! +1>> .colors.LtGray.components = 0.659, 0.659, 0.659
+! +1>> .colors.LtKhaki.components = 0.94, 0.9, 0.55
+! +1>> .colors.LtMagenta.components = 1, 0.35, 0.747
+! +1>> .colors.LtSteelBlue.components = 0.486, 0.596, 0.827
+! +1>> .colors.LimeGreen.components = 0.196, 0.804, 0.196
+! +1>> .colors.Marine.components = 0, 0.33, 1
+! +1>> .colors.Maroon.components = 0.498, 0, 0.228
+! +1>> .colors.MedAquamarine.components = 0, 0.576, 0.561
+! +1>> .colors.MedBlue.components = 0.196, 0.196, 0.8
+! +1>> .colors.MedForest.components = 0.196, 0.506, 0.294
+! +1>> .colors.MedGolden.components = 0.82, 0.757, 0.4
+! +1>> .colors.MedOrchid.components = 0.792, 0.333, 0.828
+! +1>> .colors.MedSeaGray.components = 0.322, 0.502, 0.475
+! +1>> .colors.MedSlateBlue.components = 0.416, 0.416, 0.553
+! +1>> .colors.MedSpring.components = 0.137, 0.557, 0.137
+! +1>> .colors.MedTurquoise.components = 0, 0.824, 0.824
+! +1>> .colors.MedViolet.components = 0.58, 0, 0.828
+! +1>> .colors.MidnightBlue2.components = 0.184, 0.184, 0.392
+! +1>> .colors.Navy.components = 0.137, 0.137, 0.459
+! +1>> .colors.NearRed.components = 0.9, 0, 0
+! +1>> .colors.NearWhite.components = 0.9, 0.9, 0.9
+! +1>> .colors.NiceGreen.components = 0, 0.33, 0
+! +1>> .colors.Orange.components = 1, 0.271, 0
+! +1>> .colors.Orange2.components = 1, 0.53, 0
+! +1>> .colors.Orchid.components = 0.937, 0.518, 0.937
+! +1>> .colors.PaleGreen.components = 0.451, 0.871, 0.471
+! +1>> .colors.Pink.components = 1, 0.71, 0.773
+! +1>> .colors.Plum.components = 0.54, 0, 0.44
+! +1>> .colors.Salmon.components = 1, 0.49, 0.3
+! +1>> .colors.SeaGreen.components = 0.322, 0.584, 0.518
+! +1>> .colors.Sienna.components = 0.588, 0.322, 0.176
+! +1>> .colors.SlateBlue.components = 0.494, 0.533, 0.671
+! +1>> .colors.SlateBlue2.components = 0.416, 0.353, 0.804
+! +1>> .colors.SpringGreen.components = 0.255, 0.675, 0.255
+! +1>> .colors.SteelBlue.components = 0.329, 0.439, 0.667
+! +1>> .colors.Tan.components = 0.824, 0.706, 0.549
+! +1>> .colors.Tan2.components = 0.871, 0.722, 0.529
+! +1>> .colors.Thistle.components = 0.846, 0.749, 0.846
+! +1>> .colors.Turquoise.components = 0.116, 0.889, 1
+! +1>> .colors.Violet.components = 0.612, 0.243, 0.808
+! +1>> .colors.VioletRed.components = 0.816, 0.126, 0.565
+! +1>> .colors.VlMagenta.components = 1, 0.66, 1
+! +1>> .colors.VlGray.components = 0.7, 0.7, 0.8
+! +1>> .colors.Wheat.components = 0.961, 0.871, 0.702
+! +1>> .colors.YellowGreen.components = 0.604, 0.804, 0.196
+! +1>> if cond=(!DB_EXISTS(".colors.COLOR_R192G207B177"))
+! +2>>   color create color = .colors.COLOR_R192G207B177 red_component = 0.753 green_component = 0.816 blue_component = 0.694
+! +2>> else
+! -2>>   .colors.COLOR_R192G207B177.components = 0.753, 0.816, 0.694
+! -2>> end
+! +1>> if cond=(!DB_EXISTS(".colors.COLOR_R223G199B149"))
+! +2>>   color create color = .colors.COLOR_R223G199B149 red_component = 0.878 green_component = 0.78 blue_component = 0.584
+! +2>> else
+! -2>>   .colors.COLOR_R223G199B149.components = 0.878, 0.78, 0.584
+! -2>> end
+! +1>> if cond=(!DB_EXISTS(".colors.COLOR_R222G240B255"))
+! +2>>   color create color = .colors.COLOR_R222G240B255 red_component = 0.875 green_component = 0.945 blue_component = 1
+! +2>> else
+! -2>>   .colors.COLOR_R222G240B255.components = 0.875, 0.945, 1
+! -2>> end
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Force Graphics
+! +1>> !-------------------------------------------
+! +1>> default force &
+! +1&>    force_scale=1.000000 &
+! +1&>    torque_scale=1.000000 &
+! +1&>    display_text=no &
+! +1&>    decimal_places=4 &
+! +1&>    display_wireframe=no &
+! +1&>    always_in_front=no
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Vector Plot Graphics
+! +1>> !-------------------------------------------
+! +1>> default vector_plots &
+! +1&>    scale=1.000000 &
+! +1&>    display_torque=no
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Flex Bodies
+! +1>> !-------------------------------------------
+! +1>> defaults geometry
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Tool Bars and Tool Boxes
+! +1>> !-------------------------------------------
+! +1>> int dia undisplay dia=.gui.moag
+! +1>> int tool mod tool=.gui.main.tbar3 top=yes
+! +1>> int tool undisplay tool=.gui.main.tbar3
+! +1>> int tool mod tool=.gui.main.tbar4 top=no
+! +1>> int tool undisplay tool=.gui.main.tbar4
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! View management
+! +1>> !-------------------------------------------
+! +1>> view manage modify &
+! +1&>    back=.colors.Background &
+! +1&>    render=sshaded &
+! +1&>    triad=on &
+! +1&>    name=on
+! +1>> int grid display grid=.gui.grid view=( db_default( .system_defaults, "view" )) 
+! +1>> interface grid modify &
+! +1&>    extent      = 12,12 &
+! +1&>    spacing     = 1,1
+! +1>> var set var=.MDI.up_axis str="Y_pos"
+! +1>> var set var=.MDI.forward_axis str="Z_pos"
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Simulation Preferences
+! +1>> !-------------------------------------------
+! +1>> .sim_preferences.alert=0
+! +1>> .sim_preferences.chart_objectives=1
+! +1>> .sim_preferences.chart_variables=0
+! +1>> .sim_preferences.enable_debugger=0
+! +1>> .sim_preferences.file_prefix="Adams"
+! +1>> .sim_preferences.highlight_objects=0
+! +1>> .sim_preferences.icon_visibility=0
+! +1>> .sim_preferences.integrator_order_measure=0
+! +1>> .sim_preferences.iterations_per_step_measure=0
+! +1>> .sim_preferences.m_analysis_prefix="Multi_Run"
+! +1>> .sim_preferences.m_save_analyses=0
+! +1>> .sim_preferences.monitor=4
+! +1>> .sim_preferences.remote_compute=0
+! +1>> .sim_preferences.s_analysis_prefix="Run"
+! +1>> .sim_preferences.s_save_analyses=0
+! +1>> .sim_preferences.save_curves=1
+! +1>> .sim_preferences.save_files=0
+! +1>> .sim_preferences.load_analysis=1
+! +1>> .sim_preferences.show_all_messages=1
+! +1>> .sim_preferences.show_summary=0
+! +1>> .sim_preferences.show_table=0
+! +1>> .sim_preferences.solver_preference=0
+! +1>> .sim_preferences.static_imbalance_measure=0
+! +1>> .sim_preferences.step_size_measure=0
+! +1>> .sim_preferences.stop_on_error=1
+! +1>> .sim_preferences.time_delay=0.000000
+! +1>> .sim_preferences.track_model_element=0
+! +1>> .sim_preferences.update=4
+! +1>> .sim_preferences.verify_first=0
+! +1>> .sim_preferences.hold_solver_license=1
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Animation Preferences
+! +1>> !-------------------------------------------
+! +1>> default animation_settings loop=play_forever
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Run-time Functions
+! +1>> !-------------------------------------------
+! +1>> default function_references show_as=partial_name 
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Plot Attributes
+! +1>> !-------------------------------------------
+! +1>> default plt_attributes &
+! +1&>    grid_visibility=on &
+! +1&>    secondary_grid_visibility=on &
+! +1&>    tic_visibility=on &
+! +1&>    duplicate_points=use_last &
+! +1&>    legend_visibility=on &
+! +1&>    legend_border_visibility=on &
+! +1&>    simulation_legend_visibility=on &
+! +1&>    simulation_legend_border_visibility=on &
+! +1&>    axis_label_visibility=on &
+! +1&>    symbol_visibility=on &
+! +1&>    border_line_type=solid &
+! +1&>    border_thickness=1.000000 &
+! +1&>    title_color=BLACK &
+! +1&>    subtitle_color=BLACK &
+! +1&>    haxis_label_color=BLACK &
+! +1&>    vaxis_label_color=BLACK &
+! +1&>    axis_numbers_color=BLACK &
+! +1&>    grid_color=SILVER &
+! +1&>    secondary_grid_color=SILVER &
+! +1&>    tic_color=BLACK &
+! +1&>    border_color=BLACK &
+! +1&>    legend_border_color=BLACK &
+! +1&>    simulation_legend_border_color=BLACK &
+! +1&>    axis_color=BLACK &
+! +1&>    scientific_notation=-4,5 &
+! +1&>    trailing_zeros=off &
+! +1&>    decimal_places=4 &
+! +1&>    legend_placement=top_left &
+! +1&>    simulation_legend_placement=top_right &
+! +1&>    legend_fill=on &
+! +1&>    simulation_legend_fill=on &
+! +1&>    legend_border_line_type=solid &
+! +1&>    simulation_legend_border_line_type=solid &
+! +1&>    graph_area=0.000000,0.000000,160.000000,93.000000 &
+! +1&>    zero_line=on
+! +1>> !
+! +1>> default plotting &
+! +1&>    spec_line_color=BLUE &
+! +1&>    spec_line_thickness=3.000000 &
+! +1&>    spec_line_line_type=solid &
+! +1&>    curve_auto_thickness=yes &
+! +1&>    curve_auto_color=yes &
+! +1&>    curve_auto_line_type=no &
+! +1&>    curve_symbol=none &
+! +1&>    curve_frozen=no &
+! +1&>    curve_increment_symbol=1 &
+! +1&>    haxis_type=linear &
+! +1&>    haxis_autoscale=on &
+! +1&>    haxis_default_limits=0.000000,0.000000 &
+! +1&>    haxis_label_offset=5.000000 &
+! +1&>    haxis_autodivs=on &
+! +1&>    haxis_minor_divs=2 &
+! +1&>    haxis_placement=alternate &
+! +1&>    vaxis_type=linear &
+! +1&>    vaxis_autoscale=on &
+! +1&>    vaxis_default_limits=0.000000,0.000000 &
+! +1&>    vaxis_label_offset=15.000000 &
+! +1&>    vaxis_autodivs=on &
+! +1&>    vaxis_minor_divs=2 &
+! +1&>    vaxis_placement=alternate &
+! +1&>    grid_color=SILVER &
+! +1&>    grid_line_type=solid &
+! +1&>    grid_thickness=0.500000 &
+! +1&>    secondary_grid_color=SILVER &
+! +1&>    secondary_grid_line_type=solid &
+! +1&>    secondary_grid_thickness=0.500000 &
+! +1&>    auto_graph_area=yes &
+! +1&>    dependent_axis_type=vertical
+! +1>> defaults plt_attributes plot_auto_title = "off"
+! +1>> defaults plt_attributes plot_auto_subtitle = "off"
+! +1>> defaults plt_attributes plot_auto_date = "off"
+! +1>> defaults plt_attributes plot_auto_analysis_name = "off"
+! +1>> defaults plt_attributes plot_table = "no"
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Optimizer Settings
+! +1>> !-------------------------------------------
+! +1>> .sim_preferences.opt_maximum_iterations=100
+! +1>> .sim_preferences.opt_convergence_tolerance=1.000000e-03
+! +1>> simulation multi_run set opt_differencing_technique=forward_difference
+! +1>> .sim_preferences.opt_scaled_perturbation=1.000000e-03
+! +1>> simulation multi_run set opt_algorithm=mscads_mmfd
+! +1>> .sim_preferences.opt_debug=0
+! +1>> .sim_preferences.opt_slp_convergence_iter=2
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! GUI Display Settings
+! +1>> !-------------------------------------------
+! +1>> help tips=on
+! +1>> interface coord_window display=off
+! +1>> !
+! +1>> defaults interface style=view_refresh
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Graphics Settings
+! +1>> !-------------------------------------------
+! +1>> default attributes endcap_visibility=on
+! +1>> defaults graphics  &
+! +1&>   caching = precache  &
+! +1&>   cache_data_compression = no_compression  &
+! +1&>   memory_caching = on
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Lighting Settings
+! +1>> !-------------------------------------------
+! +1>> !
+! +1>> defaults lights light = top_left enable = no
+! +1>> defaults lights light = top enable = no
+! +1>> defaults lights light = top_right enable = no
+! +1>> defaults lights light = left enable = no
+! +1>> defaults lights light = center enable = no
+! +1>> defaults lights light = right enable = no
+! +1>> defaults lights light = bottom_left enable = no
+! +1>> defaults lights light = bottom enable = no
+! +1>> defaults lights light = bottom_right enable = no
+! +1>> !
+! +1>> defaults lights light = top_left enable = yes
+! +1>> defaults lights light = top enable = no
+! +1>> defaults lights light = top_right enable = no
+! +1>> defaults lights light = left enable = no
+! +1>> defaults lights light = center enable = no
+! +1>> defaults lights light = right enable = no
+! +1>> defaults lights light = bottom_left enable = no
+! +1>> defaults lights light = bottom enable = no
+! +1>> defaults lights light = bottom_right enable = no
+! +1>> !
+! +1>> defaults graphics light_intensity = 1.000000
+! +1>> defaults graphics ambient_light = 0.000000
+! +1>> defaults graphics camera_angle = 45.000000
+! +1>> defaults graphics lighting = two_sided
+! +1>> defaults graphics reflections = on
+! +1>> defaults graphics transparent_quality = quality
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! File settings
+! +1>> !-------------------------------------------
+! +1>> default command on_error=ignore_command 
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Cache File settings
+! +1>> !-------------------------------------------
+! +1>> defaults file_cache_purge delete_on_exit=no
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Font Settings...
+! +1>> !-------------------------------------------
+! +1>> default attributes screen_font="sans serif"
+! +1>> default attributes postscript_font="helvetica"
+! +1>> default plt_attributes legend_font_size=5
+! +1>> default plt_attributes date_note_font_size=5
+! +1>> default plt_attributes subtitle_font_size=5
+! +1>> default plt_attributes title_font_size=7
+! +1>> default plt_attributes table_font_size=7
+! +1>> default plotting axis_numbers_font_size=5
+! +1>> default plotting axis_label_font_size=7
+! +1>> default report base_font_size=7
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Orientation Settings...
+! +1>> !-------------------------------------------
+! +1>> variable set variable = .MDI.forward_axis string="Z_pos"
+! +1>> variable set variable = .MDI.up_axis string="Y_pos"
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Shell Settings...
+! +1>> !-------------------------------------------
+! +1>> defaults geometry trimesh_shells = "yes"
+! +1>> !
+! +1>> !-------------------------------------------
+! +1>> ! Page Settings...
+! +1>> !-------------------------------------------
+! +1>> defaults page_attributes header_left_font_size= 9
+! +1>> defaults page_attributes header_left_color= .colors.BLACK
+! +1>> defaults page_attributes header_left_image_height= 50.000000
+! +1>> defaults page_attributes header_center_font_size= 9
+! +1>> defaults page_attributes header_center_color= .colors.BLACK
+! +1>> defaults page_attributes header_center_image_height= 50.000000
+! +1>> defaults page_attributes header_right_font_size= 9
+! +1>> defaults page_attributes header_right_color= .colors.BLACK
+! +1>> defaults page_attributes header_right_image_height= 50.000000
+! +1>> defaults page_attributes footer_left_font_size= 9
+! +1>> defaults page_attributes footer_left_color= .colors.BLACK
+! +1>> defaults page_attributes footer_left_image_height= 50.000000
+! +1>> defaults page_attributes footer_center_font_size= 9
+! +1>> defaults page_attributes footer_center_color= .colors.BLACK
+! +1>> defaults page_attributes footer_center_image_height= 50.000000
+! +1>> defaults page_attributes footer_right_font_size= 9
+! +1>> defaults page_attributes footer_right_color= .colors.BLACK
+! +1>> defaults page_attributes footer_right_image_height= 50.000000
 end
-! -1>> end
+! +1>> end
 
 ! >> 
 
@@ -348,3 +845,10 @@ end
 !     value = (eval(str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64;" // str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64\\\\DLLs;" // str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64\\\\Scripts;" // str_replace_all(getenv("path"), "\\", "\\\\")))
 ! >> !     value = (eval(str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64;" // str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64\\\\DLLs;" // str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64\\\\Scripts;" // str_replace_all(getenv("path"), "\\", "\\\\")))
 ! Enter a command, '?', or 'help'.
+! command_server start
+! this should be shown
+! this should be shown
+! this should ALSO be shown
+! this should be shown
+! this should be shown
+! this should ALSO be shown
