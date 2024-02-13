@@ -31,13 +31,21 @@ function run_selection(output_channel, entire_file=false) {
             fs.closeSync(temp_file.fd);
             var line = `file command read file_name = "${temp_file.path}"`;
 
-        } else if (editor.document.languageId == 'python') {
+        } else if (editor.document.languageId == 'python' && entire_file) {
 
             // If the current file is a Python file
 
             // Get the current file name
             let file = vscode.window.activeTextEditor.document.fileName;
             var line = `file python read file_name = "${file}"`;
+
+        } else if (editor.document.languageId == 'python') {
+                
+                // If the current file is a Python file, do some formatting
+                let temp_file = temp.openSync({ suffix: '.py' });
+                fs.writeSync(temp_file.fd, text);
+                fs.closeSync(temp_file.fd);
+                var line = `file python read file_name = "${temp_file.path}"`;
 
         } else {
 
