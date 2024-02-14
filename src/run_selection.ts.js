@@ -3,16 +3,26 @@ const fs = require('fs');
 const net = require('net');
 const temp = require('temp').track();
 
+const tmp_lib_name = ".adams_vscode";
+
 /**
  * Runs the currently selected text in Adams View.
  *  
  * @param {vscode.OutputChannel} output_channel
  * @param {boolean} entire_file
+ * @param {function} done
  */
-function run_selection(output_channel, entire_file=false) {
+function run_selection(output_channel, entire_file=false, done=()=>{}) {
     return async () => {
         // Get the currently selected text 
         let editor = vscode.window.activeTextEditor;
+        
+        if (editor.document.languageId != 'adams_cmd' && editor.document.languageId != 'python') {
+
+            // If the current file is not an Adams or Python file, show an error message
+            vscode.window.showErrorMessage('The current file is not an Adams or Python file');
+            return;
+        };
         
         if (!entire_file) {
             let selection = editor.selection;
@@ -21,92 +31,141 @@ function run_selection(output_channel, entire_file=false) {
             var text = editor.document.getText()
         }
 
-        // Write the text to a temporary file
-        if (editor.document.languageId == 'adams_cmd') {
+        if (editor.document.languageId == 'adams_cmd' && text.includes('$_self')) {
+            createUniqueLibrary((lib_name) => {runScript(lib_name, done)});
+        }
+        else {
+            runScript('', done);
+        }
 
-            // If the current file is an Adams command file, do some formatting
-            text = format_adams_cmd(text, editor.document.getText());
-            let temp_file = temp.openSync({ suffix: '.cmd' });
-            fs.writeSync(temp_file.fd, text);
-            fs.closeSync(temp_file.fd);
-            var line = `file command read file_name = "${temp_file.path}"`;
-
-        } else if (editor.document.languageId == 'python' && entire_file) {
-
-            // If the current file is a Python file
-
-            // Get the current file name
-            let file = vscode.window.activeTextEditor.document.fileName;
-            var line = `file python read file_name = "${file}"`;
-
-        } else if (editor.document.languageId == 'python') {
-                
-                // If the current file is a Python file, do some formatting
-                let temp_file = temp.openSync({ suffix: '.py' });
-                fs.writeSync(temp_file.fd, text);
-                fs.closeSync(temp_file.fd);
-                var line = `file python read file_name = "${temp_file.path}"`;
-
-        } else {
-
-            // If the current file is not an Adams or Python file, show an error message
-            vscode.window.showErrorMessage('The current file is not an Adams or Python file');
-            return;
-        };
+        function runScript(lib_name, done) {
+            let cmd = getAviewCommand(editor, text, lib_name, entire_file);
+            sendAviewCommands(output_channel, cmd, lib_name, () => {
+                if (lib_name != '') {
+                    deleteLibrary(lib_name);
+                }
+                done();
+            });
+        }
+    };
+}
 
 
-        // Create a tcp/ip socket and connect to 5002 on localhost
-        const client = new net.Socket();
-        client.connect(5002, 'localhost', function () {
-            output_channel.appendLine(`Sending command to Adams View: ${line}`);
-            client.write(`cmd ${line}`);
-        });
+/**
+ * Returns the command to send to Adams View and the text to send.
+ *  
+ * @param {vscode.TextEditor} editor
+ * @param {string} text
+ * @param {string} lib_name
+ * @param {boolean} entire_file
+ * @returns {Object}
+*/
+function getAviewCommand(editor, text, lib_name, entire_file) {
+    if (editor.document.languageId == 'adams_cmd') {
 
-        client.on('data', function (data) {
+        // If the current file is an Adams command file, do some formatting
+        text = format_adams_cmd(text, editor.document.getText(), lib_name);
+        let temp_file = temp.openSync({ suffix: '.cmd' });
+        fs.writeSync(temp_file.fd, text);
+        fs.closeSync(temp_file.fd);
+        var cmd = `file command read file_name = "${temp_file.path}"`;
 
-            // If the data is not "cmd: 0" print an error message
-            if (data.toString() != "cmd: 0") {
-                console.error('Unexpected response from Adams View: ' + data.toString());
-                vscode.window.showErrorMessage(`The following command could not be run in Adams View: ${line}`);
-            }
+    } else if (editor.document.languageId == 'python' && entire_file) {
+
+        // If the current file is a Python file
+        // Get the current file name
+        let file = vscode.window.activeTextEditor.document.fileName;
+        var cmd = `file python read file_name = "${file}"`;
+
+    } else if (editor.document.languageId == 'python') {
+
+        // If the current file is a Python file, do some formatting
+        let temp_file = temp.openSync({ suffix: '.py' });
+        fs.writeSync(temp_file.fd, text);
+        fs.closeSync(temp_file.fd);
+        var cmd = `file python read file_name = "${temp_file.path}"`;
+
+    }
+    return cmd;
+}
+
+/**
+ * Sends the given command to Adams View and handles the response.
+ * 
+ * @param {vscode.OutputChannel} output_channel
+ * @param {string} cmd
+ * @param {string} lib_name
+ * @param {function} done
+ * @returns {void}
+*/
+function sendAviewCommands(output_channel, cmd, lib_name, done) {
+    const client = new net.Socket();
+    client.connect(5002, 'localhost', function () {
+        output_channel.appendLine(`Sending command to Adams View: ${cmd}`);
+        client.write(`cmd ${cmd}`);
+    });
+
+    client.on('data', function (data) {
+
+        // If the data is not "cmd: 0" print an error message
+        if (data.toString() != "cmd: 0") {
+            console.error('Unexpected response from Adams View: ' + data.toString());
+            vscode.window.showErrorMessage(`The following command could not be run in Adams View: ${cmd}`);
+        }
+        if (lib_name != '') {
+            client.write(`cmd library delete library=${lib_name}`);
+            client.on('data', function (ldata) {
+                if (ldata.toString() != "cmd: 0") {
+                    console.error('Unexpected response from Adams View: ' + ldata.toString());
+                    vscode.window.showErrorMessage('Unable to delete the temporary library for storing references to $_self');
+                }
+                // kill client after server's response
+                client.destroy();
+                // Delete the temporary file
+                temp.cleanupSync();
+                done();
+            });
+        }
+        else {
             // kill client after server's response
             client.destroy();
             // Delete the temporary file
             temp.cleanupSync();
-        });
+            done();
+        }
 
-        client.on('close', function () {
-            output_channel.appendLine('Connection closed');
-        });
+    });
 
-        client.on('error', function (err) {
-            output_channel.appendLine('Error sending command to Adams View\n'
-                + err.toString()
-            );
-            vscode.window.showErrorMessage(
-                'No connection to Adams View was found. ' +
-                'Please ensure that Adams View is open and the Command Server is running. ' +
-                'You can start the command server in Adams View by going to Tools>Command Server.'
-            );
-        });
+    client.on('close', function () {
+        output_channel.appendLine('Connection closed');
+    });
 
-
-    };
+    client.on('error', function (err) {
+        output_channel.appendLine('Error sending command to Adams View\n'
+            + err.toString()
+        );
+        vscode.window.showErrorMessage(
+            'No connection to Adams View was found. ' +
+            'Please ensure that Adams View is open and the Command Server is running. ' +
+            'You can start the command server in Adams View by going to Tools>Command Server.'
+        );
+        done();
+    });
 }
-
 
 /**
  * Formats the given text as an Adams command and sends it to Adams View.
  * 
  * @param {string} selected_text
  * @param {string} full_text
+ * @param {string} lib_name
  */
-function format_adams_cmd(selected_text, full_text) {
+function format_adams_cmd(selected_text, full_text, lib_name) {
 
 
     // Check the substitution value from the settings (msc-adams.runSelection.replaceSelf)
     // and replace all instances of '$_self' with the appropriate value
-    let replace_self = vscode.workspace.getConfiguration('msc-adams').get('runInAdams.substituteSelf');
+    let replace_self = lib_name;
 
     // Replace all instances of '$_self' with '.mdi'
     selected_text = selected_text.replace(/\$_self/g, replace_self);
@@ -180,4 +239,74 @@ function format_adams_cmd(selected_text, full_text) {
     return selected_text;
 }
 
+
+function createUniqueLibrary(done) {
+    getUniqueLibraryName(function (name) {
+        createLibrary(name, function () {
+            done(name);
+        });
+    });
+}
+
+function deleteLibrary(name) {
+    // Create a tcp/ip socket and connect to 5002 on localhost
+    const client = new net.Socket();
+    client.connect(5002, 'localhost', function () {
+        client.write(`cmd library delete library=${name}`);
+        client.on('data', function (cdata) {
+            if (cdata.toString() != "cmd: 0") {
+                console.error('Unexpected response from Adams View: ' + cdata.toString());
+                vscode.window.showErrorMessage(`Unable to delete the temporary library for storing references to $_self: ${name}`);
+            }
+            else {
+                console.log(`Deleted the temporary library for storing references to $_self: ${name}`);
+            }
+            // kill client after server's response
+            client.destroy();
+        });
+    });
+}
+
+
+function getUniqueLibraryName(done) {
+    // Create a tcp/ip socket and connect to 5002 on localhost
+    const client = new net.Socket();
+    let query = `query unique_name_in_hierarchy("${tmp_lib_name}")`;
+    client.connect(5002, 'localhost', function () {
+        client.write(query);
+        client.on('data', function () {
+            client.write("OK");
+            client.on('data', function (rdata) {
+                let result = rdata.toString(); 
+                client.destroy();
+                done(result);
+            });
+        });
+    });
+}
+
+function createLibrary(name, done) {
+    // Create a tcp/ip socket and connect to 5002 on localhost
+    const client = new net.Socket();
+    client.connect(5002, 'localhost', function () {
+        client.write(`cmd library create library=${name}`)
+        client.on('data', function (cdata) {
+            if (cdata.toString() != "cmd: 0") {
+                console.error('Unexpected response from Adams View: ' + cdata.toString());
+                vscode.window.showErrorMessage('Unable to create a temporary library for ' +
+                                               'storing references to $_self');
+            }
+            else {
+                console.log(`Created a temporary library for storing references to $_self: ${name}`);
+            }
+            // kill client after server's response
+            client.destroy();
+            done();
+        });
+    });
+}
+
+
 exports.run_selection = run_selection;
+exports.createUniqueLibrary = createUniqueLibrary;
+exports.tmp_lib_name = tmp_lib_name;
