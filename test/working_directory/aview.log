@@ -845,10 +845,116 @@ end
 !     value = (eval(str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64;" // str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64\\\\DLLs;" // str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64\\\\Scripts;" // str_replace_all(getenv("path"), "\\", "\\\\")))
 ! >> !     value = (eval(str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64;" // str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64\\\\DLLs;" // str_replace_all(getenv("topdir"), "/", "\\\\") // "python\\\\win64\\\\Scripts;" // str_replace_all(getenv("path"), "\\", "\\\\")))
 ! Enter a command, '?', or 'help'.
-! command_server start
+! Automatically executing Command file aview.cmd.
+! >> command_server start
+! >> var set var=.mdi.command_server.pydummy real = (eval(run_python_code('import mdi.command_server as command_server')))
+! >> var set var=.mdi.command_server.py_dummy_cl real=(eval(run_python_code('command_server.listener_dialog.start_clicked()')))
+! ! > run_selection.py
 ! this should be shown
+! ! > run_selection_entire_file.py
 ! this should be shown
 ! this should ALSO be shown
+! ! > run_selection.cmd
 ! this should be shown
+! ! > run_selection_self.cmd
+! this should be shown
+! ! > run_selection_entire_file.cmd
 ! this should be shown
 ! this should ALSO be shown
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Re-use the menu dialog
+ int dia dis dia=.gui.model_cremod par=""
+interface dialog execute dialog=.gui.model_cremod undisp=yes
+! .gui.model_cremod / Exe - begin ===========================
+! Create mode 
+if cond=( str_is_space( "" ) )
+   model create model="MODEL_1" &
+      comments=""
+   ! special section for gravity toggle
+   if cond=( "" != "" )
+      if cond=(  )
+         var set var=.gui.model_cremod.gravity_name &
+            str=(eval( db_default(system_defaults, "model")//".GRAVITY" ))
+         force create body gravitational &
+            gravity_field_name=(eval( .gui.model_cremod.gravity_name )) &
+            x_component_gravity = (eval( .gui.model_cremod.gravity_field_to_copy.object_value.x_component_gravity )) &
+            y_component_gravity = (eval( .gui.model_cremod.gravity_field_to_copy.object_value.y_component_gravity )) &
+            z_component_gravity = (eval( .gui.model_cremod.gravity_field_to_copy.object_value.z_component_gravity )) 
+       end
+   end
+   if con=("" != "")
+     interface field set field= string=(eval(DB_DEFAULT_NAME_FOR_TYPE(MODEL_1, "model")))
+   end
+end
+! Update mode 
+if cond=( ! str_is_space( "" ) )
+   model modify model=MODEL_1 &
+      comments=(eval( .gui.model_cremod.entity_comments ))
+end
+! .gui.model_cremod / Exe - end ===========================
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+default coordinate_system default_coordinate_system=.MODEL_1
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+command_server show
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+interface database_navigator display=on
+! 100 1
+! 100 2
+! 100 3
+! 100 4
+! 100 5
+! 100 6
+! 100 7
+! 100 8
+! 100 9
+! 100 10
+! Hello!
+! Hello!
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+default coordinate_system default_coordinate_system=.model_1
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Hello!
+! Hello!
