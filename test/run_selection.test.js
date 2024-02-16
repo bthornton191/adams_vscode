@@ -4,45 +4,73 @@ const path = require("path");
 const fs = require("fs");
 const vscode = require("vscode");
 const os = require("os");
-const { run_selection, createUniqueLibrary, tmp_lib_name } = require("../src/run_selection.ts.js");
-// const { logBlankLine } = require('./utils.cjs');
+const { run_selection, createLibIfNotExist, sub_lib_name } = require("../src/run_selection.ts.js");
+const { evaluate_exp } = require("../src/aview.ts.js");
+const { waitForAdamsConnection } = require("./utils.js");
 
 output_channel = vscode.window.createOutputChannel("MSC Adams Testing");
 
-suite("createUniqueLibrary Test Suite", () => {
+suite("createLibIfNotExist Test Suite", () => {
     var lib_name = "";
     suiteSetup(async () => {
-        await new Promise((resolve) => createUniqueLibrary(resolve)).then((result) => {
+        // Wait for adams view connection
+        await new Promise((resolve) => {
+            waitForAdamsConnection(resolve);
+        });
+
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
+        await new Promise((resolve) => createLibIfNotExist(resolve)).then((result) => {
             lib_name = result;
         });
     });
 
     suiteTeardown(async () => {
-        // Delete the temporary library
-        const client = new net.Socket();
-        client.connect(5002, "localhost", function () {
-            client.write(`cmd library delete library=${lib_name}`);
-        });
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
     });
 
-    test("should return a library name", async () => {
-        if (lib_name === undefined) {
-            // Handle the undefined result here
-            assert.fail("createUniqueLibrary returned undefined");
-        } else {
-            assert(lib_name.startsWith(tmp_lib_name));
-        }
-    });
-
-    test("should have a temporary library", async () => {
-        await new Promise((resolve) => checkForcheTmpLib(tmp_lib_name, resolve)).then((result) => {
-            assert.strictEqual(result, true);
-        });
+    test("should have a vscode library", async () => {
+        await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
+            (result) => {
+                assert.strictEqual(result, true);
+            }
+        );
     });
 });
 
 suite("run_selection(entire_file = False) on python Test Suite", () => {
     suiteSetup(async () => {
+        // Wait for adams view connection
+        await new Promise((resolve) => {
+            waitForAdamsConnection(resolve);
+        });
+
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
         // Log a blank line to ensure the test doesn't use a previous result
         await new Promise((resolve) => logLine("run_selection.py", resolve));
 
@@ -62,7 +90,19 @@ suite("run_selection(entire_file = False) on python Test Suite", () => {
         });
     });
 
-    test("Should only run the selection", async () => {
+    suiteTeardown(async () => {
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+    });
+
+    test("Should only run the selection", (done) => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
@@ -71,17 +111,35 @@ suite("run_selection(entire_file = False) on python Test Suite", () => {
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastLine = logFileContent.trim().split("\n").pop();
         assert.strictEqual(lastLine, "! this should be shown");
+        done();
     });
 
-    test("should not have a temporary library", async () => {
-        await new Promise((resolve) => checkForcheTmpLib(tmp_lib_name, resolve)).then((result) => {
-            assert.strictEqual(result, false);
-        });
+    test("should not have a vscode library", async () => {
+        await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
+            (result) => {
+                assert.strictEqual(result, false);
+            }
+        );
     });
 });
 
 suite("run_selection(entire_file = True) on python Test Suite", () => {
     suiteSetup(async () => {
+        // Wait for adams view connection
+        await new Promise((resolve) => {
+            waitForAdamsConnection(resolve);
+        });
+
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
         // Log a blank line to ensure the test doesn't use a previous result
         await new Promise((resolve) => logLine("run_selection_entire_file.py", resolve));
 
@@ -101,7 +159,19 @@ suite("run_selection(entire_file = True) on python Test Suite", () => {
         });
     });
 
-    test("should run the entire file", async () => {
+    suiteTeardown(async () => {
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+    });
+
+    test("should run the entire file", (done) => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
@@ -111,17 +181,35 @@ suite("run_selection(entire_file = True) on python Test Suite", () => {
         const lastTwoLines = logFileContent.trim().split(/\r?\n/).slice(-2);
         const expectedLines = ["! this should be shown", "! this should ALSO be shown"];
         assert.deepStrictEqual(lastTwoLines, expectedLines);
+        done();
     });
 
-    test("should not have a temporary library", async () => {
-        await new Promise((resolve) => checkForcheTmpLib(tmp_lib_name, resolve)).then((result) => {
-            assert.strictEqual(result, false);
-        });
+    test("should not have a vscode library", async () => {
+        await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
+            (result) => {
+                assert.strictEqual(result, false);
+            }
+        );
     });
 });
 
 suite("run_selection(entire_file = False) on cmd Test Suite", () => {
     suiteSetup(async () => {
+        // Wait for adams view connection
+        await new Promise((resolve) => {
+            waitForAdamsConnection(resolve);
+        });
+
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
         // Log a blank line to ensure the test doesn't use a previous result
         await new Promise((resolve) => logLine("run_selection.cmd", resolve));
 
@@ -143,7 +231,19 @@ suite("run_selection(entire_file = False) on cmd Test Suite", () => {
         });
     });
 
-    test("should only run the selection", async () => {
+    suiteTeardown(async () => {
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+    });
+
+    test("should only run the selection", (done) => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
@@ -152,17 +252,35 @@ suite("run_selection(entire_file = False) on cmd Test Suite", () => {
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastLine = logFileContent.trim().split("\n").pop();
         assert.strictEqual(lastLine, "! this should be shown");
+        done();
     });
 
-    test("should not have a temporary library", async () => {
-        await new Promise((resolve) => checkForcheTmpLib(tmp_lib_name, resolve)).then((result) => {
-            assert.strictEqual(result, false);
-        });
+    test("should not have a vscode library", async () => {
+        await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
+            (result) => {
+                assert.strictEqual(result, false);
+            }
+        );
     });
 });
 
 suite("run_selection(entire_file = False) on cmd when $_self is in the file Test Suite", () => {
     suiteSetup(async () => {
+        // Wait for adams view connection
+        await new Promise((resolve) => {
+            waitForAdamsConnection(resolve);
+        });
+
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
         // Log a blank line to ensure the test doesn't use a previous result
         await new Promise((resolve) => logLine("run_selection_self.cmd", resolve));
 
@@ -184,7 +302,19 @@ suite("run_selection(entire_file = False) on cmd when $_self is in the file Test
         });
     });
 
-    test("should work when $_self is in the file", async () => {
+    suiteTeardown(async () => {
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+    });
+
+    test("aview.log should display 'this should be shown", (done) => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
@@ -193,17 +323,35 @@ suite("run_selection(entire_file = False) on cmd when $_self is in the file Test
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastLine = logFileContent.trim().split("\n").pop();
         assert.strictEqual(lastLine, "! this should be shown");
+        done();
     });
 
-    test("should delete the temporary library", async () => {
-        await new Promise((resolve) => checkForcheTmpLib(tmp_lib_name, resolve)).then((result) => {
-            assert.strictEqual(result, false);
-        });
+    test("should have a vscode library", async () => {
+        await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
+            (result) => {
+                assert.strictEqual(result, true);
+            }
+        );
     });
 });
 
 suite("run_selection(entire_file = True) on cmd Test Suite", () => {
     suiteSetup(async () => {
+        // Wait for adams view connection
+        await new Promise((resolve) => {
+            waitForAdamsConnection(resolve);
+        });
+
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
         // Log a blank line to ensure the test doesn't use a previous result
         await new Promise((resolve) => logLine("run_selection_entire_file.cmd", resolve));
 
@@ -226,7 +374,19 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
         });
     });
 
-    test("should run the entire file", async () => {
+    suiteTeardown(async () => {
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+    });
+
+    test("should run the entire file", (done) => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
@@ -236,6 +396,7 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
         const lastTwoLines = logFileContent.trim().split(/\r?\n/).slice(-2);
         const expectedLines = ["! this should be shown", "! this should ALSO be shown"];
         assert.deepStrictEqual(lastTwoLines, expectedLines);
+        done();
     });
 });
 
@@ -246,7 +407,7 @@ function logLine(line = "", done = () => {}) {
     });
 }
 
-async function checkForcheTmpLib(lib_name, done = () => {}) {
+async function checkForcheVscodeLib(lib_name, done = () => {}) {
     async function check(suffix, done) {
         const client = new net.Socket();
         let query = `query db_exists("${lib_name}${suffix}")`;
@@ -272,4 +433,37 @@ async function checkForcheTmpLib(lib_name, done = () => {}) {
         });
     }
     done(found);
+}
+
+/**
+ * Deletes the given library from Adams View.
+ * @param {string} name
+ * @returns {void}
+ */
+function deleteLibrary(name, done = () => {}) {
+    // Create a tcp/ip socket and connect to 5002 on localhost
+    const client = new net.Socket();
+    client.on("error", function (err) {
+        console.error("Error deleting library: " + err.toString());
+        vscode.window.showErrorMessage("Error deleting library: " + err.toString());
+        done();
+    });
+    client.connect(5002, "localhost", function () {
+        client.write(`cmd library delete library=${name}`);
+        client.on("data", function (cdata) {
+            if (cdata.toString() != "cmd: 0") {
+                console.error("Unexpected response from Adams View: " + cdata.toString());
+                vscode.window.showErrorMessage(
+                    `Unable to delete the temporary library for storing references to $_self: ${name}`
+                );
+            } else {
+                console.log(
+                    `Deleted the temporary library for storing references to $_self: ${name}`
+                );
+            }
+            // kill client after server's response
+            client.destroy();
+            done();
+        });
+    });
 }
