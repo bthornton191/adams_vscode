@@ -3,7 +3,9 @@ const fs = require("fs");
 const net = require("net");
 const temp = require("temp").track();
 
-const tmp_lib_name = ".adams_vscode";
+const sub_lib_name = vscode.workspace
+    .getConfiguration("msc-adams")
+    .get("runInAdams.substituteSelf");
 
 /**
  * Runs the currently selected text in Adams View.
@@ -31,21 +33,13 @@ function run_selection(output_channel, entire_file = false, done = () => {}) {
         }
 
         if (editor.document.languageId == "adams_cmd" && text.includes("$_self")) {
-            createUniqueLibrary((lib_name) => {
-                runScript(lib_name, done);
-            });
-        } else {
-            runScript("", done);
+            await new Promise((resolve) => createLibIfNotExist(resolve));
         }
+        runScript(done);
 
-        function runScript(lib_name, done) {
-            let cmd = getAviewCommand(editor, text, lib_name, entire_file);
-            sendAviewCommands(output_channel, cmd, lib_name, () => {
-                if (lib_name != "") {
-                    deleteLibrary(lib_name);
-                }
-                done();
-            });
+        function runScript(done) {
+            let cmd = getAviewCommand(editor, text, entire_file);
+            sendAviewCommands(output_channel, cmd, done);
         }
     };
 }
@@ -55,14 +49,13 @@ function run_selection(output_channel, entire_file = false, done = () => {}) {
  *
  * @param {vscode.TextEditor} editor
  * @param {string} text
- * @param {string} lib_name
- * @param {boolean} entire_file
+ * @param {Boolean} entire_file
  * @returns {Object}
  */
-function getAviewCommand(editor, text, lib_name, entire_file) {
+function getAviewCommand(editor, text, entire_file) {
     if (editor.document.languageId == "adams_cmd") {
         // If the current file is an Adams command file, do some formatting
-        text = format_adams_cmd(text, editor.document.getText(), lib_name);
+        text = format_adams_cmd(text, editor.document.getText(), sub_lib_name);
         let temp_file = temp.openSync({ suffix: ".cmd" });
         fs.writeSync(temp_file.fd, text);
         fs.closeSync(temp_file.fd);
@@ -87,11 +80,10 @@ function getAviewCommand(editor, text, lib_name, entire_file) {
  *
  * @param {vscode.OutputChannel} output_channel
  * @param {string} cmd
- * @param {string} lib_name
  * @param {function} done
  * @returns {void}
  */
-function sendAviewCommands(output_channel, cmd, lib_name, done) {
+function sendAviewCommands(output_channel, cmd, done) {
     const client = new net.Socket();
     client.connect(5002, "localhost", function () {
         output_channel.appendLine(`Sending command to Adams View: ${cmd}`);
@@ -106,28 +98,11 @@ function sendAviewCommands(output_channel, cmd, lib_name, done) {
                 `The following command could not be run in Adams View: ${cmd}`
             );
         }
-        if (lib_name != "") {
-            client.write(`cmd library delete library=${lib_name}`);
-            client.on("data", function (ldata) {
-                if (ldata.toString() != "cmd: 0") {
-                    console.error("Unexpected response from Adams View: " + ldata.toString());
-                    vscode.window.showErrorMessage(
-                        "Unable to delete the temporary library for storing references to $_self"
-                    );
-                }
-                // kill client after server's response
-                client.destroy();
-                // Delete the temporary file
-                temp.cleanupSync();
-                done();
-            });
-        } else {
-            // kill client after server's response
-            client.destroy();
-            // Delete the temporary file
-            temp.cleanupSync();
-            done();
-        }
+        // kill client after server's response
+        client.destroy();
+        // Delete the temporary file
+        temp.cleanupSync();
+        done();
     });
 
     client.on("close", function () {
@@ -223,54 +198,31 @@ function format_adams_cmd(selected_text, full_text, lib_name) {
     return selected_text;
 }
 
-function createUniqueLibrary(done) {
-    getUniqueLibraryName(function (name) {
-        createLibrary(name, function () {
-            done(name);
-        });
+function createLibIfNotExist(done) {
+    checkIfLibExists(function (exists) {
+        if (exists) {
+            done();
+        } else
+            createLibrary(sub_lib_name, function () {
+                done();
+            });
     });
 }
 
-function deleteLibrary(name) {
+function checkIfLibExists(done) {
     // Create a tcp/ip socket and connect to 5002 on localhost
     const client = new net.Socket();
     client.on("error", function (err) {
-        console.error("Error deleting library: " + err.toString());
-        vscode.window.showErrorMessage("Error deleting library: " + err.toString());
+        console.error(`Error checking for ${sub_lib_name}: ` + err.toString());
+        vscode.window.showErrorMessage(`Error checking for ${sub_lib_name}: ` + err.toString());
     });
-    client.connect(5002, "localhost", function () {
-        client.write(`cmd library delete library=${name}`);
-        client.on("data", function (cdata) {
-            if (cdata.toString() != "cmd: 0") {
-                console.error("Unexpected response from Adams View: " + cdata.toString());
-                vscode.window.showErrorMessage(
-                    `Unable to delete the temporary library for storing references to $_self: ${name}`
-                );
-            } else {
-                console.log(
-                    `Deleted the temporary library for storing references to $_self: ${name}`
-                );
-            }
-            // kill client after server's response
-            client.destroy();
-        });
-    });
-}
-
-function getUniqueLibraryName(done) {
-    // Create a tcp/ip socket and connect to 5002 on localhost
-    const client = new net.Socket();
-    client.on("error", function (err) {
-        console.error("Error getting unique library name: " + err.toString());
-        vscode.window.showErrorMessage("Error getting unique library name: " + err.toString());
-    });
-    let query = `query unique_name_in_hierarchy("${tmp_lib_name}")`;
+    let query = `query db_exists("${sub_lib_name}")`;
     client.connect(5002, "localhost", function () {
         client.write(query);
         client.on("data", function () {
             client.write("OK");
             client.on("data", function (rdata) {
-                let result = rdata.toString();
+                let result = Boolean(parseInt(rdata));
                 client.destroy();
                 done(result);
             });
@@ -306,5 +258,5 @@ function createLibrary(name, done) {
 }
 
 exports.run_selection = run_selection;
-exports.createUniqueLibrary = createUniqueLibrary;
-exports.tmp_lib_name = tmp_lib_name;
+exports.createLibIfNotExist = createLibIfNotExist;
+exports.sub_lib_name = sub_lib_name;
