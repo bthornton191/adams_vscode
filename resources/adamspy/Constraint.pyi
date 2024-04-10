@@ -31,50 +31,387 @@ class ConstraintManager(Manager.SubclassManager):
         """
     def createPointMotion(self,name: str=None, **kwargs)->PointMotion: ...
     def createJointMotion(self,
-                          name: str=None, 
-                          joint: Joint=None, 
-                          joint_name: str=None, 
-                          time_derivative: str=None,
-                          function: str='',
-                          type_of_freedom: str=None, 
-                          **kwargs)->JointMotion: 
+                          name: str = None, 
+                          joint: Joint = None, 
+                          joint_name: str = None, 
+                          time_derivative: str = None,
+                          function: str = '',
+                          type_of_freedom: str = None, 
+                          **kwargs) -> JointMotion: 
         """Creates a Motion constraint on a Joint
 
         Parameters
         ----------
-        type_of_freedom : str
-            The type of freedom to be constrained. Can be 'translational' or 'rotational'.
-        time_derivative : str
+        name : str, optional
+            The name of the motion, by default None
+        joint : Joint, optional
+            The joint object to which the motion is applied, by default None
+        joint_name : str, optional
+            The name of the joint object to which the motion is applied, by default None
+        time_derivative : str, optional
             The time derivative of the constraint. Can be 'displacement' or 'velocity'.
+        function : str, optional
+            The function defining the joint motion, by default ''
+        type_of_freedom : str, optional
+            The type of freedom to be constrained. Can be 'translational' or 'rotational'.
+
+        Returns
+        -------
+        JointMotion
+            The created joint motion object
         """
-    def createMotionT(self,name: str=None, **kwargs): ...
-    def createMotionR(self,name: str=None, **kwargs): ...
-    def createTranslational(self,name: str=None, **kwargs): ...
-    def createRevolute(self,name: str=None, **kwargs): ...
-    def createCylindrical(self,name: str=None, **kwargs): ...
-    def createUniversal(self,name: str=None, **kwargs): ...
-    def createSpherical(self,name: str=None, **kwargs): ...
-    def createPlanar(self,name: str=None, **kwargs): ...
-    def createConvel(self,name: str=None, **kwargs): ...
-    def createFixed(self,name: str=None, **kwargs): ...
-    def createHooke(self,name: str=None, **kwargs): ...
-    def createRackpin(self,name: str=None, **kwargs): ...
-    def createScrew(self,name: str=None, **kwargs): ...
-    def createAtPoint(self,name: str=None, **kwargs): ...
-    def createInline(self,name: str=None, **kwargs): ...
-    def createInLine(self,name: str=None, **kwargs): ...
-    def createInPlane(self,name: str=None, **kwargs): ...
-    def createOrientation(self,name: str=None, **kwargs): ...
-    def createParallel(self,name: str=None, **kwargs): ...
-    def createPerpendicular(self,name: str=None, **kwargs): ...
-    def createPointPoint(self,name: str=None, **kwargs): ...
-    def createPointLine(self,name: str=None, **kwargs): ...
-    def createPointPlane(self,name: str=None, **kwargs): ...
-    def createLineLine(self,name: str=None, **kwargs): ...
-    def createLinePlane(self,name: str=None, **kwargs): ...
-    def createPlanePlane(self,name: str=None, **kwargs): ...
-    def createPointCurve(self,name: str=None, **kwargs): ...
-    def createCurveCurve(self,name: str=None, **kwargs): ...
+    def createMotionT(self, name: str = None, **kwargs): ...
+    def createMotionR(self, name: str = None, **kwargs): ...
+
+    def createTranslational(self, 
+                            name: str = None,
+                            i_part: Part = None,
+                            j_part: Part = None,
+                            i_marker: Marker.Marker = None,
+                            j_marker: Marker.Marker = None,
+                            i_marker_name: str = None,
+                            j_marker_name: str = None,
+                            location: List[float] = None,
+                            orientation: List[float] = None,
+                            in_plane_orientation: List[float] = None,
+                            along_axis_orientation: List[float] = None,
+                            relative_to: Object.Object = None,
+                            comments: str = None,
+                            adams_id: int = None, 
+                            maximum_deformation: float = None,
+                            delta_v: float = None,
+                            translational_ic: float = None,
+                            velocity_ic: float = None,
+                            mu_dyn_trans: float = None,
+                            mu_stat_trans: float = None,
+                            max_fric_trans: float = None,
+                            height: float = None,
+                            width: float = None,
+                            preload_x: float = None,
+                            preload_y: float = None,
+                            **kwargs) -> TranslationalJoint: 
+        ...
+
+    def createRevolute(self,
+                       name: str = None,
+                       i_part: Part = None,
+                       j_part: Part = None,
+                       i_marker: Marker.Marker = None,
+                       j_marker: Marker.Marker = None,
+                       i_marker_name: str = None,
+                       j_marker_name: str = None,
+                       location: List[float] = None,
+                       orientation: List[float] = None,
+                       in_plane_orientation: List[float] = None,
+                       along_axis_orientation: List[float] = None,
+                       relative_to: Object.Object = None,
+                       comments: str = None,
+                       adams_id: int = None,
+                       maximum_deformation: float = None,
+                       delta_v: float = None,
+                       rotational_ic: float = None,
+                       angular_velocity_ic: float = None,
+                       mu_dyn_rot: float = None,
+                       mu_stat_rot: float = None,
+                       max_fric_rot: float = None,
+                       **kwargs) -> RevoluteJoint: 
+        ...
+
+    def createCylindrical(self,
+                          name: str = None,
+                          i_part: Part = None,
+                          j_part: Part = None,
+                          i_marker: Marker.Marker = None,
+                          j_marker: Marker.Marker = None,
+                          i_marker_name: str = None,
+                          j_marker_name: str = None,
+                          location: List[float] = None,
+                          orientation: List[float] = None,
+                          in_plane_orientation: List[float] = None,
+                          along_axis_orientation: List[float] = None,
+                          relative_to: Object.Object = None,
+                          comments: str = None,
+                          adams_id: int = None,
+                          translational_ic: float = None,
+                          velocity_ic: float = None,
+                          rotational_ic: float = None,
+                          angular_velocity_ic: float = None,
+                          **kwargs) -> CylindricalJoint: 
+        ...
+
+    def createUniversal(self,
+                        name: str = None,
+                        i_part: Part = None,
+                        j_part: Part = None,
+                        i_marker: Marker.Marker = None,
+                        j_marker: Marker.Marker = None,
+                        i_marker_name: str = None,
+                        j_marker_name: str = None,
+                        location: List[float] = None,
+                        orientation: List[float] = None,
+                        in_plane_orientation: List[float] = None,
+                        along_axis_orientation: List[float] = None,
+                        relative_to: Object.Object = None,
+                        comments: str = None,
+                        adams_id: int = None,
+                        **kwargs): 
+        ...
+
+    def createSpherical(self,
+                        name: str = None,
+                        i_part: Part = None,
+                        j_part: Part = None,
+                        i_marker: Marker.Marker = None,
+                        j_marker: Marker.Marker = None,
+                        i_marker_name: str = None,
+                        j_marker_name: str = None,
+                        location: List[float] = None,
+                        orientation: List[float] = None,
+                        in_plane_orientation: List[float] = None,
+                        along_axis_orientation: List[float] = None,
+                        relative_to: Object.Object = None,
+                        comments: str = None,
+                        adams_id: int = None,
+                        **kwargs): 
+        ...
+
+    def createPlanar(self,
+                     name: str = None,
+                     i_part: Part = None,
+                     j_part: Part = None,
+                     i_marker: Marker.Marker = None,
+                     j_marker: Marker.Marker = None,
+                     i_marker_name: str = None,
+                     j_marker_name: str = None,
+                     location: List[float] = None,
+                     orientation: List[float] = None,
+                     in_plane_orientation: List[float] = None,
+                     along_axis_orientation: List[float] = None,
+                     relative_to: Object.Object = None,
+                     comments: str = None,
+                     adams_id: int = None,
+                     **kwargs): 
+        ...
+
+    def createConvel(self,
+                     name: str = None,
+                     i_part: Part = None,
+                     j_part: Part = None,
+                     i_marker: Marker.Marker = None,
+                     j_marker: Marker.Marker = None,
+                     i_marker_name: str = None,
+                     j_marker_name: str = None,
+                     location: List[float] = None,
+                     orientation: List[float] = None,
+                     in_plane_orientation: List[float] = None,
+                     along_axis_orientation: List[float] = None,
+                     relative_to: Object.Object = None,
+                     comments: str = None,
+                     adams_id: int = None,
+                     **kwargs): 
+        ...
+
+    def createFixed(self,
+                    name: str = None,
+                    i_part: Part = None,
+                    j_part: Part = None,
+                    i_marker: Marker.Marker = None,
+                    j_marker: Marker.Marker = None,
+                    i_marker_name: str = None,
+                    j_marker_name: str = None,
+                    location: List[float] = None,
+                    orientation: List[float] = None,
+                    in_plane_orientation: List[float] = None,
+                    along_axis_orientation: List[float] = None,
+                    relative_to: Object.Object = None,
+                    comments: str = None,
+                    adams_id: int = None,
+                    **kwargs) -> FixedJoint: 
+        ...
+
+    def createHooke(self,
+                    name: str = None,
+                    i_marker: Marker.Marker = None,
+                    j_marker: Marker.Marker = None,
+                    i_marker_name: str = None,
+                    j_marker_name: str = None,
+                    **kwargs): ...
+
+    def createRackpin(self,
+                      name: str = None,
+                      i_marker: Marker.Marker = None,
+                      j_marker: Marker.Marker = None,
+                      i_marker_name: str = None,
+                      j_marker_name: str = None,
+                      diameter_of_pitch: float = None,
+                      **kwargs) -> RackpinJoint: ...
+
+    def createScrew(self,
+                    name: str = None,
+
+                    i_marker: Marker.Marker = None,
+                    j_marker: Marker.Marker = None,
+                    i_marker_name: str = None,
+                    j_marker_name: str = None,
+                    pitch: float = None,
+                    **kwargs) -> ScrewJoint: ...
+
+    def createAtPoint(self,
+                      name: str = None,
+
+                      i_marker: Marker.Marker = None,
+                      j_marker: Marker.Marker = None,
+                      i_marker_name: str = None,
+                      j_marker_name: str = None,
+                      **kwargs) -> AtPointJPrim: ...
+
+    def createInline(self,
+                     name: str = None,
+
+                     i_marker: Marker.Marker = None,
+                     j_marker: Marker.Marker = None,
+                     i_marker_name: str = None,
+                     j_marker_name: str = None,
+                     **kwargs) -> InlineJPrim: ...
+
+    def createInLine(self,
+                     name: str = None,
+
+                     i_marker: Marker.Marker = None,
+                     j_marker: Marker.Marker = None,
+                     i_marker_name: str = None,
+                     j_marker_name: str = None,
+                     **kwargs) -> InLineJPrim: ...
+
+    def createInPlane(self,
+                      name: str = None,
+
+                      i_marker: Marker.Marker = None,
+                      j_marker: Marker.Marker = None,
+                      i_marker_name: str = None,
+                      j_marker_name: str = None,
+                      **kwargs) -> InPlaneJPrim: ...
+
+    def createOrientation(self,
+                          name: str = None,
+
+                          i_marker: Marker.Marker = None,
+                          j_marker: Marker.Marker = None,
+                          i_marker_name: str = None,
+                          j_marker_name: str = None,
+                          **kwargs) -> OrientationJPrim: ...
+
+    def createParallel(self,
+                       name: str = None,
+
+                       i_marker: Marker.Marker = None,
+                       j_marker: Marker.Marker = None,
+                       i_marker_name: str = None,
+                       j_marker_name: str = None,
+                       **kwargs) -> ParallelJPrim: ...
+
+    def createPerpendicular(self,
+                            name: str = None,
+
+                            i_marker: Marker.Marker = None,
+                            j_marker: Marker.Marker = None,
+                            i_marker_name: str = None,
+                            j_marker_name: str = None,
+                            **kwargs) -> PerpendicularJPrim: ...
+
+    def createPointPoint(self,
+                         name: str = None,
+
+                         i_marker: Marker.Marker = None,
+                         j_marker: Marker.Marker = None,
+                         i_marker_name: str = None,
+                         j_marker_name: str = None,
+                         **kwargs) -> PointPointJPrim: ...
+
+    def createPointLine(self,
+                        name: str = None,
+
+                        i_marker: Marker.Marker = None,
+                        j_marker: Marker.Marker = None,
+                        i_marker_name: str = None,
+                        j_marker_name: str = None,
+                        **kwargs) -> PointLineConstraint: ...
+
+    def createPointPlane(self,
+                         name: str = None,
+
+                         i_marker: Marker.Marker = None,
+                         j_marker: Marker.Marker = None,
+                         i_marker_name: str = None,
+                         j_marker_name: str = None,
+                         **kwargs) -> PointPlaneConstraint: ...
+
+    def createLineLine(self,
+                       name: str = None,
+
+                       i_marker: Marker.Marker = None,
+                       j_marker: Marker.Marker = None,
+                       i_marker_name: str = None,
+                       j_marker_name: str = None,
+                       **kwargs) -> LineLineConstraint: ...
+
+    def createLinePlane(self,
+                        name: str = None,
+
+                        i_marker: Marker.Marker = None,
+                        j_marker: Marker.Marker = None,
+                        i_marker_name: str = None,
+                        j_marker_name: str = None,
+                        **kwargs) -> LinePlaneConstraint: ...
+
+    def createPlanePlane(self,
+                         name: str = None,
+
+                         i_marker: Marker.Marker = None,
+                         j_marker: Marker.Marker = None,
+                         i_marker_name: str = None,
+                         j_marker_name: str = None,
+                         **kwargs) -> PlanePlaneConstraint: ...
+
+    def createPointCurve(self,
+                         name: str = None,
+                         i_marker: Marker.Marker = None,
+                         i_marker_name: str = None,
+                         j_floating_marker_name: str = None,
+                         j_floating_marker: Marker.Marker = None,
+                         ref_marker: Marker.Marker = None,
+                         ref_marker_name: str = None,
+                         displacement_ic: float = None,
+                         velocity_ic: float = None,
+                         ic_ref_marker_name: str = None,
+                         ic_ref_marker: Marker.Marker = None,
+                         curve_name: str = None,
+                         curve: Any = None,
+                         **kwargs) -> PointCurveConstraint: ...
+
+    def createCurveCurve(self,
+                         name: str = None,
+                         i_curve: Any = None,
+                         i_curve_name: str = None,
+                         i_floating_marker: Marker.Marker = None,
+                         i_floating_marker_name: str = None,
+                         i_ref_marker: Marker.Marker = None,
+                         i_ref_marker_name: str = None,
+                         i_ic_ref_marker: Marker.Marker = None,
+                         i_ic_ref_marker_name: str = None,
+                         i_displacement_ic: float = None,
+                         i_velocity_ic: float = None,
+                         j_curve: Any = None,
+                         j_curve_name: str = None,
+                         j_floating_marker: Marker.Marker = None,
+                         j_floating_marker_name: str = None,
+                         j_ref_marker: Marker.Marker = None,
+                         j_ref_marker_name: str = None,
+                         j_ic_ref_marker: Marker.Marker = None,
+                         j_ic_ref_marker_name: str = None,
+                         j_displacement_ic: float = None,
+                         j_velocity_ic: float = None,
+                         **kwargs) -> CurveCurveConstraint: ...
     def createUserDefined(self,name: str=None, **kwargs): ...
     def createAngle(self,name: str=None, **kwargs): ...
     def switch_type(self, **kwargs): ...
@@ -101,12 +438,12 @@ class Jprim(Constraint, _constraint_i_j_parts, Marker._loc_ori_provider):
     update: Any
 
 class TranslationalJoint(Joint):
-    maximum_deformation: float
-    delta_v: float
     i_marker: Marker.Marker
     j_marker: Marker.Marker
     i_marker_name: str
     j_marker_name: str
+    maximum_deformation: float
+    delta_v: float
     translational_ic: float
     velocity_ic: float
     mu_dyn_trans: float
@@ -277,11 +614,11 @@ class AngleConstraint(Jprim):
 
 class PointCurveConstraint(Constraint):
     i_marker_name: str
-    j_floating_marker_name: str
-    ref_marker_name: str
     i_marker: Marker.Marker
+    j_floating_marker_name: str
     j_floating_marker: Marker.Marker
     ref_marker: Marker.Marker
+    ref_marker_name: str
     displacement_ic: float
     velocity_ic: float
     ic_ref_marker_name: str
@@ -290,26 +627,26 @@ class PointCurveConstraint(Constraint):
     curve: Any
 
 class CurveCurveConstraint(Constraint):
-    i_floating_marker_name: str
-    i_curve_name: str
-    i_ref_marker_name: str
-    i_floating_marker: Marker.Marker
     i_curve: Any
+    i_curve_name: str
+    i_floating_marker: Marker.Marker
+    i_floating_marker_name: str
     i_ref_marker: Marker.Marker
+    i_ref_marker_name: str
+    i_ic_ref_marker: Marker.Marker
+    i_ic_ref_marker_name: str
     i_displacement_ic: float
     i_velocity_ic: float
-    i_ic_ref_marker_name: str
-    j_floating_marker_name: str
-    j_curve_name: str
-    j_ref_marker_name: str
-    i_ic_ref_marker: Marker.Marker
-    j_floating_marker: Marker.Marker
     j_curve: Any
+    j_curve_name: str
+    j_floating_marker: Marker.Marker
+    j_floating_marker_name: str
     j_ref_marker: Marker.Marker
+    j_ref_marker_name: str
+    j_ic_ref_marker: Marker.Marker
+    j_ic_ref_marker_name: str
     j_displacement_ic: float
     j_velocity_ic: float
-    j_ic_ref_marker_name: str
-    j_ic_ref_marker: Marker.Marker
 
 class UserDefinedConstraint(Constraint):
     user_function: str

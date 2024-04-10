@@ -15,6 +15,7 @@ class Marker(Object.Object):
     v1: float
     v2: float
     orientation: List[float]
+    """Local when getting, global when setting"""
     location: List[float]
     relative_to: Marker
     reference_marker: Marker
