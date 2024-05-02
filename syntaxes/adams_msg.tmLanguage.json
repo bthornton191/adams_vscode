@@ -50,7 +50,17 @@
                 },
                 {
                     "name": "msg.warning",
-                    "match": "(?i).*solution failed to converge.*"
+                    "patterns": [
+                        {
+                            "name": "msg.warning",
+                            "match": "(?i).*solution failed to converge.*"
+                        },
+                        {
+                            "name": "msg.warning",
+                            "begin": "(?i)-+ start: warning -+$",
+                            "end": "(?i)-+ end: warning -+$"
+                        }
+                    ]
                 }
             ]
         },
