@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "0.4.4",
+    "version": "0.4.5",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -455,19 +455,21 @@
     },
     "devDependencies": {
         "@types/node": "^17.0.2",
-        "@vscode/test-cli": "^0.0.6",
+        "@vscode/test-cli": "^0.0.9",
         "@vscode/test-electron": "^2.3.9",
+        "glob": "^10.3.12",
         "pid-cwd": "^1.2.0",
         "uuid": "^9.0.1"
     },
     "extensionDependencies": [
         "ms-python.vscode-pylance",
-        "ms-python.python"
+        "ms-python.python",
+        "ms-python.debugpy"
     ],
     "dependencies": {
         "temp": "^0.9.4"
     },
     "scripts": {
-        "test": "vscode-test"
+        "test": "run-tests.js"
     }
 }
