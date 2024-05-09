@@ -5,11 +5,9 @@ const { spawn, exec } = require("child_process");
 const { port, evaluate_exp, execute_cmd } = require("../src/aview.ts.js");
 const cwd = path.join(__dirname, "working_directory");
 const pidCwd = require("pid-cwd");
+const process = require("process");
 
 const log_file = path.join(cwd, "aview.log");
-
-const adamsLaunchCommand = process.env.ADAMS_LAUNCH_COMMAND;
-var proc;
 
 async function mochaGlobalSetup() {
     console.log("Start all tests.");
@@ -17,6 +15,14 @@ async function mochaGlobalSetup() {
         launchAdamsIfNotRunning(resolve);
     });
     console.log("Global setup complete.");
+}
+
+async function mochaGlobalTeardown() {
+    console.log("All tests complete.");
+    await new Promise((resolve, reject) => {
+        killAdamsIfRunningInDir(cwd, resolve);
+    });
+    console.log("Global teardown complete.");
 }
 
 /**
@@ -121,26 +127,9 @@ function getCwdOfRunningCommandServer(done = (cwd) => {}) {
 function startAdamsView(done) {
     console.log("Starting Adams View...");
     killAdamsIfRunningInDir(cwd, () => {
-        // Delete the log file if it exists
-        console.log("Deleting log file...");
-        if (fs.existsSync(log_file)) {
-            function deleteLogFile() {
-                if (fs.existsSync(log_file)) {
-                    try {
-                        fs.unlinkSync(log_file);
-                        console.log("Log file deleted successfully.");
-                    } catch (error) {
-                        console.log("Log file is locked. Retrying in 1 second...");
-                        setTimeout(deleteLogFile, 1000);
-                    }
-                }
-            }
-            deleteLogFile();
-        }
-
         console.log("Running aview start command...");
         fs.writeFileSync(path.join(cwd, "aview.cmd"), "command_server start");
-        proc = spawn(`${adamsLaunchCommand}`, ["aview", "ru-s", "i"], { cwd: cwd });
+        spawn(`${process.env._ADAMS_LAUNCH_COMMAND}`, ["aview", "ru-s", "i"], { cwd: cwd });
 
         // Wait for Adams View to start
         console.log("Waiting for Adams View to start...");
@@ -164,6 +153,24 @@ function killAdamsIfRunningInDir(dir, done = () => {}) {
             console.log(`There is already a running Adams View process in ${dir}. Killing it...`);
             killProcByPid(pid);
         }
+
+        // Delete the log file if it exists
+        console.log("Deleting log file...");
+        if (fs.existsSync(log_file)) {
+            function deleteLogFile() {
+                if (fs.existsSync(log_file)) {
+                    try {
+                        fs.unlinkSync(log_file);
+                        console.log("Log file deleted successfully.");
+                    } catch (error) {
+                        console.log("Log file is locked. Retrying in 1 second...");
+                        setTimeout(deleteLogFile, 1000);
+                    }
+                }
+            }
+            deleteLogFile();
+        }
+
         done();
     });
 }
@@ -202,4 +209,4 @@ function checkIfAdamsRunningInDir(dir, done = (pid) => {}) {
 }
 
 exports.mochaGlobalSetup = mochaGlobalSetup;
-mochaGlobalSetup();
+exports.mochaGlobalTeardown = mochaGlobalTeardown;

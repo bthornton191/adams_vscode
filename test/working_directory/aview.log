@@ -1,4 +1,4 @@
-! Adams View Adams 2022.1 (built Mar 30 2022)
+! Adams View Adams 2023.2 (built Jun 30 2023)
 ! Graphics:  OpenGL
 
 ! >> 
@@ -42,6 +42,10 @@ macro read macro_name = .athorn.ppt_winmax file="C:\Program Files\MSC.Software\A
 ! >> macro read macro_name = .athorn.ppt_winmax file="C:\Program Files\MSC.Software\Adams\aview_mods_gen\ppt_winmax.mac" user="athorn ppt_winmax"
 macro read macro_name = .athorn.pick_from_screen file="C:\Program Files\MSC.Software\Adams\aview_mods_gen\pick_from_screen.mac" user="athorn pick_from_screen"
 ! >> macro read macro_name = .athorn.pick_from_screen file="C:\Program Files\MSC.Software\Adams\aview_mods_gen\pick_from_screen.mac" user="athorn pick_from_screen"
+macro read macro_name = .athorn.fbd file="C:\Program Files\MSC.Software\Adams\aview_mods_gen\fbd.mac" user="athorn fbd" create_panel=yes
+! >> macro read macro_name = .athorn.fbd file="C:\Program Files\MSC.Software\Adams\aview_mods_gen\fbd.mac" user="athorn fbd" create_panel=yes
+macro read macro_name = .athorn.all_force_graphics file="C:\Program Files\MSC.Software\Adams\aview_mods_gen\all_force_graphics.mac" user="athorn all_force_graphics" create_panel=no
+! >> macro read macro_name = .athorn.all_force_graphics file="C:\Program Files\MSC.Software\Adams\aview_mods_gen\all_force_graphics.mac" user="athorn all_force_graphics" create_panel=no
 
 ! >> 
 ! Set Environment Variables
@@ -313,10 +317,18 @@ default report base_font_size=5
 ! >> default report base_font_size=5
 
 ! >> 
-! Add Plotting Hotkeys
-! >> ! Add Plotting Hotkeys
+! ---------------------------------------------------------------------
+! >> ! ---------------------------------------------------------------------
+! Add Plotting Tools
+! >> ! Add Plotting Tools
+! ---------------------------------------------------------------------
+! >> ! ---------------------------------------------------------------------
 for var=.mdi.menu_bar  obj=.gui.ppt_main.anim_mbar, .gui.ppt_main.report_mbar, .gui.ppt_main.plot3d_mbar, .gui.ppt_main.plot4d_mbar, .gui.ppt_main.plotcurve3d_mbar, .gui.ppt_main.mbar
 ! >> for var=.mdi.menu_bar  obj=.gui.ppt_main.anim_mbar, .gui.ppt_main.report_mbar, .gui.ppt_main.plot3d_mbar, .gui.ppt_main.plot4d_mbar, .gui.ppt_main.plotcurve3d_mbar, .gui.ppt_main.mbar
+
+! +1>> 
+    ! Hotkeys
+! +1>>     ! Hotkeys
     interface separator create separator_name=.gui.ppt_main.anim_mbar.tools.hotkeys_sep
 ! +1>>     interface separator create separator_name=.gui.ppt_main.anim_mbar.tools.hotkeys_sep
     interface push_button create &
@@ -371,8 +383,36 @@ for var=.mdi.menu_bar  obj=.gui.ppt_main.anim_mbar, .gui.ppt_main.report_mbar, .
 ! +1&>                     "    int tog set state=on tog=.gui.ppt_main.ppt_tbar1.cockpit_visibility", &
                     "end" !"
 ! +1&>                     "end" !"
+
+! +1>> 
+    ! Free Body Diagram Button
+! +1>>     ! Free Body Diagram Button
+    interface separator create separator_name=.gui.ppt_main.anim_mbar.tools.fbd_sep
+! +1>>     interface separator create separator_name=.gui.ppt_main.anim_mbar.tools.fbd_sep
+    interface push_button create   &
+! +1>>     interface push_button create   &
+        push_button_name=.gui.ppt_main.anim_mbar.tools.btn_fbd &
+! +1&>         push_button_name=.gui.ppt_main.anim_mbar.tools.btn_fbd &
+        label = "Free Body Diagram..." &
+! +1&>         label = "Free Body Diagram..." &
+        commands = "interface dialog display dialog=.gui.dbox_fbd"
+! +1&>         commands = "interface dialog display dialog=.gui.dbox_fbd"
+
+! +1>> 
+    ! Force Graphics
+! +1>>     ! Force Graphics
+    interface push_button create   &
+! +1>>     interface push_button create   &
+        push_button_name=.gui.ppt_main.anim_mbar.tools.btn_all_force_graphics &
+! +1&>         push_button_name=.gui.ppt_main.anim_mbar.tools.btn_all_force_graphics &
+        label = "Turn on all force graphics" &
+! +1&>         label = "Turn on all force graphics" &
+        commands = "athorn all_force_graphics"
+! +1&>         commands = "athorn all_force_graphics"
 end
 ! +1>> end
+
+! >> 
 
 ! >> 
 ! ---------------------------------------------------------------------
@@ -849,18 +889,11 @@ end
 ! >> command_server start
 ! >> var set var=.mdi.command_server.pydummy real = (eval(run_python_code('import mdi.command_server as command_server')))
 ! >> var set var=.mdi.command_server.py_dummy_cl real=(eval(run_python_code('command_server.listener_dialog.start_clicked()')))
-! ! > run_selection.py
-! this should be shown
-! ! > run_selection_entire_file.py
-! this should be shown
-! this should ALSO be shown
-! ! > run_selection.cmd
-! this should be shown
-! ! > run_selection_self.cmd
-! this should be shown
-! ! > run_selection_entire_file.cmd
-! this should be shown
-! this should ALSO be shown
+! WARNING:  Part .test_model.PART_2 has mass but no center-of-mass marker is specified.
+! WARNING:  Part .test_model.PART_2 has mass but no center-of-mass marker is specified.
+interface field set field=message strings="" action=replace
+interface field set field=message strings="" action=replace
+interface dialog_box undisplay dialog_box_name = .gui.msg_box
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !  SELECT OBJECT
@@ -868,93 +901,59 @@ undo begin
 undo end
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-! Re-use the menu dialog
- int dia dis dia=.gui.model_cremod par=""
-interface dialog execute dialog=.gui.model_cremod undisp=yes
-! .gui.model_cremod / Exe - begin ===========================
-! Create mode 
-if cond=( str_is_space( "" ) )
-   model create model="MODEL_1" &
-      comments=""
-   ! special section for gravity toggle
-   if cond=( "" != "" )
-      if cond=(  )
-         var set var=.gui.model_cremod.gravity_name &
-            str=(eval( db_default(system_defaults, "model")//".GRAVITY" ))
-         force create body gravitational &
-            gravity_field_name=(eval( .gui.model_cremod.gravity_name )) &
-            x_component_gravity = (eval( .gui.model_cremod.gravity_field_to_copy.object_value.x_component_gravity )) &
-            y_component_gravity = (eval( .gui.model_cremod.gravity_field_to_copy.object_value.y_component_gravity )) &
-            z_component_gravity = (eval( .gui.model_cremod.gravity_field_to_copy.object_value.z_component_gravity )) 
-       end
-   end
-   if con=("" != "")
-     interface field set field= string=(eval(DB_DEFAULT_NAME_FOR_TYPE(MODEL_1, "model")))
-   end
+! Note: F2 shortcut uses this
+variable set variable_name = .gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_name string_value = "C:\Users\ben.thornton\code\adams_vscode\test\files\test_model.py"
+variable set variable_name = .gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type string_value = "C:\Users\ben", "thornton\code\adams_vscode\test\files\test_model", "py"
+if condition = (.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type[rows(.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type)]=="py")
+   file python read file_name="C:\Users\ben.thornton\code\adams_vscode\test\files\test_model.py"
+! WARNING:  Part .test_model.PART_2 has mass but no center-of-mass marker is specified.
+! WARNING:  Part .test_model.PART_2 has mass but no center-of-mass marker is specified.
+elseif condition = (.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type[rows(.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type)]=="cmd")
+   file command read file_name=(eval(.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_name))
 end
-! Update mode 
-if cond=( ! str_is_space( "" ) )
-   model modify model=MODEL_1 &
-      comments=(eval( .gui.model_cremod.entity_comments ))
+variable del variable_name = .gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_name
+variable del variable_name = .gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type
+interface dialog undisplay dialog=.gui.msg_box
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  SELECT OBJECT
+undo begin
+undo end
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+! Note: F2 shortcut uses this
+variable set variable_name = .gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_name string_value = "C:\Users\ben.thornton\code\adams_vscode\test\files\test_model.py"
+variable set variable_name = .gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type string_value = "C:\Users\ben", "thornton\code\adams_vscode\test\files\test_model", "py"
+if condition = (.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type[rows(.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type)]=="py")
+   file python read file_name="C:\Users\ben.thornton\code\adams_vscode\test\files\test_model.py"
+! WARNING:  Part .test_model.PART_2 has mass but no center-of-mass marker is specified.
+! WARNING:  Part .test_model.PART_2 has mass but no center-of-mass marker is specified.
+elseif condition = (.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type[rows(.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type)]=="cmd")
+   file command read file_name=(eval(.gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_name))
 end
-! .gui.model_cremod / Exe - end ===========================
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  SELECT OBJECT
-undo begin
-default coordinate_system default_coordinate_system=.MODEL_1
-undo end
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  SELECT OBJECT
-undo begin
-undo end
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-command_server show
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  SELECT OBJECT
-undo begin
-undo end
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  SELECT OBJECT
-undo begin
-undo end
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-interface database_navigator display=on
-! 100 1
-! 100 2
-! 100 3
-! 100 4
-! 100 5
-! 100 6
-! 100 7
-! 100 8
-! 100 9
-! 100 10
-! Hello!
-! Hello!
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  SELECT OBJECT
-undo begin
-default coordinate_system default_coordinate_system=.model_1
-undo end
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-!  SELECT OBJECT
-undo begin
-undo end
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-! Hello!
-! Hello!
+variable del variable_name = .gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_name
+variable del variable_name = .gui.main.mmenu_menu.mbar_refresh.tools.com_read.f2_file_type
+"c:/Program Files/desktop.ini"
+! Error in sys.excepthook:
+! Traceback (most recent call last):
+!   File "C:\Users\ben.thornton\Hexagon\NNL - Roller Nut Drive - Engineering\plugin\src\modules\general\log.py", line 128, in excepthook
+!     raise exc_type.with_traceback(exc_tb)
+! TypeError: descriptor 'with_traceback' for 'BaseException' objects doesn't apply to a 'traceback' object
+! Original exception was:
+! Traceback (most recent call last):
+!   File "<string>", line 22, in <module>
+!   File "C:\Users\ben.thornton\Hexagon\NNL - Roller Nut Drive - Engineering\plugin\working_directory\modules\qual\utilities\test_rig\base_test.py", line 105, in pre
+!     analyses = self.run(tr_editor, t_editor, mod, self.ANS_PREFIX, mode=mode)
+!   File "C:\Users\ben.thornton\Hexagon\NNL - Roller Nut Drive - Engineering\plugin\working_directory\modules\qual\utilities\test_rig\base_test.py", line 181, in run
+!     wait_for_results_to_load(mod,
+!   File "C:\Users\ben.thornton\Hexagon\NNL - Roller Nut Drive - Engineering\plugin\working_directory\modules\qual\utilities\test_rig\__init__.py", line 47, in wait_for_results_to_load
+!     raise TimeoutError('Results did not load!')
+! TimeoutError: Results did not load!
+mylog.log
