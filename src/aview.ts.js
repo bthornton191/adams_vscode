@@ -2,7 +2,7 @@ const net = require("net");
 
 const port = 5002;
 
-function execute_cmd(cmd, log = () => {}, done = () => {}) {
+function execute_cmd(cmd, log = () => {}, done = () => {}, sent = () => {}) {
     const client = new net.Socket();
     client.on("error", function (err) {
         log("Error running command '${ cmd }: '" + err.toString());
@@ -11,7 +11,7 @@ function execute_cmd(cmd, log = () => {}, done = () => {}) {
 
     client.connect(port, "localhost", function () {
         // Send the command to the server
-        client.write(`cmd ${cmd}`);
+        client.write(`cmd ${cmd}`, sent);
 
         // Receive the server's response
         client.on("data", function (data) {

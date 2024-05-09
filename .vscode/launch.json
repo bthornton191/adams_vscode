@@ -12,13 +12,25 @@
             "runtimeExecutable": "${execPath}",
             "args": [
                 "--extensionDevelopmentPath=${workspaceFolder}",
-                "--folder-uri=${workspaceFolder}\\test"
+                "--folder-uri=${workspaceFolder}/test"
             ]
         },
         {
             "name": "Node Debug",
             "type": "node",
+            "request": "launch"
+        },
+        {
+            "name": "Run Extension Tests",
+            "type": "extensionHost",
             "request": "launch",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                // "--disable-extensions",
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "--extensionTestsPath=${workspaceFolder}/test/index.js",
+                "--folder-uri=${workspaceFolder}/test"
+            ],
         }
     ]
 }

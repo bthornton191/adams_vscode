@@ -1,7 +1,7 @@
 const vscode = require('vscode');
 const child_process = require("child_process");
 
-function debug_in_adams(output_channel) {
+function debug_in_adams(output_channel, done = () => {}) {
     return async () => {
         // Search running processes for aview.exe. If there are multiple, ask the user to select one and store the process id in a variable.
         let aview_pid = 0;
@@ -14,7 +14,6 @@ function debug_in_adams(output_channel) {
         if (process.platform === 'win32') {
             var plist = child_process.execSync('tasklist /fi "imagename eq aview.exe" /fo csv /nh /v').toString().split('\r\n'); // Get a list of running processes
         }
-
 
         // If the operating system is linux or mac
         else {
@@ -55,18 +54,31 @@ function debug_in_adams(output_channel) {
         let aview_version = aview_ptitle.split(' ')[aview_ptitle.split(' ').length - 1];
 
         // If the version is 2023 or newer, warn the user and ask if they want to continue
-        if (parseInt(aview_version) >= 2023) {
-            // let selection = await 
-            output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Unsupported aview version: ${aview_version}. Awaiting User Selection...`);
+        if (parseInt(aview_version) >= 2023 && !vscode.workspace.getConfiguration("msc-adams").get("debugOptions").debugAdapterPath) {
+            output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Trying to attach to version 2023 with no debug adapter: ${aview_version}. Awaiting User Selection...`);
+
             // Warn the user that this version is not supported
-            let selection = await vscode.window.showQuickPick(["No", "Yes"], { title: "Unsupported Adams version", placeHolder: "Debugging is not supported in Adams 2023 and later. Do you want to continue?" });
+            let selection = await vscode.window.showQuickPick(["No", "Yes"], {
+                title: "Adams 2023 requires a debug adapter",
+                placeHolder: "Debugging in Adams 2023 requires a debug adapter. Do you want to continue?",
+            });
 
             if (selection === "No") {
                 output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: User selected to not continue with aview version: ${aview_version}`);
                 return;
-            }
-            else {
-                output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: User selected to continue with aview version: ${aview_version}`);
+            } else if (selection === "Open Settings") {
+                output_channel.appendLine(
+                    `[${new Date().toLocaleTimeString()}]: User selected to not continue with aview version: ${aview_version} and opened settings to add debug adapter path`
+                );
+                vscode.commands.executeCommand(
+                    "workbench.action.openSettings",
+                    "msc-adams.debugOptions"
+                );
+                return;
+            } else {
+                output_channel.appendLine(
+                    `[${new Date().toLocaleTimeString()}]: User selected to continue with aview version: ${aview_version}`
+                );
             }
         }
 
@@ -84,7 +96,8 @@ function debug_in_adams(output_channel) {
             }, vscode.workspace.getConfiguration('msc-adams').get('debugOptions')));
 
         vscode.window.showInformationMessage('The debugger has been attached. Set a breakpoint, then run the python script in Adams');
-
+        
+        done();
     };
 }
 exports.debug_in_adams = debug_in_adams;
