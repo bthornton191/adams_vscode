@@ -19,42 +19,70 @@ function link_provider() {
             const text = document.getText().replace(/\\/g, "/");
 
             // Regex to match filepaths on windows and linux
-            const regex_quoted =
-                /(?<="|')(?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*?]+\.[a-zA-Z0-9]+(?="|')/g;
-            const regex_unquoted = /((?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*? ]+\.[a-zA-Z0-9]+)/g;
-            const regex_local = /[^"'<>|:\n\r*? ]+\.[a-zA-Z0-9]+/g;
+            const regex =
+                // /(?<quoted>(?<="|')(?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*?]+\.[a-zA-Z0-9]+(?="|'))|(?<unquoted>((?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*? ]+\.[a-zA-Z0-9]+))(?<pos>(, line \d+)|(:\d+(:\d+)?))?/g;
+                /(?:(?:(?:"|')(?<quoted>(?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*?]+\.[a-zA-Z0-9]+)(?:"|'))|(?<unquoted>((?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*? ]+\.[a-zA-Z0-9]+)))(?<line>, line \d+)?/g;
             let match;
 
-            while ((match = regex_quoted.exec(text)) || (match = regex_unquoted.exec(text))) {
-                const file = path.normalize(match[0]);
+            while ((match = regex.exec(text))) {
+                var file = path.normalize(match.groups?.quoted || match.groups?.unquoted);
+
+                const range = new vscode.Range(
+                    document.positionAt(match.index),
+                    document.positionAt(match.index + match[0].length)
+                );
 
                 // Add the link if the file exists and isn't already in the links
-                if (fs.existsSync(file) && !links.some((link) => link.target.fsPath === file)) {
-                    const range = new vscode.Range(
-                        document.positionAt(match.index),
-                        document.positionAt(match.index + match[0].length)
-                    );
-                    links.push(new vscode.DocumentLink(range, vscode.Uri.file(file)));
+                if (
+                    fs.existsSync(file) &&
+                    !links.some(
+                        (link) =>
+                            link.range.isEqual(range) ||
+                            link.range.contains(range) ||
+                            range.contains(link.range)
+                    )
+                ) {
+                    var uri = vscode.Uri.file(file);
+                    // Get the position
+                    if (match.groups?.line) {
+                        // Get the line number
+                        const line = parseInt(match.groups.line.replace(", line ", ""));
+                        uri = uri.with({ fragment: `L${line}` });
+                    }
+                    links.push(new vscode.DocumentLink(range, uri));
                 }
             }
 
-            // Local paths
-            while ((match = regex_local.exec(text))) {
-                // Append the file to the current file parent directory
-                var file = path.join(path.dirname(document.uri.fsPath), match[0]);
-
-                // Add the link if the file exists
-                if (fs.existsSync(file)) {
-                    const range = new vscode.Range(
-                        document.positionAt(match.index),
-                        document.positionAt(match.index + match[0].length)
-                    );
-                    links.push(new vscode.DocumentLink(range, vscode.Uri.file(file)));
-                }
-            }
             return links;
         },
     };
+}
+
+/**
+ * Add a link to the links array if the file exists and isn't already in the links
+ * @param {vscode.TextDocument} document
+ * @param {RegExpExecArray} match
+ * @param {string} file
+ * @param {vscode.DocumentLink[]} links
+ **/
+function addLink(document, match, file, links) {
+    const range = new vscode.Range(
+        document.positionAt(match.index),
+        document.positionAt(match.index + match[0].length)
+    );
+
+    // Add the link if the file exists and isn't already in the links
+    if (
+        fs.existsSync(file) &&
+        !links.some(
+            (link) =>
+                link.range.isEqual(range) ||
+                link.range.contains(range) ||
+                range.contains(link.range)
+        )
+    ) {
+        links.push(new vscode.DocumentLink(range, vscode.Uri.file(file)));
+    }
 }
 
 exports.link_provider = link_provider;
