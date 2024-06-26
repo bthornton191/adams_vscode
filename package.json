@@ -288,6 +288,12 @@
                         "title": "Auto Load adamspy Stubs",
                         "description": "Automatically load adamspy stub files when the extension is activated.",
                         "default": true
+                    },
+                    "msc-adams.showDebuggerWarning": {
+                        "type": "boolean",
+                        "title": "Show Debugger Warning",
+                        "description": "Show a pop-up message when trying to connect the debugger to Adams View 2023 or higher",
+                        "default": true
                     }
                 }
             }

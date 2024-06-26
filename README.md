@@ -8,6 +8,7 @@
 > know which features you are most interested in. Thanks!
 
 # Table of Contents
+- [MSC Adams Extension for Visual Studio Code](#msc-adams-extension-for-visual-studio-code)
 - [Table of Contents](#table-of-contents)
 - [Features](#features)
   - [Syntax highlighting](#syntax-highlighting)
@@ -174,7 +175,13 @@ a user defined value. The default is `.mdi`. This is useful when the macro uses 
 # Known Issues
 
 ## Attaching the Debugger to Adams View does not work in version 2023
-This is likely due to a change in the compilers for Adams 2023. I am working on a fix.
+The debugger appears to attach but fails to stop at break points.
+
+> [!TIP]
+> A workaround is to simply import the threading module before attaching the debugger. The easiest 
+> way to do this is to open the adams view command line, switch to python, and run 
+> `import threading`. You can also automate this by adding 
+> `var set var=.mdi.tmp_int int=(eval(run_python_code("import threading")))` to aviewAS.cmd. 
 
 ## Intellisense Adams Command Language *functions* does not work for every function
 It's a work in progress. The help documentation for each function needs to be converted to a 
