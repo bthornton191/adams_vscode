@@ -11,3 +11,7 @@ adams_vscode.vsix
 test/working_directory/mylog.log
 .vscode-test
 test/mylog.log
+test/working_directory/aview.log
+test/working_directory/aview.cmd
+test/working_directory/aviewAS.cmd
+test/working_directory/aviewBS.cmd
