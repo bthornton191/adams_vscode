@@ -5,12 +5,14 @@ from typing import Any, ItemsView, Iterable, KeysView, List, ValuesView
 
 UdeModifyMacroDict: Any
 
+
 class UDEDesignVariableProps:
     prop: Any
     def __init__(self, p) -> None: ...
     def __get__(self, instance, owner): ...
     def __set__(self, instance, val) -> None: ...
     def __delete__(self, instance) -> None: ...
+
 
 class UserDefinedElementManager(Manager.AdamsManager):
     def items(self) -> ItemsView[str, UserDefinedElement]: ...
@@ -19,12 +21,14 @@ class UserDefinedElementManager(Manager.AdamsManager):
     def __getitem__(self, name) -> UserDefinedElement: ...
     def __iter__(self, *args) -> Iterable[str]: ...
 
+
 class UserDefinedInstanceManager(Manager.AdamsManager):
     def items(self) -> ItemsView[str, UserDefinedInstance]: ...
     def values(self) -> ValuesView[UserDefinedInstance]: ...
     def keys(self) -> KeysView[str]: ...
     def __getitem__(self, name) -> UserDefinedInstance: ...
     def __iter__(self, *args) -> Iterable[str]: ...
+
 
 class UserDefinedElement(Object.ObjectBase):
     definition_name: str
@@ -34,9 +38,10 @@ class UserDefinedElement(Object.ObjectBase):
     output_parameters: List[DesignVariable]
     parameters: List[DesignVariable]
 
+
 class UserDefinedInstance(Object.ObjectBase):
     definition_name: str
-    definition: str
+    definition: UserDefinedElement
     objects: List[Object.ObjectBase]
     input_parameters: List[DesignVariable]
     output_parameters: List[DesignVariable]

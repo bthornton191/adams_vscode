@@ -31,8 +31,8 @@ class Part(Object.Object):
     is_flexible: bool
     def destroy(self): ...
     relative_to: Any
-    orientation: Any
-    location: Any
+    orientation: List[float]
+    location: List[float]
     along_axis_orientation: Any
     in_plane_orientation: Any
     cm: Marker
