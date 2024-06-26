@@ -26,5 +26,3 @@ UNIQUE_NAME_IN_HIERARCHY("stat")
 ```java
 stat_2
 ```
-[Learn more about database functions](file:///C:/Program%20Files/MSC.Software/Adams/2022_2_886672/help/adams_view_fn/200_sys_supplied.html#ww1004102)
- 

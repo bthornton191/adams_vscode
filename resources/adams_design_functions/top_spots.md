@@ -1,6 +1,6 @@
 # Array TOP_SPOTS (Name array, Integer array, Real array)
 
-Returns a fixed number of the hottest spots in the Body. Learn more about TOP_SPOTS function.
+Returns a fixed number of the hottest spots in the Body. 
 
 ## Arguments
 
