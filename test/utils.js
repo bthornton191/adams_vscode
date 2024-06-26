@@ -30,30 +30,24 @@ function get_parents(p, n) {
 }
 
 /**
- * Get the latest installed version of Adams and the latest installed 2023 version of Adams
+ * Get the latest installed version of Adams
  * and return the two paths in a list.
- * @returns {path.ParsedPath[]}
+ * @returns {path.ParsedPath}
  */
 function getLatestAdamsVersions() {
+    const win = process.platform === "win32";
     // Get the path to the adams installations
-    const adams_path = path.format(get_parents(path.parse(process.env.ADAMS_LAUNCH_COMMAND), 2));
+    var adams_path = path.format(
+        get_parents(path.parse(process.env.ADAMS_LAUNCH_COMMAND), win ? 3 : 2)
+    );
 
     // Get the list of all directories that match the pattern \d+_\d+(_\d+)?
     const adams_versions = fs.readdirSync(adams_path).filter((f) => f.match(/\d+_\d+(_\d+)?/));
     const latest = adams_versions.sort().reverse()[0];
-    const latest_2023 = adams_versions
-        .filter((v) => v.includes("2023"))
-        .sort()
-        .reverse()[0];
 
-    if (process.platform === "win32") {
-        return [
-            path.join(adams_path, latest, "common", "mdi.bat"),
-            path.join(adams_path, latest_2023, "common", "mdi.bat"),
-        ];
-    } else {
-        return [path.join(adams_path, latest, "mdi"), path.join(adams_path, latest_2023, "mdi")];
-    }
+    return win
+        ? path.join(adams_path, latest, "common", "mdi.bat")
+        : path.join(adams_path, latest, "mdi");
 }
 
 exports.waitForAdamsConnection = waitForAdamsConnection;
