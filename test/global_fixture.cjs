@@ -129,7 +129,7 @@ function startAdamsView(done) {
     killAdamsIfRunningInDir(cwd, () => {
         console.log("Running aview start command...");
         fs.writeFileSync(
-            path.join(cwd, "aviewAS.cmd"),
+            path.join(cwd, "aviewBS.cmd"),
             'var set var=.mdi.tmp_int int=(eval(run_python_code("import threading))")'
         );
         fs.writeFileSync(path.join(cwd, "aview.cmd"), "command_server start");
