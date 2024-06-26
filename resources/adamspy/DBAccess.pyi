@@ -64,7 +64,17 @@ class ArrayProperty(PropertyValue):
     def __set__(self, instance, val): ...
 
 class BoolValue(PropertyValue):
-    bool_str: Any
+    bool_str = {
+        'true': True,
+        'yes': True,
+        'on': True,
+        'false': False,
+        'no': False,
+        'off': False,
+        1: True,
+        0: False
+    }
+    """Use this dictionary to convert strings to boolean values."""
     def getValue(self, instance, owner, dbt): ...
     def setValue(self, instance, val, dbt): ...
 
