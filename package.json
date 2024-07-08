@@ -269,12 +269,7 @@
                     "msc-adams.runInAdams.substituteSelf": {
                         "type": "string",
                         "title": "Substitute $_self",
-                        "description": [
-                            "Substitute $_self in the current selection when running the",
-                            " selection in Adams View with the name of the current file. ",
-                            "If the value is not an existing object in the Adams View database ",
-                            "a library by that name will be created."
-                        ],
+                        "description": "The string with which to replace '$_self' when running a macro or selection in Adams View. If the value is not an existing object in the Adams View database a library by that name will be created.",
                         "default": ".vscode"
                     },
                     "msc-adams.runInAdams.substituteParams": {
