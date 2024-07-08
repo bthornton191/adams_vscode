@@ -1,6 +1,12 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [0.4.6 (July 8th 2024)](#046-july-8th-2024)
+    - [Bug Fixes](#bug-fixes)
+    - [**Improved** Run In Adams](#improved-run-in-adams)
+    - [**Added** a warning when debugging Adams View versions \>= 2023](#added-a-warning-when-debugging-adams-view-versions--2023)
+    - [Miscellaneous](#miscellaneous)
+    - [Development](#development)
   - [0.4.2 (December 6th 2023)](#042-december-6th-2023)
     - [Intellisense support for Adams View Python Interface](#intellisense-support-for-adams-view-python-interface)
       - [**Fixed**: Fixed a bug preventing python intellisense from working properly](#fixed-fixed-a-bug-preventing-python-intellisense-from-working-properly)
@@ -14,6 +20,79 @@
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
 
+
+## 0.4.6 (July 8th 2024)
+
+### Bug Fixes
+- **Fixed** syntax highliging issue when a string argument contains an equals sign on a continuation line ([Issue 3](https://github.com/bthornton191/adams_vscode/issues/3))
+
+### **Improved** Run In Adams
+- You can now set `msc-adams.runInAdams.substituteSelf` to an existing OR non-existent library 
+  (e.g. ".vscode") and the extension will automatically create an empty library by that name replace 
+  all occurances of `$_self` with the library name when running the file or selection in Adams View.
+  This closes [Issue 4](https://github.com/bthornton191/adams_vscode/issues/4).
+
+
+### **Added** a warning when debugging Adams View versions >= 2023
+A reminder that you may need to import the threading module before attaching the debugger. [More Info](https://github.com/bthornton191/adams_vscode/issues/6#issuecomment-2192053891)
+
+### Miscellaneous
+- **Added** clickable links in model and log files
+- **Added** a configuration option called `msc-adams.runInAdams.autoLoadAdamspyStubs` allowing users
+  to prevent the extension from automatically loading the Adams View Python stubs. This is useful if
+  you have your own stubs.
+
+- **Improved** intellisense documentation and typing in the following adamspy modules:
+    * Analysis
+    * Constraint
+    * Contact
+    * DataElement
+    * DBAccess
+    * Force
+    * Group
+    * Manager
+    * Marker
+    * Measure
+    * Model
+    * Part
+    * Sensor
+    * Simulation
+    * SystemElement
+    * UDE
+
+- **Added** intellisense support for the following design functions:
+    * `dm`
+    * `dot`
+    * `dx`
+    * `dy`
+    * `dz`
+    * `eig_di`
+    * `eig_dr`
+    * `eig_vi`
+    * `eig_vr`
+    * `elementmd`
+    * `execute_view_command`
+    * `exp`
+    * `expr_exists`
+    * `expr_reference`
+    * `expr_references`
+    * `expr_string`
+    * `top_spots`
+    * `unique` copy
+    * `unique_file_name`
+    * `unique_full_name`
+    * `unique_id`
+    * `unique_name_in_hierarchy`
+    * `uniquemd`
+    * `units_conversion_factor`
+    * `units_string`
+    * `unwrap`
+    * `val`
+    * `valat`
+    * `vali`
+  
+### Development
+- **Added** a test suite
 
 ## 0.4.2 (December 6th 2023)
 
