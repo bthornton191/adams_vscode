@@ -62,7 +62,16 @@ function debug_in_adams(output_channel, done = () => {}) {
         }
 
         // Get the aview version from the end of aview_ptitle
-        let aview_version = parseInt(aview_ptitle.match(/\d+(?=(?:\.\d+)*)/)[0]);
+        let match = aview_ptitle.match(/\d+(?=(?:\.\d+)*)/);
+        if (match) {
+            var aview_version = parseInt(match[0]);
+        } else {
+            var aview_version = 0;
+            console.log(`Could not find aview version in ${aview_ptitle}`);
+            output_channel.appendLine(
+                `[${new Date().toLocaleTimeString()}]: Could not find aview version in process title ${aview_ptitle}. Skipping version check.`
+            );
+        }
 
         // If the version is 2023 or newer, warn the user and ask if they want to continue
         if (
