@@ -1,13 +1,19 @@
+from typing import Any, ItemsView, Iterable, KeysView, List, Union, ValuesView
+
 import Manager
 import Object
-from typing import Any, List, Union
-
 
 class GroupManager(Manager.AdamsManager):
     def create(self,
                objects: List[Object.Object] = None,
                object_names: List[str] = None,
                **kwargs) -> Group: ...
+
+    def items(self) -> ItemsView[str, Group]: ...
+    def values(self) -> ValuesView[Group]: ...
+    def keys(self) -> KeysView[str]: ...
+    def __getitem__(self, name) -> Group: ...
+    def __iter__(self, *args) -> Iterable[str]: ...
 
 
 class Group(Object.ObjectComment):
@@ -37,5 +43,5 @@ class Group(Object.ObjectComment):
 
     def copyObjects(self, new_group_name: str = None, type_filter: str = None):
         ...
-    objects: Any
-    object_names: Any
+    objects: List[Object.Object]
+    object_names: List[str]
