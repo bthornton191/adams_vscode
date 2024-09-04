@@ -29,7 +29,8 @@
                 // "--disable-extensions",
                 "--extensionDevelopmentPath=${workspaceFolder}",
                 "--extensionTestsPath=${workspaceFolder}/test/index.js",
-                "--folder-uri=${workspaceFolder}/test"
+                "--folder-uri=${workspaceFolder}/test",
+                "--profile=adams_vscode_testing"
             ],
         }
     ]
