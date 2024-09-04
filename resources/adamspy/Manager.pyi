@@ -1,4 +1,3 @@
-import collections
 from collections.abc import Generator
 from typing import Any, ItemsView, Iterable, KeysView, ValuesView
 from Object import Object
@@ -7,7 +6,7 @@ class DuplicateNameError(AttributeError): ...
 class ObjectCreationFailure(Exception): ...
 class InvalidNameError(AttributeError): ...
 
-class AdamsManager(collections.Mapping):
+class AdamsManager():
     parent: Any
     managedClass: Any
     def __init__(self, managed_class, parent) -> None: ...

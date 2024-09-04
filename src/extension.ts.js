@@ -14,6 +14,11 @@ const { link_provider } = require("./link_provider.ts.js");
 //Create output channel
 const output_channel = vscode.window.createOutputChannel("MSC Adams");
 
+/**
+ * Runs the currently selected text in Adams View.
+ *
+ * @param {vscode.ExtensionContext} context
+ */
 function activate(context) {
     const view_functions = new Map();
     const func_dir = context.asAbsolutePath("resources/adams_design_functions");
@@ -68,11 +73,12 @@ function activate(context) {
     // Set to run whenever the loadStubFiles setting is changed
     // vscode.workspace.onDidChangeConfiguration(load_stub_files(context, output_channel));
 
-    if (vscode.workspace.getConfiguration().get("msc_adams.autoLoadAdamspyStubs")) {
+    if (vscode.workspace.getConfiguration().get("msc-adams.runInAdams.autoLoadAdamspyStubs")) {
         vscode.commands.executeCommand("msc_adams.loadStubFiles");
     }
 
     vscode.window.showInformationMessage("MSC Adams Extension Activated");
+    output_channel.appendLine(`[${new Date().toLocaleTimeString()}] MSC Adams Extension Activated`);
 }
 
 function deactivate(context) {
@@ -80,7 +86,7 @@ function deactivate(context) {
 }
 
 const command = "msc_adams.activate";
-vscode.commands.registerCommand(command, activate);
+vscode.commands.registerCommand(command, () => {});
 
 module.exports = {
     activate,
