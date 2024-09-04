@@ -1,10 +1,12 @@
 # Changelog
 
 - [Changelog](#changelog)
-  - [0.4.7 (July 9th 2024)](#047-july-9th-2024)
+  - [0.4.9 (September 3rd 2024)](#049-september-3rd-2024)
     - [Bug Fixes](#bug-fixes)
-  - [0.4.6 (July 8th 2024)](#046-july-8th-2024)
+  - [0.4.7 (July 9th 2024)](#047-july-9th-2024)
     - [Bug Fixes](#bug-fixes-1)
+  - [0.4.6 (July 8th 2024)](#046-july-8th-2024)
+    - [Bug Fixes](#bug-fixes-2)
     - [**Improved** Run In Adams](#improved-run-in-adams)
     - [**Added** a warning when debugging Adams View versions \>= 2023](#added-a-warning-when-debugging-adams-view-versions--2023)
     - [Miscellaneous](#miscellaneous)
@@ -22,6 +24,10 @@
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
 
+
+## 0.4.9 (September 3rd 2024)
+### Bug Fixes
+- **Fixed** A bug causing python type hints to only partially work in python 3.10 and higher.
 
 ## 0.4.7 (July 9th 2024)
 ### Bug Fixes
