@@ -1,6 +1,8 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [0.4.11 (September 3rd 2024)](#0411-september-3rd-2024)
+    - [Documentation](#documentation)
   - [0.4.9 (September 3rd 2024)](#049-september-3rd-2024)
     - [Bug Fixes](#bug-fixes)
   - [0.4.7 (July 9th 2024)](#047-july-9th-2024)
@@ -24,6 +26,11 @@
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
 
+
+## 0.4.11 (September 3rd 2024)
+### Documentation
+- **Added** A note to the readme about debugging in Adams Car. [More Info](https://github.com/bthornton191/adams_vscode/issues/9#issuecomment-2332435544)
+  
 
 ## 0.4.9 (September 3rd 2024)
 ### Bug Fixes
