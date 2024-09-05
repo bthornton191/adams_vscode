@@ -1,8 +1,10 @@
 # Changelog
 
 - [Changelog](#changelog)
-  - [0.4.11 (September 3rd 2024)](#0411-september-3rd-2024)
+  - [0.4.12 (September 3rd 2024)](#0412-september-3rd-2024)
     - [Documentation](#documentation)
+  - [0.4.11 (September 3rd 2024)](#0411-september-3rd-2024)
+    - [Documentation](#documentation-1)
   - [0.4.9 (September 3rd 2024)](#049-september-3rd-2024)
     - [Bug Fixes](#bug-fixes)
   - [0.4.7 (July 9th 2024)](#047-july-9th-2024)
@@ -26,6 +28,10 @@
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
 
+
+## 0.4.12 (September 3rd 2024)
+### Documentation
+- **Fixed** a typo in the readme.
 
 ## 0.4.11 (September 3rd 2024)
 ### Documentation
