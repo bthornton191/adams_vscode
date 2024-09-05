@@ -55,7 +55,7 @@
 > You may need to manually activate the extension using `msc_adams.activate` for these features to work
 > ![adams python autocomplete](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/adams_python_autocomplete.gif)
 
-## Support for debugging python scripts in Adams View
+## Debugging python scripts in Adams View
 You can debug python scripts in Adams View using the [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python). This extension provides a convenient button to attach the debugger to an existing Adams View process. 
 
 > [!NOTE] Python Debugging in Adams Car
@@ -93,7 +93,7 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 ![Run CMD File in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_file_in_adams.gif)
 
 > [!NOTE] 
-> For python files, the button is located within the existing python run button stack.!
+> For python files, the button is located within the existing python run button stack.
 > ![Alt text](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_python_file_in_adams.png)
 
 ## Open Adams View From Explorer
