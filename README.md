@@ -58,7 +58,7 @@
 ## Debugging python scripts in Adams View
 You can debug python scripts in Adams View using the [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python). This extension provides a convenient button to attach the debugger to an existing Adams View process. 
 
-> [!NOTE] Python Debugging in Adams Car
+> [!NOTE]
 > Debugging ***is supported*** in Adams Car too! See 
 > [Debugger not breaking when attached to Adams Car](https://github.com/bthornton191/adams_vscode/issues/9#issuecomment-2332435544) 
 > if you are having trouble getting the debugger to break in Adams Car.
