@@ -1,6 +1,6 @@
 const vscode = require('vscode');
 
-function load_stub_files(context, output_channel) {
+function load_stub_files(context, output_channel, reporter = null) {
     return async () => {
 
         const adams_stub_dir = context.asAbsolutePath('resources/adamspy');
@@ -11,6 +11,7 @@ function load_stub_files(context, output_channel) {
         if (!extra_paths.includes(adams_stub_dir)) {
             extra_paths.push(adams_stub_dir);
             output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Adding "${adams_stub_dir}" to python.analysis.extraPaths`);
+            reporter.sendTelemetryEvent("load_stub_files", { path: adams_stub_dir, config: "analysis.extraPaths" });
         }
         if (vscode.workspace.workspaceFolders == undefined) {
             vscode.workspace.getConfiguration('python').update('analysis.extraPaths', extra_paths, true);
@@ -23,6 +24,7 @@ function load_stub_files(context, output_channel) {
         if (!autocomp_paths.includes(adams_stub_dir)) {
             autocomp_paths.push(adams_stub_dir);
             output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: Adding "${adams_stub_dir}" to python.autoComplete.extraPaths`);
+            reporter.sendTelemetryEvent("load_stub_files", { path: adams_stub_dir, config: "analysis.autoComplete.extraPaths" });
         }
         if (vscode.workspace.workspaceFolders == undefined) {
             vscode.workspace.getConfiguration('python').update('autoComplete.extraPaths', autocomp_paths, true);

@@ -3,7 +3,7 @@ const vscode = require('vscode');
 const fs = require('fs');
 const child_process = require("child_process");
 
-function open_view_here(output_channel) {
+function open_view_here(output_channel, reporter = null) {
     return (uri) => {
 
         let dir_name = path.dirname(uri.fsPath);
@@ -21,15 +21,18 @@ function open_view_here(output_channel) {
 
         console.log(`"${adams_launch_command}" aview ru-s i`);
         output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: "${adams_launch_command}" aview ru-s i`);
+        reporter.sendTelemetryEvent("open_view_here");
         child_process.exec(`"${adams_launch_command}" aview ru-s i`, { cwd: uri.fsPath }, (error, stdout, stderr) => {
             if (error) {
                 console.log(`error: ${error.message}`);
                 output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: error: ${error.message}`);
+                reporter.sendTelemetryErrorEvent("open_view_here", { error: error.message });
                 return;
             }
             if (stderr) {
                 console.log(`stderr: ${stderr}`);
                 output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: stderr: ${stderr}`);
+                reporter.sendTelemetryErrorEvent("open_view_here", { error: stderr });
                 return;
             }
             console.log(`stdout: ${stdout}`);

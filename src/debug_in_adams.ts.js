@@ -1,7 +1,7 @@
 const vscode = require("vscode");
 const child_process = require("child_process");
 
-function debug_in_adams(output_channel, done = () => {}) {
+function debug_in_adams(output_channel, reporter = null, done = () => {}) {
     return async () => {
         // Search running processes for aview.exe. If there are multiple, ask the user to select one and store the process id in a variable.
         let aview_pid = 0;
@@ -42,6 +42,9 @@ function debug_in_adams(output_channel, done = () => {}) {
             output_channel.appendLine(
                 `[${new Date().toLocaleTimeString()}]: No aview Processes Found!`
             );
+            if (reporter) {
+                reporter.sendTelemetryEvent("No aview Processes Found");
+            }
             return;
         }
 
@@ -103,6 +106,11 @@ function debug_in_adams(output_channel, done = () => {}) {
         output_channel.appendLine(
             `[${new Date().toLocaleTimeString()}]: Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`
         );
+        if (reporter) {
+            reporter.sendTelemetryEvent("Attaching Python Debugger", {
+                aview_version: aview_version,
+            });
+        }
 
         // Attach python debugger to selected process
         await vscode.debug.startDebugging(
@@ -122,7 +130,13 @@ function debug_in_adams(output_channel, done = () => {}) {
         vscode.window.showInformationMessage(
             "The debugger has been attached. Set a breakpoint, then run the python script in Adams"
         );
-
+        
+        if (reporter) {
+            reporter.sendTelemetryEvent("Python Debugger Attached", {
+                aview_version: aview_version,
+            });
+        }
+        
         done();
     };
 }

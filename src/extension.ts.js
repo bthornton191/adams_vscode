@@ -1,5 +1,6 @@
 const path = require("path");
 const vscode = require("vscode");
+const TelemetryReporter = require("@vscode/extension-telemetry").default;
 const fs = require("fs");
 const { open_in_view } = require("./open_in_view.ts");
 const { open_view_here } = require("./open_view_here.ts.js");
@@ -14,12 +15,20 @@ const { link_provider } = require("./link_provider.ts.js");
 //Create output channel
 const output_channel = vscode.window.createOutputChannel("MSC Adams");
 
+// Connection string for Azure Application Insights
+const connectionString =
+    "InstrumentationKey=d1f9c873-6ad2-4566-8fe0-d694cda7000e;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/;ApplicationId=b993e79b-356a-466c-b53c-e51aa41f496a";
+
 /**
  * Runs the currently selected text in Adams View.
  *
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
+    // Telemetry
+    const reporter = new TelemetryReporter(connectionString);
+    context.subscriptions.push(reporter);
+
     const view_functions = new Map();
     const func_dir = context.asAbsolutePath("resources/adams_design_functions");
     const func_files = fs.readdirSync(func_dir);
@@ -45,7 +54,7 @@ function activate(context) {
     // ---------------------------------------------------------------------------
     // Hover Provider
     // ---------------------------------------------------------------------------
-    vscode.languages.registerHoverProvider("adams_cmd", cmd_hover_provider(view_functions));
+    vscode.languages.registerHoverProvider("adams_cmd", cmd_hover_provider(view_functions, reporter));
 
     // ---------------------------------------------------------------------------
     // Completion Provider
@@ -54,21 +63,21 @@ function activate(context) {
     const view_commands = JSON.parse(fs.readFileSync(cmd_files_json));
     vscode.languages.registerCompletionItemProvider(
         "adams_cmd",
-        cmd_completion_provider(view_functions, view_commands)
+        cmd_completion_provider(view_functions, view_commands, reporter)
     );
 
     // ---------------------------------------------------------------------------
     // Commands
     // ---------------------------------------------------------------------------
-    vscode.commands.registerCommand("msc_adams.macros.makeHeader", make_macro_header());
-    vscode.commands.registerCommand("msc_adams.openInView", open_in_view(context, output_channel));
-    vscode.commands.registerCommand("msc_adams.openViewHere", open_view_here(output_channel));
-    vscode.commands.registerCommand("msc_adams.debugInAdams", debug_in_adams(output_channel));
-    vscode.commands.registerCommand("msc_adams.runSelection", run_selection(output_channel));
-    vscode.commands.registerCommand("msc_adams.runFile", run_selection(output_channel, true));
+    vscode.commands.registerCommand("msc_adams.macros.makeHeader", make_macro_header(reporter));
+    vscode.commands.registerCommand("msc_adams.openInView", open_in_view(context, output_channel, reporter));
+    vscode.commands.registerCommand("msc_adams.openViewHere", open_view_here(output_channel, reporter));
+    vscode.commands.registerCommand("msc_adams.debugInAdams", debug_in_adams(output_channel, reporter));
+    vscode.commands.registerCommand("msc_adams.runSelection", run_selection(output_channel, false, reporter));
+    vscode.commands.registerCommand("msc_adams.runFile", run_selection(output_channel, true, reporter));
     vscode.commands.registerCommand(
         "msc_adams.loadStubFiles",
-        load_stub_files(context, output_channel)
+        load_stub_files(context, output_channel, reporter)
     );
     // Set to run whenever the loadStubFiles setting is changed
     // vscode.workspace.onDidChangeConfiguration(load_stub_files(context, output_channel));
@@ -79,6 +88,10 @@ function activate(context) {
 
     vscode.window.showInformationMessage("MSC Adams Extension Activated");
     output_channel.appendLine(`[${new Date().toLocaleTimeString()}] MSC Adams Extension Activated`);
+    reporter.sendTelemetryEvent(
+        "MSC Adams Extension Activated",
+        vscode.workspace.getConfiguration().get("msc-adams")
+    );
 }
 
 function deactivate(context) {
