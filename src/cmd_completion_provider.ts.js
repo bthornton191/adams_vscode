@@ -24,9 +24,6 @@ function cmd_completion_provider(function_names, commands, reporter = null) {
                     completion.command = { command: 'editor.action.showHover' };
                     completion.documentation = new vscode.MarkdownString(doc);
                     completions.push(completion);
-                    if (reporter) {
-                        reporter.sendTelemetryEvent("cmd_completion_provider", { symbol: name });
-                    }
                 }
             }
             
@@ -52,9 +49,6 @@ function cmd_completion_provider(function_names, commands, reporter = null) {
                     completion.kind = vscode.CompletionItemKind.Field;
                     completions.push(completion);
                 }
-                if (reporter) {
-                    reporter.sendTelemetryEvent("cmd_completion_provider", { symbol: arg });
-                }
             }
 
             // Commands
@@ -69,11 +63,13 @@ function cmd_completion_provider(function_names, commands, reporter = null) {
                     completion.command = { command: 'editor.action.triggerSuggest', title: 'Re-trigger completions...' };
                     if (!completions.some(c => c.label === word + ' ')) {
                         completions.push(completion);
-                        if (reporter) {
-                            reporter.sendTelemetryEvent("cmd_completion_provider", { symbol: word });
-                        }
                     }
                 }
+            }
+            
+            // Report telemetry
+            if (reporter) {
+                reporter.sendTelemetryEvent("cmd_completion_provider");
             }
 
             return completions;
