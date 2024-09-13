@@ -5,7 +5,7 @@ const vscode = require('vscode');
  * @param {Map<string, string[]} commands
  * @returns {vscode.CompletionItemProvider}
  */
-function cmd_completion_provider(function_names, commands) {
+function cmd_completion_provider(function_names, commands, reporter = null) {
     return {
         provideCompletionItems(document, position, token, context) {
             let completions = [];
@@ -24,6 +24,9 @@ function cmd_completion_provider(function_names, commands) {
                     completion.command = { command: 'editor.action.showHover' };
                     completion.documentation = new vscode.MarkdownString(doc);
                     completions.push(completion);
+                    if (reporter) {
+                        reporter.sendTelemetryEvent("cmd_completion_provider", { symbol: name });
+                    }
                 }
             }
             
@@ -49,6 +52,9 @@ function cmd_completion_provider(function_names, commands) {
                     completion.kind = vscode.CompletionItemKind.Field;
                     completions.push(completion);
                 }
+                if (reporter) {
+                    reporter.sendTelemetryEvent("cmd_completion_provider", { symbol: arg });
+                }
             }
 
             // Commands
@@ -63,6 +69,9 @@ function cmd_completion_provider(function_names, commands) {
                     completion.command = { command: 'editor.action.triggerSuggest', title: 'Re-trigger completions...' };
                     if (!completions.some(c => c.label === word + ' ')) {
                         completions.push(completion);
+                        if (reporter) {
+                            reporter.sendTelemetryEvent("cmd_completion_provider", { symbol: word });
+                        }
                     }
                 }
             }

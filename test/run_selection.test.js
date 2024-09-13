@@ -85,7 +85,7 @@ suite("run_selection(entire_file = False) on python Test Suite", () => {
                 editor.selection = new vscode.Selection(0, 0, 1, 0);
 
                 // Run the msc_adams.runSelection command
-                await new Promise((resolve) => run_selection(output_channel, false, resolve)());
+                await new Promise((resolve) => run_selection(output_channel, false, null, resolve)());
             });
         });
     });
@@ -154,7 +154,7 @@ suite("run_selection(entire_file = True) on python Test Suite", () => {
                 editor.selection = new vscode.Selection(0, 0, 0, 1);
 
                 // Run the msc_adams.runSelection command
-                await new Promise((resolve) => run_selection(output_channel, true, resolve)());
+                await new Promise((resolve) => run_selection(output_channel, true, null, resolve)());
             });
         });
     });
@@ -226,7 +226,7 @@ suite("run_selection(entire_file = False) on cmd Test Suite", () => {
                 editor.selection = new vscode.Selection(0, 0, 1, 0);
 
                 // Run the msc_adams.runSelection command
-                await new Promise((resolve) => run_selection(output_channel, false, resolve)());
+                await new Promise((resolve) => run_selection(output_channel, false, null, resolve)());
             });
         });
     });
@@ -297,7 +297,7 @@ suite("run_selection(entire_file = False) on cmd when $_self is in the file Test
                 editor.selection = new vscode.Selection(0, 0, 1, 0);
 
                 // // Run the msc_adams.runSelection command
-                await new Promise((resolve) => run_selection(output_channel, false, resolve)());
+                await new Promise((resolve) => run_selection(output_channel, false, null, resolve)());
             });
         });
     });
@@ -369,7 +369,7 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
                 editor.selection = new vscode.Selection(0, 0, 0, 1);
 
                 // Run the msc_adams.runSelection command
-                await new Promise((resolve) => run_selection(output_channel, true, resolve)());
+                await new Promise((resolve) => run_selection(output_channel, true, null, resolve)());
             });
         });
     });

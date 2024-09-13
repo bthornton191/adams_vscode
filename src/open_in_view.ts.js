@@ -3,7 +3,7 @@ const vscode = require('vscode');
 const fs = require('fs');
 const child_process = require("child_process");
 
-function open_in_view(context, output_channel) {
+function open_in_view(context, output_channel, reporter = null) {
     return (uri) => {
 
         let dir_name = path.dirname(uri.fsPath);
@@ -23,16 +23,19 @@ function open_in_view(context, output_channel) {
         console.log(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`);
         // Write to output channel with timestamp
         output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: "${view_launcher}" "${base_name}" "${adams_launch_command}"`);
+        reporter.sendTelemetryEvent("open_in_view");
 
         child_process.exec(`"${view_launcher}" "${base_name}" "${adams_launch_command}"`, { cwd: dir_name }, (error, stdout, stderr) => {
             if (error) {
                 console.log(`error: ${error.message}`);
                 output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: error: ${error.message}`);
+                reporter.sendTelemetryErrorEvent("open_in_view", {error: error.message});
                 return;
             }
             if (stderr) {
                 console.log(`stderr: ${stderr}`);
                 output_channel.appendLine(`[${new Date().toLocaleTimeString()}]: stderr: ${stderr}`);
+                reporter.sendTelemetryErrorEvent("open_in_view", { error: stderr });
                 return;
             }
             console.log(`stdout: ${stdout}`);

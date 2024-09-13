@@ -18,7 +18,7 @@ suite("debug_in_adams Test Suite", () => {
         });
 
         // Attach the debugger
-        await new Promise((resolve) => debug_in_adams(output_channel, resolve)());
+        await new Promise((resolve) => debug_in_adams(output_channel, null, resolve)());
 
         // Open test_model.py in the editor
         await vscode.workspace.openTextDocument(testPythonScriptPath).then((document) => {

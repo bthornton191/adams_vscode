@@ -14,7 +14,7 @@ const sub_lib_name = vscode.workspace
  * @param {boolean} entire_file
  * @param {function} done
  */
-function run_selection(output_channel, entire_file = false, done = () => {}) {
+function run_selection(output_channel, entire_file = false, reporter = null, done = () => {}) {
     return async () => {
         // Get the currently selected text
         let editor = vscode.window.activeTextEditor;
@@ -38,8 +38,8 @@ function run_selection(output_channel, entire_file = false, done = () => {}) {
         runScript(done);
 
         function runScript(done) {
-            let cmd = getAviewCommand(editor, text, entire_file);
-            sendAviewCommands(output_channel, cmd, done);
+            let cmd = getAviewCommand(editor, text, entire_file, reporter);
+            sendAviewCommands(output_channel, cmd, done, reporter);
         }
     };
 }
@@ -52,7 +52,7 @@ function run_selection(output_channel, entire_file = false, done = () => {}) {
  * @param {Boolean} entire_file
  * @returns {Object}
  */
-function getAviewCommand(editor, text, entire_file) {
+function getAviewCommand(editor, text, entire_file, reporter = null) {
     if (editor.document.languageId == "adams_cmd") {
         // If the current file is an Adams command file, do some formatting
         text = format_adams_cmd(text, editor.document.getText(), sub_lib_name);
@@ -60,17 +60,24 @@ function getAviewCommand(editor, text, entire_file) {
         fs.writeSync(temp_file.fd, text);
         fs.closeSync(temp_file.fd);
         var cmd = `file command read file_name = "${temp_file.path}"`;
+        if (entire_file) {
+            reporter.sendTelemetryEvent("run_file", {language: "adams_cmd"});
+        } else {
+            reporter.sendTelemetryEvent("run_selection", {language: "adams_cmd"});
+        }
     } else if (editor.document.languageId == "python" && entire_file) {
         // If the current file is a Python file
         // Get the current file name
         let file = vscode.window.activeTextEditor.document.fileName;
         var cmd = `file python read file_name = "${file}"`;
+        reporter.sendTelemetryEvent("run_file", {language: "python"});
     } else if (editor.document.languageId == "python") {
         // If the current file is a Python file, do some formatting
         let temp_file = temp.openSync({ suffix: ".py" });
         fs.writeSync(temp_file.fd, text);
         fs.closeSync(temp_file.fd);
         var cmd = `file python read file_name = "${temp_file.path}"`;
+        reporter.sendTelemetryEvent("run_selection", {language: "python"});
     }
     return cmd;
 }
@@ -83,7 +90,7 @@ function getAviewCommand(editor, text, entire_file) {
  * @param {function} done
  * @returns {void}
  */
-function sendAviewCommands(output_channel, cmd, done) {
+function sendAviewCommands(output_channel, cmd, done, reporter=null) {
     const client = new net.Socket();
     client.connect(5002, "localhost", function () {
         output_channel.appendLine(`Sending command to Adams View: ${cmd}`);
@@ -116,6 +123,7 @@ function sendAviewCommands(output_channel, cmd, done) {
                 "Please ensure that Adams View is open and the Command Server is running. " +
                 "You can start the command server in Adams View by going to Tools>Command Server."
         );
+        reporter.sendTelemetryErrorEvent("sendAviewCommands", {error: err.toString()});
         done();
     });
 }
