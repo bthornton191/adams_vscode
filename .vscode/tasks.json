@@ -3,8 +3,29 @@
 	"tasks": [
         {
             "type": "shell",
+            "label": "Publish",
+            "command": "echo Published!",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": [],
+            "dependsOn": ["Publish to VS Code Marketplace", "Publish to Open VSX Registry"]
+        },
+        {
+            "type": "shell",
             "label": "Publish to VS Code Marketplace",
             "command": "vsce publish",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Publish to Open VSX Registry",
+            "command": "npx ovsx publish --pat cae28c66-8a5f-4956-b8d1-1908da498e84",
             "group": {
                 "kind": "build",
                 "isDefault": false
