@@ -60,9 +60,9 @@ function getAviewCommand(editor, text, entire_file, reporter = null) {
         fs.writeSync(temp_file.fd, text);
         fs.closeSync(temp_file.fd);
         var cmd = `file command read file_name = "${temp_file.path}"`;
-        if (entire_file) {
+        if (entire_file && reporter) {
             reporter.sendTelemetryEvent("run_file", {language: "adams_cmd"});
-        } else {
+        } else if (reporter) {
             reporter.sendTelemetryEvent("run_selection", {language: "adams_cmd"});
         }
     } else if (editor.document.languageId == "python" && entire_file) {
@@ -70,14 +70,18 @@ function getAviewCommand(editor, text, entire_file, reporter = null) {
         // Get the current file name
         let file = vscode.window.activeTextEditor.document.fileName;
         var cmd = `file python read file_name = "${file}"`;
-        reporter.sendTelemetryEvent("run_file", {language: "python"});
+        if (reporter) {
+            reporter.sendTelemetryEvent("run_file", { language: "python" });
+        }
     } else if (editor.document.languageId == "python") {
         // If the current file is a Python file, do some formatting
         let temp_file = temp.openSync({ suffix: ".py" });
         fs.writeSync(temp_file.fd, text);
         fs.closeSync(temp_file.fd);
         var cmd = `file python read file_name = "${temp_file.path}"`;
-        reporter.sendTelemetryEvent("run_selection", {language: "python"});
+        if (reporter) {
+            reporter.sendTelemetryEvent("run_selection", { language: "python" });
+        }
     }
     return cmd;
 }

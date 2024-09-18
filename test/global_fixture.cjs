@@ -130,11 +130,14 @@ function startAdamsView(done) {
         console.log("Running aview start command...");
         fs.writeFileSync(
             path.join(cwd, "aviewBS.cmd"),
-            'var set var=.mdi.tmp_int int=(eval(run_python_code("import threading))")'
+            'var set var=.mdi.tmp_int int=(eval(run_python_code("import threading")))'
         );
         fs.writeFileSync(path.join(cwd, "aview.cmd"), "command_server start");
         fs.writeFileSync(path.join(cwd, "aviewAS.cmd"), "");
-        spawn(`${process.env._ADAMS_LAUNCH_COMMAND}`, ["aview", "ru-s", "i"], { cwd: cwd });
+        spawn(`"${process.env._ADAMS_LAUNCH_COMMAND}"`, ["aview", "ru-s", "i"], {
+            cwd: cwd,
+            shell: true,
+        });
 
         // Wait for Adams View to start
         console.log("Waiting for Adams View to start...");

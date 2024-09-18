@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.0.0 (September 16th 2024)](#100-september-16th-2024)
   - [0.4.12 (September 3rd 2024)](#0412-september-3rd-2024)
     - [Documentation](#documentation)
   - [0.4.11 (September 3rd 2024)](#0411-september-3rd-2024)
@@ -28,6 +29,9 @@
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
 
+
+## 1.0.0 (September 16th 2024)
+- Official Version 1.0.0 Release. No new features or bug fixes. This release is to mark the extension as stable and ready for production use.
 
 ## 0.4.12 (September 3rd 2024)
 ### Documentation
