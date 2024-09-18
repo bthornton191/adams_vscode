@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "0.4.14",
+    "version": "1.0.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
