@@ -1,11 +1,17 @@
 import Manager
 import Object
-from Marker import _i_j_parts_from_markers as _i_j_parts, _loc_ori_provider as _loc_ori, Marker
-from typing import Any, ItemsView, Iterable, List, ValuesView
-from Part import Part
+from Marker import _i_j_parts_from_markers as _i_j_parts, _loc_ori_provider as _loc_ori, Marker, FloatingMarker
+from Marker import FloatingMarker
+from typing import Any, ItemsView, Iterable, KeysView, List, ValuesView
+from Part import Part, FlexBody
 
 
 class ForceManager(Manager.SubclassManager):
+    def items(self) -> ItemsView[str, Force]: ...
+    def values(self) -> ValuesView[Force]: ...
+    def keys(self) -> KeysView[str]: ...
+    def __getitem__(self, name) -> Force: ...
+    def __iter__(self, *args) -> Iterable[str]: ...
     def createGravity(self, **kwargs): ...
 
     def createForceVector(self,
@@ -92,7 +98,19 @@ class ForceManager(Manager.SubclassManager):
 
     def createField(self, **kwargs): ...
     def createFriction(self, **kwargs): ...
-    def createModalForce(self, **kwargs): ...
+
+    def createModalForce(self,
+                         name: str = None,
+                         flexible_body: FlexBody = None,
+                         flexible_body_name: str = None,
+                         reaction_part: FloatingMarker = None,
+                         reaction_part_name: str = None,
+                         user_function: str = None,
+                         routine: str = None,
+                         scale_function: str = None,
+                         load_case=None,
+                         force_function: str = None,
+                         **kwargs) -> ModalForce: ...
 
     def createGeneralForce(self,
                            name: str,
@@ -280,14 +298,14 @@ class Friction(Force):
 
 
 class ModalForce(Force):
-    flexible_body: Any
-    flexible_body_name: Any
-    reaction_part: Any
-    user_function: Any
-    routine: Any
-    scale_function: Any
-    load_case: Any
-    force_function: Any
+    flexible_body: FlexBody
+    flexible_body_name: str
+    reaction_part: FloatingMarker
+    user_function: str
+    routine: str
+    scale_function: str
+    load_case: str
+    force_function: str
 
 
 class GeneralForce(Force):

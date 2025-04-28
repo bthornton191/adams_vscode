@@ -69,11 +69,11 @@ class Contact(Object.Object):
     exponent: float
     penalty: Any
     restitution_coefficient: float
-    normal_function: Any
-    normal_routine: Any
+    normal_function: str
+    normal_routine: str
     augmented_lagrangian_formulation: Any
-    friction_function: Any
-    friction_routine: Any
+    friction_function: str
+    friction_routine: str
     coulomb_friction_dict: Any
     coulomb_friction: str
     mu_static: float

@@ -4,6 +4,7 @@ import Model
 from Model import ModelManager
 from Group import GroupManager
 from Expression import eval as eval, expression as expression
+from Defaults import AdamsDefaults
 
 DBRoot: Any
 
@@ -11,7 +12,7 @@ class AdamsRoot(Object.Object): ...
 
 
 Models: ModelManager
-defaults: Any
+defaults: AdamsDefaults
 preferences: Any
 Groups: GroupManager
 Libraries: Any
