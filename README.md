@@ -51,9 +51,7 @@
 * Function signature help provider
 * Type hinting
 
-> [!NOTE]
-> You may need to manually activate the extension using `msc_adams.activate` for these features to work
-> ![adams python autocomplete](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/adams_python_autocomplete.gif)
+![adams python autocomplete](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/adams_python_autocomplete.gif)
 
 ## Debugging python scripts in Adams View
 You can debug python scripts in Adams View using the [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python). This extension provides a convenient button to attach the debugger to an existing Adams View process. 
