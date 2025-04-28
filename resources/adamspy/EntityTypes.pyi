@@ -248,4 +248,4 @@ ent_opt_func: Any
 ent_upper_boundary: Any
 ent_analysis: Any
 TypeMap: Any
-ReverseTypeMap: Any
+ReverseTypeMap: dict

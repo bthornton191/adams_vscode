@@ -3,6 +3,7 @@ import Object
 from Part import Part
 from typing import Any, ItemsView, Iterable, KeysView, List, Union, ValuesView
 
+
 class Marker(Object.Object):
     def __init__(self, _DBKey) -> None: ...
     node_id: int
@@ -17,6 +18,7 @@ class Marker(Object.Object):
     orientation: List[float]
     """Local when getting, global when setting"""
     location: List[float]
+    """Local when getting, global when setting"""
     relative_to: Marker
     reference_marker: Marker
     reference_marker_name: str
@@ -24,11 +26,15 @@ class Marker(Object.Object):
     in_plane_orientation: List[float]
     location_global: List[float]
 
+
 class FloatingMarker(Object.Object):
     node_id: int
     adams_id: int
 
-class _i_j_parts_from_markers: ...
+
+class _i_j_parts_from_markers:
+    ...
+
 
 class _loc_ori_provider:
     location: List[float]
@@ -53,4 +59,18 @@ class MarkerManager(Manager.AdamsManager):
                location=[0, 0, 0],
                orientation=[0, 0, 0],
                relative_to: Union[Marker, Part] = None,
-               **kwargs) -> Marker: ...
+               **kwargs) -> Marker:
+        """Create a new marker object
+
+        Parameters
+        ----------
+        name : str
+            Name of the marker
+        location : List[float]
+            Global location of the marker (default is [0, 0, 0])
+        orientation : List[float]
+            Orientation of the marker. (default is [0, 0, 0])
+        relative_to : Marker or Part
+            Marker or part to which the new marker is relative to (default is ground)
+        """
+        ...

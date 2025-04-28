@@ -1,6 +1,6 @@
 import Manager
 import Object
-from typing import Any, ItemsView, List, ValuesView
+from typing import Any, ItemsView, List, Optional, ValuesView
 
 
 class DataElement(Object.Object):
@@ -23,7 +23,7 @@ class Spline(DataElement):
     x: List[float]
     y: List[float]
     z: List[float]
-    linear_extrapolate: Any
+    linear_extrapolate: bool
     channel: Any
     file_type: Any
     block_name: str
@@ -47,7 +47,7 @@ class ICArray(Array):
 
 
 class GeneralArray(Array):
-    numbers: List[float]
+    numbers: Optional[List[float]]
 
 
 class XStateArray(Array):
@@ -99,17 +99,17 @@ class String(DataElement):
 
 class PInput(DataElement):
     variable_name: str
-    variable: StateVariable
+    variable: List[StateVariable]
 
 
 class POutput(DataElement):
     variable_name: str
-    variable: StateVariable
+    variable: List[StateVariable]
 
 
 class PState(DataElement):
     variable_name: str
-    variable: StateVariable
+    variable: List[StateVariable]
 
 
 class DataElementManager(Manager.SubclassManager):
@@ -117,21 +117,70 @@ class DataElementManager(Manager.SubclassManager):
     def values(self, *args) -> ValuesView[DataElement]: ...
     def items(self, *args) -> ItemsView[str, DataElement]: ...
     def createCurveData(self, **kwargs) -> CurveData: ...
-    def createSpline(self, **kwargs) -> Spline: ...
+
+    def createSpline(self,
+                     name: str = None,
+                     x: List[float] = None,
+                     y: List[float] = None,
+                     z: List[float] = None,
+                     linear_extrapolate: bool = None,
+                     **kwargs) -> Spline: ...
+
     def createICArray(self, **kwargs) -> ICArray: ...
-    def createGeneralArray(self, **kwargs) -> GeneralArray: ...
+
+    def createGeneralArray(self,
+                           name: str = None,
+                           numbers: List = None,
+                           **kwargs) -> GeneralArray: ...
+
     def createXStateArray(self, **kwargs) -> XStateArray: ...
     def createYOutputArray(self, **kwargs) -> YOutputArray: ...
     def createUInputArray(self, **kwargs) -> UInputArray: ...
-    def createMatrixFull(self, **kwargs) -> MatrixFull: ...
+
+    def createMatrixFull(self,
+                         row_count: int,
+                         column_count: int,
+                         values: List[float],
+                         input_order: str,
+                         **kwargs) -> MatrixFull:
+        """Create a full matrix data element.
+
+        Parameters
+        ----------
+        row_count : int
+            Specifies the number of rows (M) in the matrix.Used in the definition of a full matrix.
+        column_count : int
+            Specifies the number of columns (N) in the matrix used in the definition of a full matrix.
+        values : List[float]
+            Specifies the real number values that you enter to populate a FULL MATRIX.
+        input_order : str
+            'by_row' or 'by_column' to specify the order in which the values are entered.
+
+        Returns
+        -------
+        MatrixFull
+            _description_
+        """
+        ...
+
     def createMatrixSparse(self, **kwargs) -> MatrixSparse: ...
     def createMatrixFile(self, **kwargs) -> MatrixFile: ...
+
     def createStateVariable(self,
-                            name: str,
-                            function: str,
+                            name: str = None,
+                            function: str = '',
                             initial_condition: float = None,
+                            routine: str = '',
+                            user_function: str = '',
                             **kwargs) -> StateVariable: ...
+
     def createString(self, **kwargs) -> String: ...
-    def createPInput(self, **kwargs) -> PInput: ...
+
+    def createPInput(self,
+                     name: str = None,
+                     variable: List[StateVariable] = None,
+                     variable_name: List[str] = None,
+                     **kwargs) -> PInput: ...
+
     def createPOutput(self, **kwargs) -> POutput: ...
     def createPState(self, **kwargs) -> PState: ...

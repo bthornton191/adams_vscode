@@ -5,12 +5,50 @@ from Marker import MarkerManager, Marker
 from DesignPoint import DesignPointManager
 from Geometry import GeometryManager
 from Expression import AdamsExpr as AdamsExpr
-from typing import Any, ItemsView, Iterable, KeysView, List, ValuesView
+from typing import Any, ItemsView, Iterable, KeysView, List, Optional, ValuesView
 
 
 class PartManager(Manager.SubclassManager):
     def createRigidBody(self, **kwargs) -> RigidBody: ...
-    def createFlexBody(self, **kwargs) -> FlexBody: ...
+    def createFlexBody(self,
+                       name: str = None,
+                       vx: float = None,
+                       vy: float = None,
+                       vz: float = None,
+                       wx: float = None,
+                       wy: float = None,
+                       wz: float = None,
+                       vm: float = None,
+                       vm_name: str = None,
+                       wm: float = None,
+                       wm_name: str = None,
+                       md_db_file_name: str = None,
+                       index_in_database: Any = None,
+                       damping_ratio: str = None,
+                       damping_user_function: Any = None,
+                       damping_routine: Any = None,
+                       dynamic_limit: Any = None,
+                       exact_x: float = None,
+                       exact_y: float = None,
+                       exact_z: float = None,
+                       exact_psi: float = None,
+                       exact_theta: float = None,
+                       exact_phi: float = None,
+                       invariants: Any = None,
+                       characteristic_length: Any = None,
+                       stability_factor: Any = None,
+                       exact_coordinates: Any = None,
+                       selected_modes: Any = None,
+                       modal_exact_coordinates: Any = None,
+                       initial_modal_displacements: Any = None,
+                       initial_modal_velocities: Any = None,
+                       node_count: Any = None,
+                       mode_count: Any = None,
+                       modal_neutral_file_name: Any = None,
+                       bdf_file_name: Any = None,
+                       generalized_damping: Any = None,
+                       representation: Any = None,
+                       **kwargs) -> FlexBody: ...
     def createPointMass(self, **kwargs) -> PointMass: ...
     def createExternalSystem(self, **kwargs) -> ExternalSystem: ...
     def createFEPart(self, **kwargs) -> FEPart: ...
@@ -88,10 +126,10 @@ class FlexBody(Part):
     wm_name: str
     md_db_file_name: str
     index_in_database: Any
-    damping_ratio: float
+    damping_ratio: Optional[str]
     damping_user_function: Any
     damping_routine: Any
-    dynamic_limit: Any
+    dynamic_limit: Optional[float]
     exact_x: float
     exact_y: float
     exact_z: float
@@ -106,9 +144,9 @@ class FlexBody(Part):
     modal_exact_coordinates: Any
     initial_modal_displacements: Any
     initial_modal_velocities: Any
-    node_count: Any
-    mode_count: Any
-    modal_neutral_file_name: Any
+    node_count: int
+    mode_count: int
+    modal_neutral_file_name: str
     bdf_file_name: Any
     generalized_damping: Any
     representation: Any
