@@ -14,7 +14,7 @@
   - [Syntax highlighting](#syntax-highlighting)
   - [Adams View Command Language Intellisense](#adams-view-command-language-intellisense)
   - [Intellisense support for Adams View Python Interface](#intellisense-support-for-adams-view-python-interface)
-  - [Support for debugging python scripts in Adams View](#support-for-debugging-python-scripts-in-adams-view)
+  - [Debugging python scripts in Adams View](#debugging-python-scripts-in-adams-view)
     - [Steps to debug a python script in Adams View](#steps-to-debug-a-python-script-in-adams-view)
   - [Run in Adams View](#run-in-adams-view)
     - [Run selection in Adams View (*works for both CMD and Python files*)](#run-selection-in-adams-view-works-for-both-cmd-and-python-files)
