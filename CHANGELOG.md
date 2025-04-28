@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.1.0 (April 28th 2025)](#110-april-28th-2025)
   - [1.0.0 (September 16th 2024)](#100-september-16th-2024)
   - [0.4.12 (September 3rd 2024)](#0412-september-3rd-2024)
     - [Documentation](#documentation)
@@ -28,6 +29,31 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+
+## 1.1.0 (April 28th 2025)
+
+- **Updated** the extension icon to use the old *(original?)* adams logo. This was partly just for
+   fun, but also so I don't have to keep updating the icon every time Hexagon changes the logo
+
+- **Added** intellisense support for the following design functions:
+    * `file_minus_ext`
+    * `str_split`
+
+- **Added** intellisense support for the following cmd commands:
+    * `doe_matrix`
+
+- **Improved** intellisense documentation and typing in the following adamspy modules:
+    * `Adams`
+    * `Contact`
+    * `DataElement`
+    * `Defaults`
+    * `EntityTypes`
+    * `Force`
+    * `Manager`
+    * `Marker`
+    * `Object`
+    * `Part`
 
 
 ## 1.0.0 (September 16th 2024)
