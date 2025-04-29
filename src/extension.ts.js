@@ -54,7 +54,10 @@ function activate(context) {
     // ---------------------------------------------------------------------------
     // Hover Provider
     // ---------------------------------------------------------------------------
-    vscode.languages.registerHoverProvider("adams_cmd", cmd_hover_provider(view_functions, reporter));
+    vscode.languages.registerHoverProvider(
+        "adams_cmd",
+        cmd_hover_provider(view_functions, reporter)
+    );
 
     // ---------------------------------------------------------------------------
     // Completion Provider
@@ -84,6 +87,23 @@ function activate(context) {
 
     if (vscode.workspace.getConfiguration().get("msc-adams.runInAdams.autoLoadAdamspyStubs")) {
         vscode.commands.executeCommand("msc_adams.loadStubFiles");
+    }
+
+    vscode.commands.registerCommand(
+        "msc_adams.loadAdamsSitePackages",
+        load_stub_files(context, output_channel, reporter)
+    );
+    // Set to run whenever the adamsLaunchCommand setting is changed
+    vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration('msc-adams.adamsLaunchCommand')) {
+            if (vscode.workspace.getConfiguration("msc-adams").get("adamsLaunchCommand") !== null) {
+                vscode.commands.executeCommand("msc_adams.loadAdamsSitePackages");
+            }
+        }
+    });
+
+    if (vscode.workspace.getConfiguration().get("msc-adams.runInAdams.autoLoadAdamsSitePackages")) {
+        vscode.commands.executeCommand("msc_adams.loadAdamsSitePackages");
     }
 
     vscode.window.showInformationMessage("MSC Adams Extension Activated");
