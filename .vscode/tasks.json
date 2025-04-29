@@ -9,6 +9,14 @@
                 "kind": "build",
                 "isDefault": false
             },
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/c"
+                    ]
+                }
+            },
             "problemMatcher": [],
             "dependsOn": ["Publish to VS Code Marketplace", "Publish to Open VSX Registry"]
         },
@@ -20,6 +28,14 @@
                 "kind": "build",
                 "isDefault": false
             },
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/c"
+                    ]
+                }
+            },
             "problemMatcher": []
         },
         {
@@ -29,6 +45,14 @@
             "group": {
                 "kind": "build",
                 "isDefault": false
+            },
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/c"
+                    ]
+                }
             },
             "problemMatcher": []
         },
@@ -40,6 +64,14 @@
                 "kind": "build",
                 "isDefault": false
             },
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/c"
+                    ]
+                }
+            },
             "problemMatcher": []
         },
         {
@@ -50,6 +82,14 @@
                 "kind": "build",
                 "isDefault": true
             },
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/c"
+                    ]
+                }
+            },
             "problemMatcher": []
         },
 		{
@@ -59,6 +99,14 @@
             "isBackground": true,
             "presentation": {
                 "reveal": "never"
+            },
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": [
+                        "/c"
+                    ]
+                }
             },
             "group": {
                 "kind": "build",
