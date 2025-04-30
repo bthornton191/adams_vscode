@@ -139,15 +139,42 @@ function startAdamsView(done) {
             shell: true,
         });
 
-        // Wait for Adams View to start
+        // Wait for Adams View to start using polling instead of blocking
         console.log("Waiting for Adams View to start...");
-        while (
-            !fs.existsSync(log_file) ||
-            fs.readFileSync(log_file, "utf8").includes("command_server start") == false
-        ) {}
-        console.log("Adams View Started!");
-        done();
+        pollForAdamsViewStart(0, done);
     });
+}
+
+/**
+ * Poll for Adams View to start by checking the log file
+ * @param {number} attempts - The number of attempts so far
+ * @param {Function} done - Callback function to be called when Adams View is started
+ */
+function pollForAdamsViewStart(attempts, done, maxAttempts = 60, interval = 500) {
+    if (attempts >= maxAttempts) {
+        console.error(
+            `Adams View failed to start after ${(maxAttempts * interval) / 1000} seconds`
+        );
+        done();
+        return;
+    }
+
+    // Check if the log file exists and contains the expected content
+    try {
+        if (
+            fs.existsSync(log_file) &&
+            fs.readFileSync(log_file, "utf8").includes("command_server start")
+        ) {
+            console.log("Adams View Started!");
+            done();
+            return;
+        }
+    } catch (error) {
+        console.log(`Error checking log file: ${error.message}`);
+    }
+
+    // Schedule the next check
+    setTimeout(() => pollForAdamsViewStart(attempts + 1, done, maxAttempts, interval), interval);
 }
 
 /**
