@@ -14,21 +14,9 @@ suite("add_adams_site_packages Test Suite", () => {
     );
 
     // Mock configuration settings for msc-adams only
-    let mockMdiBat = path.join("C:", "MSC.Software", "Adams", "2023", "common", "mdi.bat");
-
-    // Store original workspace.getConfiguration
-    let originalGetConfiguration;
-
-    // Mock Python analysis paths
-    let mockExtraPaths = [];
-    let mockAutoCompletePaths = [];
-
-    // Create a mock reporter
-    const mockReporter = {
-        sendTelemetryEvent: (name, props) => {
-            // Do nothing in test
-        },
-    };
+    const mdiBat = path.resolve(process.env._ADAMS_LAUNCH_COMMAND);
+    const topDir = path.dirname(path.dirname(mdiBat));
+    const sitePackages = path.join(topDir, "python", "win64", "Lib", "site-packages");
 
     suiteSetup(() => {
         // Create .vscode directory if it doesn't exist
@@ -36,151 +24,96 @@ suite("add_adams_site_packages Test Suite", () => {
         if (!fs.existsSync(vscodeDir)) {
             fs.mkdirSync(vscodeDir, { recursive: true });
         }
+    });
 
-        // Clear workspace settings before tests
+    setup(async () => {
+        // Clear settings
         if (fs.existsSync(settingsPath)) {
             fs.unlinkSync(settingsPath);
         }
 
-        // Create empty settings.json
-        fs.writeFileSync(settingsPath, JSON.stringify({}), "utf8");
+        // Update Settings
+        await vscode.workspace
+            .getConfiguration("python")
+            .update("analysis.extraPaths", [], vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace
+            .getConfiguration("python")
+            .update("autoComplete.extraPaths", [], vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace
+            .getConfiguration("msc-adams")
+            .update("adamsLaunchCommand", mdiBat, vscode.ConfigurationTarget.Workspace);
 
-        // Store the original function
-        originalGetConfiguration = vscode.workspace.getConfiguration;
-    });
-
-    setup(() => {
-        // Reset mock paths before each test
-        mockExtraPaths = [];
-        mockAutoCompletePaths = [];
-
-        // Create mock configuration function
-        vscode.workspace.getConfiguration = function (section) {
-            if (section === "msc-adams") {
-                return {
-                    get: (key, defaultValue) => {
-                        if (key === "adamsLaunchCommand") {
-                            return mockMdiBat;
-                        }
-                        return defaultValue;
-                    },
-                };
-            } else if (section === "python") {
-                return {
-                    get: (key, defaultValue) => {
-                        if (key === "analysis.extraPaths") {
-                            return mockExtraPaths;
-                        } else if (key === "autoComplete.extraPaths") {
-                            return mockAutoCompletePaths;
-                        }
-                        return defaultValue;
-                    },
-                    update: (key, value, scope) => {
-                        if (key === "analysis.extraPaths") {
-                            mockExtraPaths = value;
-                        } else if (key === "autoComplete.extraPaths") {
-                            mockAutoCompletePaths = value;
-                        }
-
-                        // Update settings.json to match our mock
-                        if (fs.existsSync(settingsPath)) {
-                            const fileSettings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-                            fileSettings[`python.${key}`] = value;
-                            fs.writeFileSync(
-                                settingsPath,
-                                JSON.stringify(fileSettings, null, 4),
-                                "utf8"
-                            );
-                        }
-                        return Promise.resolve();
-                    },
-                };
-            }
-            return originalGetConfiguration(section);
-        };
+        // Give VS Code time to process the configuration changes
+        await new Promise((resolve) => setTimeout(resolve, 500));
     });
 
     teardown(() => {
-        // Restore original function after each test to prevent test interference
-        vscode.workspace.getConfiguration = originalGetConfiguration;
-    });
-
-    suiteTeardown(() => {
-        // Ensure original function is restored
-        vscode.workspace.getConfiguration = originalGetConfiguration;
-
-        // Clear workspace settings after tests
+        // Clear settings after each test
         if (fs.existsSync(settingsPath)) {
             fs.unlinkSync(settingsPath);
         }
     });
 
     test("should add Adams site-packages to python.analysis.extraPaths", async () => {
-        // Calculate the expected site-packages path based on the mock mdi.bat
-        const mockAdamsDir = path.dirname(path.dirname(mockMdiBat));
-        const mockSitePackages = path.join(mockAdamsDir, "python", "win64", "Lib", "site-packages");
-
-        // Initial paths should be empty
-        assert.deepStrictEqual(mockExtraPaths, [], "Initial extraPaths should be empty");
-
-        const context = {
-            asAbsolutePath: (relativePath) => relativePath,
-        };
-
         // Run add_adams_site_packages
-        await add_adams_site_packages(context, output_channel, mockReporter)();
+        await add_adams_site_packages(output_channel)();
+
+        // Wait a moment for settings to be updated
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Read settings.json directly to verify changes
+        const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
 
         // Verify the expected path was added to python.analysis.extraPaths
         assert(
-            mockExtraPaths.includes(mockSitePackages),
+            settings["python.analysis.extraPaths"].includes(sitePackages),
             "Adams site-packages was not added to python.analysis.extraPaths"
         );
     });
 
     test("should add Adams site-packages to python.autoComplete.extraPaths", async () => {
-        // Calculate the expected site-packages path based on the mock mdi.bat
-        const mockAdamsDir = path.dirname(path.dirname(mockMdiBat));
-        const mockSitePackages = path.join(mockAdamsDir, "python", "win64", "Lib", "site-packages");
-
-        // Initial paths should be empty
-        assert.deepStrictEqual(
-            mockAutoCompletePaths,
-            [],
-            "Initial autoCompletePaths should be empty"
-        );
-
-        const context = {
-            asAbsolutePath: (relativePath) => relativePath,
-        };
-
         // Run add_adams_site_packages
-        await add_adams_site_packages(context, output_channel, mockReporter)();
+        await add_adams_site_packages(output_channel)();
+
+        // Wait a moment for settings to be updated
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Read settings.json directly to verify changes
+        const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
 
         // Verify the expected path was added to python.autoComplete.extraPaths
         assert(
-            mockAutoCompletePaths.includes(mockSitePackages),
+            settings["python.autoComplete.extraPaths"].includes(sitePackages),
             "Adams site-packages was not added to python.autoComplete.extraPaths"
         );
     });
 
     test("should not duplicate paths in python.analysis.extraPaths", async () => {
-        // Calculate the expected site-packages path based on the mock mdi.bat
-        const mockAdamsDir = path.dirname(path.dirname(mockMdiBat));
-        const mockSitePackages = path.join(mockAdamsDir, "python", "win64", "Lib", "site-packages");
+        // Set up initial settings.json with the path already present
 
-        // Set up the path as already present
-        mockExtraPaths = [mockSitePackages];
+        // Update Settings
+        await vscode.workspace
+            .getConfiguration("python")
+            .update("analysis.extraPaths", [sitePackages], vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace
+            .getConfiguration("python")
+            .update("autoComplete.extraPaths", [], vscode.ConfigurationTarget.Workspace);
+        await vscode.workspace
+            .getConfiguration("msc-adams")
+            .update("adamsLaunchCommand", mdiBat, vscode.ConfigurationTarget.Workspace);
 
-        const context = {
-            asAbsolutePath: (relativePath) => relativePath,
-        };
+        // Run add_adams_site_package
+        await add_adams_site_packages(output_channel)();
 
-        // Run add_adams_site_packages
-        await add_adams_site_packages(context, output_channel, mockReporter)();
+        // Wait a moment for settings to be updated
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Read settings.json directly to verify changes
+        const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
 
         // Verify the path is only present once
         assert.strictEqual(
-            mockExtraPaths.filter((path) => path === mockSitePackages).length,
+            settings["python.analysis.extraPaths"].filter((path) => path === sitePackages).length,
             1,
             "Adams site-packages path was duplicated in python.analysis.extraPaths"
         );
