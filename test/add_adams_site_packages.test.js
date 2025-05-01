@@ -118,7 +118,6 @@ suite("add_adams_site_packages Test Suite", () => {
             "Adams site-packages path was duplicated in python.analysis.extraPaths"
         );
     });
-    ("");
     test("should remove old Adams site-packages paths", async () => {
         // Create paths to an old Adams version's site-packages
         const adamsParentDir = path.dirname(topDir);
