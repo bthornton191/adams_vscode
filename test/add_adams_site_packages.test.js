@@ -118,4 +118,59 @@ suite("add_adams_site_packages Test Suite", () => {
             "Adams site-packages path was duplicated in python.analysis.extraPaths"
         );
     });
+    ("");
+    test("should remove old Adams site-packages paths", async () => {
+        // Create paths to an old Adams version's site-packages
+        const adamsParentDir = path.dirname(topDir);
+        const oldAdamsDir = path.join(adamsParentDir, "2022_1");
+        const oldSitePackages = path.join(oldAdamsDir, "python", "win64", "Lib", "site-packages");
+
+        // Set up initial settings with both current and old site-packages paths
+        await vscode.workspace
+            .getConfiguration("python")
+            .update(
+                "analysis.extraPaths",
+                [sitePackages, oldSitePackages],
+                vscode.ConfigurationTarget.Workspace
+            );
+        await vscode.workspace
+            .getConfiguration("python")
+            .update(
+                "autoComplete.extraPaths",
+                [sitePackages, oldSitePackages],
+                vscode.ConfigurationTarget.Workspace
+            );
+        await vscode.workspace
+            .getConfiguration("msc-adams")
+            .update("adamsLaunchCommand", mdiBat, vscode.ConfigurationTarget.Workspace);
+
+        // Run add_adams_site_packages
+        await add_adams_site_packages(output_channel)();
+
+        // Wait a moment for settings to be updated
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Read settings.json directly to verify changes
+        const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+
+        // Verify the old site-packages path was removed
+        assert(
+            !settings["python.analysis.extraPaths"].includes(oldSitePackages),
+            "Old Adams site-packages was not removed from python.analysis.extraPaths"
+        );
+        assert(
+            !settings["python.autoComplete.extraPaths"].includes(oldSitePackages),
+            "Old Adams site-packages was not removed from python.autoComplete.extraPaths"
+        );
+
+        // Verify the current site-packages path is still there
+        assert(
+            settings["python.analysis.extraPaths"].includes(sitePackages),
+            "Current Adams site-packages was incorrectly removed from python.analysis.extraPaths"
+        );
+        assert(
+            settings["python.autoComplete.extraPaths"].includes(sitePackages),
+            "Current Adams site-packages was incorrectly removed from python.autoComplete.extraPaths"
+        );
+    });
 });

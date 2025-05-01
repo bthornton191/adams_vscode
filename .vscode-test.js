@@ -14,5 +14,6 @@ module.exports = defineConfig({
     mocha: {
         timeout: 300000,
         require: path.join(__dirname, "test", "global_fixture.cjs"),
+        fullTrace: true,
     },
 });
