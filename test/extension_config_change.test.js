@@ -23,6 +23,10 @@ suite("Configuration Change Test Suite", () => {
         ".vscode",
         "settings.json"
     );
+
+    if (!process.env._ADAMS_LAUNCH_COMMAND) {
+        throw new Error("_ADAMS_LAUNCH_COMMAND environment variable is not set.");
+    }
     const mdiBat = path.resolve(process.env._ADAMS_LAUNCH_COMMAND);
 
     // Track executed commands
