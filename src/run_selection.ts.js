@@ -168,7 +168,10 @@ function format_adams_cmd(selected_text, full_text, lib_name) {
             let found = false;
             for (let def of defs) {
                 // If the parameter name matches the parameter definition
-                if ("$" + def.match(/\$('?)([a-zA-Z0-9_]*)\1/)[2] == ref) {
+                if (
+                    "$" + def.match(/\$('?)([a-zA-Z0-9_]*)\1/)[2].replace(/'/g, "") ==
+                    ref.replace(/'/g, "")
+                ) {
                     // If the parameter definition has a default value
                     if (def.match(/.+:d=([^:]*).*/i)) {
                         // Get the default value
