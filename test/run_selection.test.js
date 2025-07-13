@@ -410,6 +410,98 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
     });
 });
 
+suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite", () => {
+    const tempOutputPath = path.join(os.tmpdir(), "var.txt");
+
+    suiteSetup(async () => {
+        // Wait for adams view connection
+        await new Promise((resolve) => {
+            waitForAdamsConnection(resolve);
+        });
+
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
+        // Log a blank line to ensure the test doesn't use a previous result
+        await new Promise((resolve) => logLine("run_selection_entire_file.cmd", resolve));
+
+        // create a file in the user's temp directory
+        const tempFilePath = path.join(os.tmpdir(), "run_selection_entire_file.cmd");
+        const tempFileContent =
+            "!$prefix:t=string:d=tes\n" +
+            "var set var=$_self.test2 string=\"This is a $'prefix't\"\n" +
+            `list_info variable variable_name = .vscode.test2 file_name = "${tempOutputPath}"\n` +
+            "var set var=.mdi.tmpstr str=(eval(str_print('this should be shown')))\n" +
+            "var set var=.mdi.tmpstr str=(eval(str_print('this should ALSO be shown')))";
+        fs.writeFileSync(tempFilePath, tempFileContent);
+
+        // Open the file in the editor
+        await vscode.workspace.openTextDocument(tempFilePath).then(async (document) => {
+            await vscode.window.showTextDocument(document).then(async (editor) => {
+                // Select the first character of the first line
+                editor.selection = new vscode.Selection(0, 0, 0, 1);
+
+                // Run the msc_adams.runSelection command
+                await new Promise((resolve) =>
+                    run_selection(output_channel, true, null, resolve)()
+                );
+            });
+        });
+    });
+
+    suiteTeardown(async () => {
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+    });
+
+    test("should run the entire file", (done) => {
+        const logFilePath = path.join(
+            vscode.workspace.workspaceFolders[0].uri.fsPath,
+            "working_directory",
+            "aview.log"
+        );
+        const logFileContent = fs.readFileSync(logFilePath, "utf8");
+        const lastTwoLines = logFileContent.trim().split(/\r?\n/).slice(-2);
+        const expectedLines = ["! this should be shown", "! this should ALSO be shown"];
+        assert.deepStrictEqual(lastTwoLines, expectedLines);
+        done();
+    });
+
+    test(".vscode.test2 should be 'test'", (done) => {
+        // Read the output file and look for the pattern `  String Value(s) : This is a (\w+)`
+        fs.readFile(tempOutputPath, "utf8", (err, data) => {
+            if (err) {
+                console.error("Error reading the output file:", err);
+                done(err);
+            }
+            const regex = /String Value\(s\) : This is a (.*)/;
+            const match = data.match(regex);
+            if (match) {
+                const value = match[1];
+                assert.strictEqual(value, "test");
+                done();
+            } else {
+                console.error("Pattern not found in the output file.");
+                done(new Error("Pattern not found in the output file."));
+            }
+        });
+    });
+});
+
 function logLine(line = "", done = () => {}) {
     const client = new net.Socket();
     client.connect(5002, "localhost", function () {
