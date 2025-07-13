@@ -5,6 +5,7 @@ from Model import ModelManager
 from Group import GroupManager
 from Expression import eval as eval, expression as expression
 from Defaults import AdamsDefaults
+from Settings import SessionPreferences
 
 DBRoot: Any
 
@@ -13,7 +14,7 @@ class AdamsRoot(Object.Object): ...
 
 Models: ModelManager
 defaults: AdamsDefaults
-preferences: Any
+preferences: SessionPreferences
 Groups: GroupManager
 Libraries: Any
 AttributesLibraries: Any

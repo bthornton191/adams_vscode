@@ -9,11 +9,11 @@ __asita__: str
 
 class SessionPreferences(Object.ObjectSubBase):
     def __init__(self, _DBKey) -> None: ...
-    general: Any
-    single_run: Any
-    single_run_debugger: Any
-    multi_run: Any
-    optimization: Any
+    general: GeneralPreferences
+    single_run: SinglerunPreferences
+    single_run_debugger: SinglerunDebuggerPreferences
+    multi_run: MultirunPreferences
+    optimization: OptimizationPreferences
 
 class ModelSettings(Object.ObjectSubBase):
     advanced: Any

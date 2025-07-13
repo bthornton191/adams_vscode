@@ -287,7 +287,7 @@
                     "msc-adams.runInAdams.autoLoadAdamsSitePackages": {
                         "type": "boolean",
                         "title": "Auto Load Adams site-packages",
-                        "description": "Automatically include Adams site-packages in python intellisense path when the extension is activated.",
+                        "description": "Automatically include Adams site-packages in python intellisense path when the extension is activated. This setting only takes effect if 'adamsLaunchCommand' is set.",
                         "default": true
                     },
                     "msc-adams.showDebuggerWarning": {
