@@ -36,10 +36,16 @@ function get_parents(p, n) {
  */
 function getLatestAdamsVersions() {
     const win = process.platform === "win32";
+
+    const adamsLaunchCmd = process.env.ADAMS_LAUNCH_COMMAND;
+
+    if (!adamsLaunchCmd) {
+        console.error("ADAMS_LAUNCH_COMMAND environment variable is not set.");
+        return null;
+    }
+
     // Get the path to the adams installations
-    var adams_path = path.format(
-        get_parents(path.parse(process.env.ADAMS_LAUNCH_COMMAND), win ? 3 : 2)
-    );
+    var adams_path = path.format(get_parents(path.parse(adamsLaunchCmd), win ? 3 : 2));
 
     // Get the list of all directories that match the pattern \d+_\d+(_\d+)?
     const adams_versions = fs.readdirSync(adams_path).filter((f) => f.match(/\d+_\d+(_\d+)?/));

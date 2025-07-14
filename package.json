@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "1.1.0",
+    "version": "1.2.1",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -287,7 +287,7 @@
                     "msc-adams.runInAdams.autoLoadAdamsSitePackages": {
                         "type": "boolean",
                         "title": "Auto Load Adams site-packages",
-                        "description": "Automatically include Adams site-packages in python intellisense path when the extension is activated.",
+                        "description": "Automatically include Adams site-packages in python intellisense path when the extension is activated. This setting only takes effect if 'adamsLaunchCommand' is set.",
                         "default": true
                     },
                     "msc-adams.showDebuggerWarning": {
