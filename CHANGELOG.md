@@ -1,6 +1,8 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.2.2 (July 14th 2025)](#122-july-14th-2025)
+  - [1.2.0 (April 30th 2025)](#120-april-30th-2025)
   - [1.1.0 (April 28th 2025)](#110-april-28th-2025)
   - [1.0.0 (September 16th 2024)](#100-september-16th-2024)
   - [0.4.12 (September 3rd 2024)](#0412-september-3rd-2024)
@@ -30,6 +32,17 @@
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
 
+
+## 1.2.2 (July 14th 2025)
+
+- **Fixed** parameter matching in `format_adams_cmd` to ignore single quotes.
+- **Improved** type annotations in `Adams.pyi` and `Settings.pyi`.
+
+## 1.2.0 (April 30th 2025)
+
+- **Added** functionality to manage Adams site-packages in Python configuration:
+  - Implemented `add_adams_site_packages` to add Adams site-packages to `python.analysis.extraPaths` and `python.autoComplete.extraPaths`.
+  - Registered command to load Adams site-packages when configuration changes.
 
 ## 1.1.0 (April 28th 2025)
 
