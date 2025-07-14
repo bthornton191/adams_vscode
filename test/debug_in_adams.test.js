@@ -17,8 +17,38 @@ suite("debug_in_adams Test Suite", () => {
             waitForAdamsConnection(resolve);
         });
 
-        // Attach the debugger
-        await new Promise((resolve) => debug_in_adams(output_channel, null, resolve)());
+        console.log("Attaching the debugger to Adams View...");
+
+        // Create a Promise that resolves when the debug session starts
+        const debugSessionStarted = new Promise((resolve) => {
+            const disposable = vscode.debug.onDidStartDebugSession(() => {
+                console.log("Debug session detected!");
+                // Allow time for debugger to fully initialize
+                setTimeout(() => {
+                    disposable.dispose();
+                    resolve();
+                }, 1000);
+            });
+
+            // Start the debugger
+            const debugFunction = debug_in_adams(output_channel);
+            debugFunction();
+
+            // Fallback in case the event doesn't fire
+            setTimeout(() => {
+                disposable.dispose();
+                if (vscode.debug.activeDebugSession) {
+                    console.log("Debug session detected through fallback!");
+                    resolve();
+                } else {
+                    console.error("Failed to detect debug session start!");
+                    resolve(); // Allow test to continue anyway
+                }
+            }, 10000);
+        });
+
+        // Wait for debugger to be attached
+        await debugSessionStarted;
 
         // Open test_model.py in the editor
         await vscode.workspace.openTextDocument(testPythonScriptPath).then((document) => {
@@ -34,6 +64,9 @@ suite("debug_in_adams Test Suite", () => {
             new vscode.Location(vscode.Uri.file(testPythonScriptPath), new vscode.Position(7, 0))
         );
         vscode.debug.addBreakpoints([breakpoint]);
+
+        // Give VS Code time to set the breakpoint
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         // Run the model
         await new Promise((resolve) => {

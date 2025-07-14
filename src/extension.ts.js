@@ -11,6 +11,7 @@ const { make_macro_header } = require("./make_macro_header.ts");
 const { cmd_completion_provider } = require("./cmd_completion_provider.ts");
 const { cmd_hover_provider } = require("./cmd_hover_provider.ts");
 const { link_provider } = require("./link_provider.ts.js");
+const { add_adams_site_packages } = require("../src/add_adams_site_packages.ts.js");
 
 //Create output channel
 const output_channel = vscode.window.createOutputChannel("MSC Adams");
@@ -24,10 +25,13 @@ const connectionString =
  *
  * @param {vscode.ExtensionContext} context
  */
-function activate(context) {
+function activate(context, enableTelemetry = true, skipCommandRegistration = false) {
     // Telemetry
-    const reporter = new TelemetryReporter(connectionString);
-    context.subscriptions.push(reporter);
+    let reporter = null;
+    if (enableTelemetry) {
+        reporter = new TelemetryReporter(connectionString);
+        context.subscriptions.push(reporter);
+    }
 
     const view_functions = new Map();
     const func_dir = context.asAbsolutePath("resources/adams_design_functions");
@@ -72,16 +76,43 @@ function activate(context) {
     // ---------------------------------------------------------------------------
     // Commands
     // ---------------------------------------------------------------------------
-    vscode.commands.registerCommand("msc_adams.macros.makeHeader", make_macro_header(reporter));
-    vscode.commands.registerCommand("msc_adams.openInView", open_in_view(context, output_channel, reporter));
-    vscode.commands.registerCommand("msc_adams.openViewHere", open_view_here(output_channel, reporter));
-    vscode.commands.registerCommand("msc_adams.debugInAdams", debug_in_adams(output_channel, reporter));
-    vscode.commands.registerCommand("msc_adams.runSelection", run_selection(output_channel, false, reporter));
-    vscode.commands.registerCommand("msc_adams.runFile", run_selection(output_channel, true, reporter));
-    vscode.commands.registerCommand(
-        "msc_adams.loadStubFiles",
-        load_stub_files(context, output_channel, reporter)
-    );
+    if (!skipCommandRegistration) {
+        context.subscriptions.push(
+            vscode.commands.registerCommand(
+                "msc_adams.macros.makeHeader",
+                make_macro_header(reporter)
+            ),
+            vscode.commands.registerCommand(
+                "msc_adams.openInView",
+                open_in_view(context, output_channel, reporter)
+            ),
+            vscode.commands.registerCommand(
+                "msc_adams.openViewHere",
+                open_view_here(output_channel, reporter)
+            ),
+            vscode.commands.registerCommand(
+                "msc_adams.debugInAdams",
+                debug_in_adams(output_channel, reporter)
+            ),
+            vscode.commands.registerCommand(
+                "msc_adams.runSelection",
+                run_selection(output_channel, false, reporter)
+            ),
+            vscode.commands.registerCommand(
+                "msc_adams.runFile",
+                run_selection(output_channel, true, reporter)
+            ),
+            vscode.commands.registerCommand(
+                "msc_adams.loadStubFiles",
+                load_stub_files(context, output_channel, reporter)
+            ),
+            vscode.commands.registerCommand(
+                "msc_adams.loadAdamsSitePackages",
+                add_adams_site_packages(output_channel, reporter)
+            )
+        );
+    }
+
     // Set to run whenever the loadStubFiles setting is changed
     // vscode.workspace.onDidChangeConfiguration(load_stub_files(context, output_channel));
 
@@ -89,29 +120,54 @@ function activate(context) {
         vscode.commands.executeCommand("msc_adams.loadStubFiles");
     }
 
-    vscode.commands.registerCommand(
-        "msc_adams.loadAdamsSitePackages",
-        load_stub_files(context, output_channel, reporter)
-    );
     // Set to run whenever the adamsLaunchCommand setting is changed
-    vscode.workspace.onDidChangeConfiguration((event) => {
-        if (event.affectsConfiguration('msc-adams.adamsLaunchCommand')) {
-            if (vscode.workspace.getConfiguration("msc-adams").get("adamsLaunchCommand") !== null) {
-                vscode.commands.executeCommand("msc_adams.loadAdamsSitePackages");
+    // Store the event listener so it can be disposed later
+    const configChangeListener = vscode.workspace.onDidChangeConfiguration((event) => {
+        if (event.affectsConfiguration("msc-adams.adamsLaunchCommand")) {
+            const config = vscode.workspace.getConfiguration("msc-adams");
+            const adamsLaunchPath = config.get("adamsLaunchCommand");
+            const autoLoadEnabled = config.get("runInAdams.autoLoadAdamsSitePackages", true);
+
+            if (adamsLaunchPath && autoLoadEnabled) {
+                // Check if the file exists
+                try {
+                    if (fs.existsSync(adamsLaunchPath)) {
+                        vscode.commands.executeCommand("msc_adams.loadAdamsSitePackages");
+                    } else {
+                        // Log warning if file doesn't exist (but don't break tests)
+                        output_channel.appendLine(
+                            `[${new Date().toLocaleTimeString()}]: Warning: Adams launch path does not exist: ${adamsLaunchPath}`
+                        );
+                    }
+                } catch (error) {
+                    // Log error but don't fail
+                    output_channel.appendLine(
+                        `[${new Date().toLocaleTimeString()}]: Error checking Adams launch path: ${
+                            error.message
+                        }`
+                    );
+                }
             }
         }
     });
 
-    if (vscode.workspace.getConfiguration().get("msc-adams.runInAdams.autoLoadAdamsSitePackages")) {
+    // Add the event listener to subscriptions so it's properly disposed
+    context.subscriptions.push(configChangeListener);
+
+    if (
+        vscode.workspace.getConfiguration("msc-adams").get("runInAdams.autoLoadAdamsSitePackages")
+    ) {
         vscode.commands.executeCommand("msc_adams.loadAdamsSitePackages");
     }
 
     vscode.window.showInformationMessage("MSC Adams Extension Activated");
     output_channel.appendLine(`[${new Date().toLocaleTimeString()}] MSC Adams Extension Activated`);
-    reporter.sendTelemetryEvent(
-        "MSC Adams Extension Activated",
-        vscode.workspace.getConfiguration().get("msc-adams")
-    );
+    if (enableTelemetry) {
+        reporter.sendTelemetryEvent(
+            "MSC Adams Extension Activated",
+            vscode.workspace.getConfiguration().get("msc-adams")
+        );
+    }
 }
 
 function deactivate(context) {
