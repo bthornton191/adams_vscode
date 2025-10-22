@@ -41,7 +41,7 @@
         {
             "type": "shell",
             "label": "Publish to Open VSX Registry",
-            "command": "npx ovsx publish --pat cae28c66-8a5f-4956-b8d1-1908da498e84",
+            "command": "npx ovsx publish --pat ovsxp_5d8bacfb-dbcb-4d1e-9f12-f330ea2177ae",
             "group": {
                 "kind": "build",
                 "isDefault": false
