@@ -5,8 +5,9 @@ const fs = require("fs");
 const vscode = require("vscode");
 const os = require("os");
 const { run_selection, createLibIfNotExist, sub_lib_name } = require("../src/run_selection.ts.js");
-const { evaluate_exp } = require("../src/aview.ts.js");
+const { evaluate_exp, getPort } = require("../src/aview.ts.js");
 const { waitForAdamsConnection } = require("./utils.js");
+const { startAdamsView, killAdamsIfRunningInDir } = require("./global_fixture.cjs");
 
 output_channel = vscode.window.createOutputChannel("MSC Adams Testing");
 
@@ -502,9 +503,105 @@ suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite
     });
 });
 
+suite("aviewPortNumber configuration Test Suite", () => {
+    const alternatePort = 5003;
+    const tempTestDir = path.join(os.tmpdir(), `adams_test_port_${alternatePort}`);
+
+    suiteSetup(async () => {
+        // Create temporary directory for alternate port server
+        if (!fs.existsSync(tempTestDir)) {
+            fs.mkdirSync(tempTestDir, { recursive: true });
+        }
+
+        // Update the configuration to use alternate port
+        await vscode.workspace
+            .getConfiguration("msc-adams")
+            .update("aviewPortNumber", alternatePort, vscode.ConfigurationTarget.Workspace);
+
+        // Start a new Adams View instance on the alternate port in temp directory
+        await new Promise((resolve) => startAdamsView(resolve, alternatePort, tempTestDir));
+
+        // Wait for adams view connection on default port to be ready
+        await new Promise((resolve) => {
+            waitForAdamsConnection(resolve);
+        });
+
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
+        // Log a blank line to ensure the test doesn't use a previous result
+        await new Promise((resolve) => logLine("port_config_test.py", resolve));
+
+        const tempFilePath = path.join(os.tmpdir(), "port_config_test.py");
+        const tempFileContent =
+            "import os\n" +
+            "port = os.environ.get('ADAMS_LISTENER_PORT', 'NOT_SET')\n" +
+            "print(f'ADAMS_LISTENER_PORT is {port}')";
+        fs.writeFileSync(tempFilePath, tempFileContent);
+
+        // Open the file in the editor
+        await vscode.workspace.openTextDocument(tempFilePath).then(async (document) => {
+            await vscode.window.showTextDocument(document).then(async (editor) => {
+                // Select the first character of the first line
+                editor.selection = new vscode.Selection(0, 0, 0, 1);
+
+                // Run the msc_adams.runSelection command
+                await new Promise((resolve) =>
+                    run_selection(output_channel, true, null, resolve)()
+                );
+            });
+        });
+    });
+
+    suiteTeardown(async () => {
+        // Delete the vscode library if it exists
+        await new Promise((resolve) =>
+            evaluate_exp(`db_exists("${sub_lib_name}")`, console.log, async (result) => {
+                if (result == 1) {
+                    await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
+                }
+                resolve();
+            })
+        );
+
+        // Kill the alternate port Adams View
+        await new Promise((resolve) => killAdamsIfRunningInDir(tempTestDir, resolve));
+
+        // Clean up temporary directory
+        if (fs.existsSync(tempTestDir)) {
+            fs.rmSync(tempTestDir, { recursive: true, force: true });
+        }
+
+        // Reset the configuration back to default
+        await vscode.workspace
+            .getConfiguration("msc-adams")
+            .update("aviewPortNumber", 5002, vscode.ConfigurationTarget.Workspace);
+    });
+
+    test("should connect to alternate port and print correct ADAMS_LISTENER_PORT", (done) => {
+        const logFilePath = path.join(tempTestDir, "aview.log");
+        const logFileContent = fs.readFileSync(logFilePath, "utf8");
+        const lastLine = logFileContent.trim().split(/\r?\n/).pop();
+        assert.strictEqual(lastLine, `! ADAMS_LISTENER_PORT is ${alternatePort}`);
+        done();
+    });
+
+    test("getPort should return the configured alternate port", () => {
+        const currentPort = getPort();
+        assert.strictEqual(currentPort, alternatePort);
+    });
+});
+
 function logLine(line = "", done = () => {}) {
     const client = new net.Socket();
-    client.connect(5002, "localhost", function () {
+    client.connect(getPort(), "localhost", function () {
         client.write(`cmd var set var=.mdi.tmpstr str=(eval(str_print('! > ${line}')))`, done());
     });
 }
@@ -513,7 +610,7 @@ async function checkForcheVscodeLib(lib_name, done = () => {}) {
     async function check(suffix, done) {
         const client = new net.Socket();
         let query = `query db_exists("${lib_name}${suffix}")`;
-        client.connect(5002, "localhost", function () {
+        client.connect(getPort(), "localhost", function () {
             client.write(query);
             client.on("data", function () {
                 client.write("OK");
@@ -543,14 +640,14 @@ async function checkForcheVscodeLib(lib_name, done = () => {}) {
  * @returns {void}
  */
 function deleteLibrary(name, done = () => {}) {
-    // Create a tcp/ip socket and connect to 5002 on localhost
+    // Create a tcp/ip socket and connect to Adams View on configured port
     const client = new net.Socket();
     client.on("error", function (err) {
         console.error("Error deleting library: " + err.toString());
         vscode.window.showErrorMessage("Error deleting library: " + err.toString());
         done();
     });
-    client.connect(5002, "localhost", function () {
+    client.connect(getPort(), "localhost", function () {
         client.write(`cmd library delete library=${name}`);
         client.on("data", function (cdata) {
             if (cdata.toString() != "cmd: 0") {

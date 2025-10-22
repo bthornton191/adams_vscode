@@ -2,7 +2,7 @@ const net = require("net");
 const path = require("path");
 const fs = require("fs");
 const { spawn, exec } = require("child_process");
-const { port, evaluate_exp, execute_cmd } = require("../src/aview.ts.js");
+const { getPort, evaluate_exp, execute_cmd } = require("../src/aview.ts.js");
 const cwd = path.join(__dirname, "working_directory");
 const pidCwd = require("pid-cwd");
 const process = require("process");
@@ -100,7 +100,7 @@ function checkIfCommandServerRunning(done = (running) => {}) {
     client.on("error", function (err) {
         done(false);
     });
-    client.connect(port, "localhost", function () {
+    client.connect(getPort(), "localhost", function () {
         done(true);
     });
 }
@@ -123,25 +123,45 @@ function getCwdOfRunningCommandServer(done = (cwd) => {}) {
 /**
  * Start Adams View
  * @param {Function} done - Callback function to be called when Adams View is started
+ * @param {number} port - Optional port number for the command server. If not specified, uses default (5002)
+ * @param {string} dir - Optional directory to start Adams View in. If not specified, uses default working directory
  */
-function startAdamsView(done) {
-    console.log("Starting Adams View...");
-    killAdamsIfRunningInDir(cwd, () => {
+function startAdamsView(done, port = null, dir = null) {
+    const workDir = dir || cwd;
+    console.log(`Starting Adams View in ${workDir}${port ? ` on port ${port}` : ""}...`);
+
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(workDir)) {
+        fs.mkdirSync(workDir, { recursive: true });
+    }
+
+    killAdamsIfRunningInDir(workDir, () => {
         console.log("Running aview start command...");
         fs.writeFileSync(
-            path.join(cwd, "aviewBS.cmd"),
+            path.join(workDir, "aviewBS.cmd"),
             'var set var=.mdi.tmp_int int=(eval(run_python_code("import threading")))'
         );
-        fs.writeFileSync(path.join(cwd, "aview.cmd"), "command_server start");
-        fs.writeFileSync(path.join(cwd, "aviewAS.cmd"), "");
-        spawn(`"${process.env._ADAMS_LAUNCH_COMMAND}"`, ["aview", "ru-s", "i"], {
-            cwd: cwd,
+        fs.writeFileSync(path.join(workDir, "aview.cmd"), "command_server start");
+        fs.writeFileSync(path.join(workDir, "aviewAS.cmd"), "");
+
+        const spawnOptions = {
+            cwd: workDir,
             shell: true,
-        });
+        };
+
+        // Only set ADAMS_LISTENER_PORT environment variable if port is specified
+        if (port) {
+            spawnOptions.env = {
+                ...process.env,
+                ADAMS_LISTENER_PORT: port.toString(),
+            };
+        }
+
+        spawn(`"${process.env._ADAMS_LAUNCH_COMMAND}"`, ["aview", "ru-s", "i"], spawnOptions);
 
         // Wait for Adams View to start using polling instead of blocking
         console.log("Waiting for Adams View to start...");
-        pollForAdamsViewStart(0, done);
+        pollForAdamsViewStart(0, done, 60, 500, workDir);
     });
 }
 
@@ -149,8 +169,14 @@ function startAdamsView(done) {
  * Poll for Adams View to start by checking the log file
  * @param {number} attempts - The number of attempts so far
  * @param {Function} done - Callback function to be called when Adams View is started
+ * @param {number} maxAttempts - Maximum number of attempts before giving up
+ * @param {number} interval - Interval in milliseconds between attempts
+ * @param {string} dir - Optional directory where Adams View is running. If not specified, uses default working directory
  */
-function pollForAdamsViewStart(attempts, done, maxAttempts = 60, interval = 500) {
+function pollForAdamsViewStart(attempts, done, maxAttempts = 60, interval = 500, dir = null) {
+    const workDir = dir || cwd;
+    const logFile = path.join(workDir, "aview.log");
+
     if (attempts >= maxAttempts) {
         console.error(
             `Adams View failed to start after ${(maxAttempts * interval) / 1000} seconds`
@@ -162,8 +188,8 @@ function pollForAdamsViewStart(attempts, done, maxAttempts = 60, interval = 500)
     // Check if the log file exists and contains the expected content
     try {
         if (
-            fs.existsSync(log_file) &&
-            fs.readFileSync(log_file, "utf8").includes("command_server start")
+            fs.existsSync(logFile) &&
+            fs.readFileSync(logFile, "utf8").includes("command_server start")
         ) {
             console.log("Adams View Started!");
             done();
@@ -174,7 +200,10 @@ function pollForAdamsViewStart(attempts, done, maxAttempts = 60, interval = 500)
     }
 
     // Schedule the next check
-    setTimeout(() => pollForAdamsViewStart(attempts + 1, done, maxAttempts, interval), interval);
+    setTimeout(
+        () => pollForAdamsViewStart(attempts + 1, done, maxAttempts, interval, dir),
+        interval
+    );
 }
 
 /**
@@ -189,13 +218,19 @@ function killAdamsIfRunningInDir(dir, done = () => {}) {
             killProcByPid(pid);
         }
 
+        if (dir === null) {
+            var logFile = log_file;
+        } else {
+            var logFile = path.join(dir, "aview.log");
+        }
+
         // Delete the log file if it exists
         console.log("Deleting log file...");
-        if (fs.existsSync(log_file)) {
+        if (fs.existsSync(logFile)) {
             function deleteLogFile() {
-                if (fs.existsSync(log_file)) {
+                if (fs.existsSync(logFile)) {
                     try {
-                        fs.unlinkSync(log_file);
+                        fs.unlinkSync(logFile);
                         console.log("Log file deleted successfully.");
                     } catch (error) {
                         console.log("Log file is locked. Retrying in 1 second...");
@@ -245,3 +280,5 @@ function checkIfAdamsRunningInDir(dir, done = (pid) => {}) {
 
 exports.mochaGlobalSetup = mochaGlobalSetup;
 exports.mochaGlobalTeardown = mochaGlobalTeardown;
+exports.startAdamsView = startAdamsView;
+exports.killAdamsIfRunningInDir = killAdamsIfRunningInDir;

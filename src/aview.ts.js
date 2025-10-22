@@ -1,6 +1,10 @@
 const net = require("net");
 
-const port = 5002;
+// Dynamic port accessor so that changes to the configuration are honored without restart.
+function getPort() {
+    const vscode = require("vscode");
+    return vscode.workspace.getConfiguration("msc-adams").get("aviewPortNumber") || 5002;
+}
 
 function execute_cmd(cmd, log = () => {}, done = () => {}, sent = () => {}) {
     const client = new net.Socket();
@@ -9,7 +13,7 @@ function execute_cmd(cmd, log = () => {}, done = () => {}, sent = () => {}) {
         done();
     });
 
-    client.connect(port, "localhost", function () {
+    client.connect(getPort(), "localhost", function () {
         // Send the command to the server
         client.write(`cmd ${cmd}`, sent);
 
@@ -34,7 +38,7 @@ function evaluate_exp(exp, log = () => {}, done = (data) => {}) {
         log(`Error evaluating expression '${exp}: '` + err.toString());
     });
 
-    client.connect(port, "localhost", function () {
+    client.connect(getPort(), "localhost", function () {
         // Send the command to the server
         client.write(`query ${exp}`);
 
@@ -93,4 +97,4 @@ function parseData(response, type_, num) {
 
 exports.execute_cmd = execute_cmd;
 exports.evaluate_exp = evaluate_exp;
-exports.port = port;
+exports.getPort = getPort;

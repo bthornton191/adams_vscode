@@ -1,0 +1,9 @@
+{
+    "msc-adams.aviewPortNumber": 5002,
+    "python.analysis.extraPaths": [
+        "c:\\Users\\ben.thornton\\code\\adams_vscode\\resources\\adamspy"
+    ],
+    "python.autoComplete.extraPaths": [
+        "c:\\Users\\ben.thornton\\code\\adams_vscode\\resources\\adamspy"
+    ]
+}
