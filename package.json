@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "1.2.2",
+    "version": "1.3.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -295,6 +295,12 @@
                         "title": "Show Debugger Warning",
                         "description": "Show a pop-up message when trying to connect the debugger to Adams View 2023 or higher",
                         "default": true
+                    },
+                    "msc-adams.aviewPortNumber": {
+                        "type": "integer",
+                        "title": "Port number for connecting to adams view",
+                        "description": "By default, the Adams View command server listens on port 5002. You can change this in Adams View using the `ADAMS_LISTENER_PORT` environment variable. If you change it there, make sure to update this setting to match.",
+                        "default": 5002
                     }
                 }
             }

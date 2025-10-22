@@ -2,6 +2,7 @@ const vscode = require("vscode");
 const fs = require("fs");
 const net = require("net");
 const temp = require("temp").track();
+const { getPort } = require("./aview.ts.js");
 
 const sub_lib_name = vscode.workspace
     .getConfiguration("msc-adams")
@@ -61,9 +62,9 @@ function getAviewCommand(editor, text, entire_file, reporter = null) {
         fs.closeSync(temp_file.fd);
         var cmd = `file command read file_name = "${temp_file.path}"`;
         if (entire_file && reporter) {
-            reporter.sendTelemetryEvent("run_file", {language: "adams_cmd"});
+            reporter.sendTelemetryEvent("run_file", { language: "adams_cmd" });
         } else if (reporter) {
-            reporter.sendTelemetryEvent("run_selection", {language: "adams_cmd"});
+            reporter.sendTelemetryEvent("run_selection", { language: "adams_cmd" });
         }
     } else if (editor.document.languageId == "python" && entire_file) {
         // If the current file is a Python file
@@ -94,9 +95,9 @@ function getAviewCommand(editor, text, entire_file, reporter = null) {
  * @param {function} done
  * @returns {void}
  */
-function sendAviewCommands(output_channel, cmd, done, reporter=null) {
+function sendAviewCommands(output_channel, cmd, done, reporter = null) {
     const client = new net.Socket();
-    client.connect(5002, "localhost", function () {
+    client.connect(getPort(), "localhost", function () {
         output_channel.appendLine(`Sending command to Adams View: ${cmd}`);
         client.write(`cmd ${cmd}`);
     });
@@ -127,7 +128,7 @@ function sendAviewCommands(output_channel, cmd, done, reporter=null) {
                 "Please ensure that Adams View is open and the Command Server is running. " +
                 "You can start the command server in Adams View by going to Tools>Command Server."
         );
-        reporter.sendTelemetryErrorEvent("sendAviewCommands", {error: err.toString()});
+        reporter.sendTelemetryErrorEvent("sendAviewCommands", { error: err.toString() });
         done();
     });
 }
@@ -225,14 +226,14 @@ function createLibIfNotExist(done) {
 }
 
 function checkIfLibExists(done) {
-    // Create a tcp/ip socket and connect to 5002 on localhost
+    // Create a tcp/ip socket and connect to Adams View on configured port
     const client = new net.Socket();
     client.on("error", function (err) {
         console.error(`Error checking for ${sub_lib_name}: ` + err.toString());
         vscode.window.showErrorMessage(`Error checking for ${sub_lib_name}: ` + err.toString());
     });
     let query = `query db_exists("${sub_lib_name}")`;
-    client.connect(5002, "localhost", function () {
+    client.connect(getPort(), "localhost", function () {
         client.write(query);
         client.on("data", function () {
             client.write("OK");
@@ -246,13 +247,13 @@ function checkIfLibExists(done) {
 }
 
 function createLibrary(name, done) {
-    // Create a tcp/ip socket and connect to 5002 on localhost
+    // Create a tcp/ip socket and connect to Adams View on configured port
     const client = new net.Socket();
     client.on("error", function (err) {
         console.error("Error creating library: " + err.toString());
         vscode.window.showErrorMessage("Error creating library: " + err.toString());
     });
-    client.connect(5002, "localhost", function () {
+    client.connect(getPort(), "localhost", function () {
         client.write(`cmd library create library=${name}`);
         client.on("data", function (cdata) {
             if (cdata.toString() != "cmd: 0") {
