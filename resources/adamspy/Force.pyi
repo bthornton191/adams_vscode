@@ -40,7 +40,17 @@ class ForceManager(Manager.SubclassManager):
 
     def createTorqueVector(self, **kwargs): ...
     def createRotationalSpringDamper(self, **kwargs): ...
-    def createTranslationalSpringDamper(self, **kwargs): ...
+    def createTranslationalSpringDamper(self, 
+                                        name: str = None,
+                                        i_marker: Marker = None,
+                                        j_marker: Marker = None,
+                                        i_marker_name: str = None,
+                                        j_marker_name: str = None,
+                                        force_preload: float = None,
+                                        stiffness: float = None,
+                                        damping: float = None,
+                                        displacement_at_preload: float = None,
+                                        **kwargs) -> TranslationalSpringDamper: ...
 
     def createBushing(self,
                       i_marker: Marker = None,
