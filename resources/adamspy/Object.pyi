@@ -48,7 +48,7 @@ class ObjectBase(ObjectSubBase):
 class ObjectComment(ObjectBase):
     DesignVariables: DesignVariableManager
     def __init__(self, _DBKey) -> None: ...
-    comments: Any
+    comments: str
 
 class ObjectAdamsId:
     adams_id: int
