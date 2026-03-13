@@ -1,4 +1,4 @@
-from typing import Any, ItemsView, Iterable, KeysView, ValuesView
+from typing import Any, ItemsView, Iterable, KeysView, List, ValuesView
 
 import Manager
 import Object
@@ -13,7 +13,7 @@ class SimulationManager(Manager.AdamsManager):
                number_of_steps: int = None,
                step_size: float = None,
                script_type: str = 'simple',
-               script: str = None,
+               script: str | List[str] = None,
                **kwargs) -> Simulation:
         """Creates a simulation object
 

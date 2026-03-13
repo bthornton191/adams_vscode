@@ -1,3 +1,4 @@
+from matplotlib.markers import MarkerStyle
 import Manager
 import Object
 from DBAccess import set_locori_expression as set_locori_expression
@@ -10,6 +11,7 @@ from typing import Any, ItemsView, Iterable, KeysView, List, Optional, ValuesVie
 
 class PartManager(Manager.SubclassManager):
     def createRigidBody(self, **kwargs) -> RigidBody: ...
+
     def createFlexBody(self,
                        name: str = None,
                        vx: float = None,
@@ -49,6 +51,7 @@ class PartManager(Manager.SubclassManager):
                        generalized_damping: Any = None,
                        representation: Any = None,
                        **kwargs) -> FlexBody: ...
+
     def createPointMass(self, **kwargs) -> PointMass: ...
     def createExternalSystem(self, **kwargs) -> ExternalSystem: ...
     def createFEPart(self, **kwargs) -> FEPart: ...
@@ -94,9 +97,9 @@ class RigidBody(Part):
     wx: float
     wy: float
     wz: float
-    wm: float
+    wm: Optional[Marker]
     wm_name: str
-    vm: float
+    vm: Optional[Marker]
     vm_name: str
     exact_x: float
     exact_y: float
@@ -120,9 +123,9 @@ class FlexBody(Part):
     wx: float
     wy: float
     wz: float
-    vm: float
+    vm: Optional[Marker]
     vm_name: str
-    wm: float
+    wm: Optional[Marker]
     wm_name: str
     md_db_file_name: str
     index_in_database: Any
