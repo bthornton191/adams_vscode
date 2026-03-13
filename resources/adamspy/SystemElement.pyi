@@ -31,7 +31,7 @@ class TransferFunction(SystemElement):
     static_hold: bool
 
 class DifferentialEquation(SystemElement):
-    initial_condition: Any
+    initial_condition: float
     implicit: bool
     static_hold: bool
     dynamic_hold: bool
