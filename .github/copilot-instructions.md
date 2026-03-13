@@ -37,3 +37,15 @@ This is a VS Code extension for MSC Adams multi-body dynamics simulation softwar
 - Build: `vsce package -o adams_vscode.vsix --pre-release` (task: *Build Locally*)
 - Publish: VS Code Marketplace via `vsce publish`; Open VSX via `npx ovsx publish`
 - Versioning follows semver; update `CHANGELOG.md` with every meaningful change.
+
+## Recommendations
+These are areas worth paying attention to when writing or reviewing code — not hard rules, but patterns that have caused bugs or are easy to get wrong in this codebase.
+
+- **Reporter null guard**: `reporter` defaults to `null`, so consider guarding calls with `if (reporter)` before calling `reporter.sendTelemetryEvent()` or `reporter.sendTelemetryErrorEvent()`.
+- **`child_process.exec()` vs `execFile()`**: prefer `execFile(file, args)` when launching external processes with user-controlled or file-system-derived values, since `exec()` spawns a shell and is more vulnerable to injection.
+- **`getWordRangeAtPosition()` can return `undefined`**: this happens when the cursor is at whitespace, so null-check before calling `.getText()`.
+- **Config `.get()` can return `null`**: when reading array settings (e.g. `python.analysis.extraPaths`), guard before calling array methods.
+- **Array comparison**: `===` / `!==` on arrays compares references, not values — use `.join()` or element-by-element comparison instead.
+- **Activation-time errors**: `fs.readdirSync()`, `fs.readFileSync()`, and `JSON.parse()` on resource files can throw if the file is missing or corrupted. A try-catch here prevents crashing activation.
+- **Provider disposables**: hover, completion, and link providers return a disposable — pushing it to `context.subscriptions` ensures proper cleanup on deactivation.
+- **Require paths**: use the full `.ts.js` extension in `require()` calls (e.g. `require("./aview.ts.js")`); the short `.ts` form may not resolve correctly.
