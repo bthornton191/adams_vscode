@@ -412,7 +412,11 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
 });
 
 suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite", () => {
-    const tempOutputPath = path.join(os.tmpdir(), "var.txt");
+    const tempOutputPath = path.join(
+        vscode.workspace.workspaceFolders[0].uri.fsPath,
+        "working_directory",
+        "var.txt"
+    );
 
     suiteSetup(async () => {
         // Wait for adams view connection
@@ -467,6 +471,11 @@ suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite
                 resolve();
             })
         );
+
+        // Clean up the output file
+        if (fs.existsSync(tempOutputPath)) {
+            fs.unlinkSync(tempOutputPath);
+        }
     });
 
     test("should run the entire file", (done) => {
