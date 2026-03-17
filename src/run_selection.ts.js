@@ -107,7 +107,7 @@ function sendAviewCommands(output_channel, cmd, done, reporter = null) {
         if (data.toString() != "cmd: 0") {
             console.error("Unexpected response from Adams View: " + data.toString());
             vscode.window.showErrorMessage(
-                `The following command could not be run in Adams View: ${cmd}`
+                `The following command could not be run in Adams View: ${cmd}`,
             );
         }
         // kill client after server's response
@@ -126,9 +126,10 @@ function sendAviewCommands(output_channel, cmd, done, reporter = null) {
         vscode.window.showErrorMessage(
             "No connection to Adams View was found. " +
                 "Please ensure that Adams View is open and the Command Server is running. " +
-                "You can start the command server in Adams View by going to Tools>Command Server."
+                "You can start the command server in Adams View by going to Tools>Command Server.",
         );
-        reporter.sendTelemetryErrorEvent("sendAviewCommands", { error: err.toString() });
+        if (reporter)
+            reporter.sendTelemetryErrorEvent("sendAviewCommands", { error: err.toString() });
         done();
     });
 }
@@ -259,11 +260,11 @@ function createLibrary(name, done) {
             if (cdata.toString() != "cmd: 0") {
                 console.error("Unexpected response from Adams View: " + cdata.toString());
                 vscode.window.showErrorMessage(
-                    "Unable to create a temporary library for " + "storing references to $_self"
+                    "Unable to create a temporary library for " + "storing references to $_self",
                 );
             } else {
                 console.log(
-                    `Created a temporary library for storing references to $_self: ${name}`
+                    `Created a temporary library for storing references to $_self: ${name}`,
                 );
             }
             // kill client after server's response
