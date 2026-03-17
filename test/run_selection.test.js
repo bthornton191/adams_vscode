@@ -439,10 +439,11 @@ suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite
 
         // create a file in the user's temp directory
         const tempFilePath = path.join(os.tmpdir(), "run_selection_entire_file.cmd");
+        const adamsOutputPath = tempOutputPath.replace(/\\/g, "/");
         const tempFileContent =
             "!$prefix:t=string:d=tes\n" +
             "var set var=$_self.test2 string=\"This is a $'prefix't\"\n" +
-            `list_info variable variable_name = .vscode.test2 file_name = "${tempOutputPath}"\n` +
+            `list_info variable variable_name = .vscode.test2 file_name = "${adamsOutputPath}"\n` +
             "var set var=.mdi.tmpstr str=(eval(str_print('this should be shown')))\n" +
             "var set var=.mdi.tmpstr str=(eval(str_print('this should ALSO be shown')))";
         fs.writeFileSync(tempFilePath, tempFileContent);
@@ -583,9 +584,18 @@ suite("aviewPortNumber configuration Test Suite", () => {
         // Kill the alternate port Adams View
         await new Promise((resolve) => killAdamsIfRunningInDir(tempTestDir, resolve));
 
-        // Clean up temporary directory
-        if (fs.existsSync(tempTestDir)) {
-            fs.rmSync(tempTestDir, { recursive: true, force: true });
+        // Clean up temporary directory (retry to handle locked log files)
+        for (let i = 0; i < 5; i++) {
+            try {
+                if (fs.existsSync(tempTestDir)) {
+                    fs.rmSync(tempTestDir, { recursive: true, force: true });
+                }
+                break;
+            } catch (e) {
+                if (i < 4) {
+                    await new Promise((r) => setTimeout(r, 1000));
+                }
+            }
         }
 
         // Reset the configuration back to default
