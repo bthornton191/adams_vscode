@@ -21,7 +21,7 @@ function link_provider() {
             // Regex to match filepaths on windows and linux
             const regex =
                 // /(?<quoted>(?<="|')(?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*?]+\.[a-zA-Z0-9]+(?="|'))|(?<unquoted>((?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*? ]+\.[a-zA-Z0-9]+))(?<pos>(, line \d+)|(:\d+(:\d+)?))?/g;
-                /(?:(?:(?:"|')(?<quoted>(?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*?]+\.[a-zA-Z0-9]+)(?:"|'))|(?<unquoted>((?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*? ]+\.[a-zA-Z0-9]+)))(?<line>, line \d+)?/g;
+                /(?:(?:(?:"|')(?<quoted>(?:[A-Za-z]:)?(?:\/+)[^"'\n\r]*\.[a-zA-Z0-9]+)(?:"|'))|(?<unquoted>((?:[A-Za-z]:)?(?:\/+)[^"'<>|:\n\r*? ]+\.[a-zA-Z0-9]+)))(?<line>, line \d+)?/g;
             let match;
 
             while ((match = regex.exec(text))) {

@@ -70,7 +70,7 @@ suite("link_provider", () => {
         assert.ok(links.length > 0, "Expected at least one link");
         assert.ok(
             links[0].target.toString().includes("L42"),
-            `Expected URI to contain 'L42', got: ${links[0].target.toString()}`
+            `Expected URI to contain 'L42', got: ${links[0].target.toString()}`,
         );
     });
 

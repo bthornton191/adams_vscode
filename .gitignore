@@ -15,3 +15,5 @@ test/working_directory/aview.log
 test/working_directory/aview.cmd
 test/working_directory/aviewAS.cmd
 test/working_directory/aviewBS.cmd
+test/working_directory/aview.bin_d.*
+test_output.txt

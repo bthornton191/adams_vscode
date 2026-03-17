@@ -34,7 +34,7 @@ function killAllProcsOfName(proc_name, done = () => {}) {
     exec("tasklist", (err, stdout, stderr) => {
         let lines = stdout.split("\n");
         let matchingLines = lines.filter((line) =>
-            line.toLowerCase().includes(proc_name.toLowerCase())
+            line.toLowerCase().includes(proc_name.toLowerCase()),
         );
 
         if (matchingLines.length === 0) {
@@ -64,29 +64,9 @@ function killProcByPid(pid) {
 function launchAdamsIfNotRunning(done = () => {}) {
     checkIfCommandServerRunning((running) => {
         if (running) {
-            console.log("Command server is running");
-            // getCwdOfRunningCommandServer((cwd_) => {
-            //     if (path.resolve(cwd_) == path.resolve(cwd)) {
-            //         console.log("Command server is running in the correct directory");
-            //         done();
-            //     } else {
-            //         console.log("Command server is running in the wrong directory");
-            //         console.log("Killing the adams view process running the command server...");
-            //         execute_cmd(
-            //             "stop",
-            //             () => {},
-            //             () => {}
-            //         );
-            //         startAdamsView(done);
-            //     }
-            // });
-            console.log("Killing all Adams View processes...");
-            killAllProcsOfName("aview.exe", () => {
-                startAdamsView(done);
-            });
-        } else {
-            startAdamsView(done);
+            console.log("Command server is running. Restarting Adams View in working directory...");
         }
+        startAdamsView(done);
     });
 }
 
@@ -116,7 +96,7 @@ function getCwdOfRunningCommandServer(done = (cwd) => {}) {
         () => {},
         (result) => {
             done(path.resolve(result));
-        }
+        },
     );
 }
 
@@ -139,7 +119,7 @@ function startAdamsView(done, port = null, dir = null) {
         console.log("Running aview start command...");
         fs.writeFileSync(
             path.join(workDir, "aviewBS.cmd"),
-            'var set var=.mdi.tmp_int int=(eval(run_python_code("import threading")))'
+            'var set var=.mdi.tmp_int int=(eval(run_python_code("import threading")))',
         );
         fs.writeFileSync(path.join(workDir, "aview.cmd"), "command_server start");
         fs.writeFileSync(path.join(workDir, "aviewAS.cmd"), "");
@@ -179,7 +159,7 @@ function pollForAdamsViewStart(attempts, done, maxAttempts = 60, interval = 500,
 
     if (attempts >= maxAttempts) {
         console.error(
-            `Adams View failed to start after ${(maxAttempts * interval) / 1000} seconds`
+            `Adams View failed to start after ${(maxAttempts * interval) / 1000} seconds`,
         );
         done();
         return;
@@ -202,7 +182,7 @@ function pollForAdamsViewStart(attempts, done, maxAttempts = 60, interval = 500,
     // Schedule the next check
     setTimeout(
         () => pollForAdamsViewStart(attempts + 1, done, maxAttempts, interval, dir),
-        interval
+        interval,
     );
 }
 
@@ -256,7 +236,7 @@ function checkIfAdamsRunningInDir(dir, done = (pid) => {}) {
     exec("tasklist", (err, stdout, stderr) => {
         let lines = stdout.split("\n");
         let matchingLines = lines.filter((line) =>
-            line.toLowerCase().includes(proc_name.toLowerCase())
+            line.toLowerCase().includes(proc_name.toLowerCase()),
         );
         if (matchingLines.length === 0) {
             done(0);
