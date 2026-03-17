@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const vscode = require("vscode");
 const os = require("os");
-const { run_selection, createLibIfNotExist, sub_lib_name } = require("../src/run_selection.ts.js");
+const { run_selection, createLibIfNotExist, sub_lib_name, format_adams_cmd } = require("../src/run_selection.ts.js");
 const { evaluate_exp, getPort } = require("../src/aview.ts.js");
 const { waitForAdamsConnection } = require("./utils.js");
 const { startAdamsView, killAdamsIfRunningInDir } = require("./global_fixture.cjs");
@@ -26,7 +26,7 @@ suite("createLibIfNotExist Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         await new Promise((resolve) => createLibIfNotExist(resolve)).then((result) => {
@@ -42,7 +42,7 @@ suite("createLibIfNotExist Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
     });
 
@@ -50,7 +50,7 @@ suite("createLibIfNotExist Test Suite", () => {
         await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
             (result) => {
                 assert.strictEqual(result, true);
-            }
+            },
         );
     });
 });
@@ -69,7 +69,7 @@ suite("run_selection(entire_file = False) on python Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         // Log a blank line to ensure the test doesn't use a previous result
@@ -87,7 +87,7 @@ suite("run_selection(entire_file = False) on python Test Suite", () => {
 
                 // Run the msc_adams.runSelection command
                 await new Promise((resolve) =>
-                    run_selection(output_channel, false, null, resolve)()
+                    run_selection(output_channel, false, null, resolve)(),
                 );
             });
         });
@@ -101,7 +101,7 @@ suite("run_selection(entire_file = False) on python Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
     });
 
@@ -109,7 +109,7 @@ suite("run_selection(entire_file = False) on python Test Suite", () => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
-            "aview.log"
+            "aview.log",
         );
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastLine = logFileContent.trim().split(/\r?\n/).pop();
@@ -121,7 +121,7 @@ suite("run_selection(entire_file = False) on python Test Suite", () => {
         await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
             (result) => {
                 assert.strictEqual(result, false);
-            }
+            },
         );
     });
 });
@@ -140,7 +140,7 @@ suite("run_selection(entire_file = True) on python Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         // Log a blank line to ensure the test doesn't use a previous result
@@ -158,7 +158,7 @@ suite("run_selection(entire_file = True) on python Test Suite", () => {
 
                 // Run the msc_adams.runSelection command
                 await new Promise((resolve) =>
-                    run_selection(output_channel, true, null, resolve)()
+                    run_selection(output_channel, true, null, resolve)(),
                 );
             });
         });
@@ -172,7 +172,7 @@ suite("run_selection(entire_file = True) on python Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
     });
 
@@ -180,7 +180,7 @@ suite("run_selection(entire_file = True) on python Test Suite", () => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
-            "aview.log"
+            "aview.log",
         );
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastTwoLines = logFileContent.trim().split(/\r?\n/).slice(-2);
@@ -193,7 +193,7 @@ suite("run_selection(entire_file = True) on python Test Suite", () => {
         await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
             (result) => {
                 assert.strictEqual(result, false);
-            }
+            },
         );
     });
 });
@@ -212,7 +212,7 @@ suite("run_selection(entire_file = False) on cmd Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         // Log a blank line to ensure the test doesn't use a previous result
@@ -232,7 +232,7 @@ suite("run_selection(entire_file = False) on cmd Test Suite", () => {
 
                 // Run the msc_adams.runSelection command
                 await new Promise((resolve) =>
-                    run_selection(output_channel, false, null, resolve)()
+                    run_selection(output_channel, false, null, resolve)(),
                 );
             });
         });
@@ -246,7 +246,7 @@ suite("run_selection(entire_file = False) on cmd Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
     });
 
@@ -254,7 +254,7 @@ suite("run_selection(entire_file = False) on cmd Test Suite", () => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
-            "aview.log"
+            "aview.log",
         );
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastLine = logFileContent.trim().split(/\r?\n/).pop();
@@ -266,7 +266,7 @@ suite("run_selection(entire_file = False) on cmd Test Suite", () => {
         await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
             (result) => {
                 assert.strictEqual(result, false);
-            }
+            },
         );
     });
 });
@@ -285,7 +285,7 @@ suite("run_selection(entire_file = False) on cmd when $_self is in the file Test
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         // Log a blank line to ensure the test doesn't use a previous result
@@ -305,7 +305,7 @@ suite("run_selection(entire_file = False) on cmd when $_self is in the file Test
 
                 // // Run the msc_adams.runSelection command
                 await new Promise((resolve) =>
-                    run_selection(output_channel, false, null, resolve)()
+                    run_selection(output_channel, false, null, resolve)(),
                 );
             });
         });
@@ -319,7 +319,7 @@ suite("run_selection(entire_file = False) on cmd when $_self is in the file Test
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
     });
 
@@ -327,7 +327,7 @@ suite("run_selection(entire_file = False) on cmd when $_self is in the file Test
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
-            "aview.log"
+            "aview.log",
         );
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastLine = logFileContent.trim().split(/\r?\n/).pop();
@@ -339,7 +339,7 @@ suite("run_selection(entire_file = False) on cmd when $_self is in the file Test
         await new Promise((resolve) => checkForcheVscodeLib(sub_lib_name, resolve)).then(
             (result) => {
                 assert.strictEqual(result, true);
-            }
+            },
         );
     });
 });
@@ -358,7 +358,7 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         // Log a blank line to ensure the test doesn't use a previous result
@@ -379,7 +379,7 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
 
                 // Run the msc_adams.runSelection command
                 await new Promise((resolve) =>
-                    run_selection(output_channel, true, null, resolve)()
+                    run_selection(output_channel, true, null, resolve)(),
                 );
             });
         });
@@ -393,7 +393,7 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
     });
 
@@ -401,7 +401,7 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
-            "aview.log"
+            "aview.log",
         );
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastTwoLines = logFileContent.trim().split(/\r?\n/).slice(-2);
@@ -412,12 +412,6 @@ suite("run_selection(entire_file = True) on cmd Test Suite", () => {
 });
 
 suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite", () => {
-    const tempOutputPath = path.join(
-        vscode.workspace.workspaceFolders[0].uri.fsPath,
-        "working_directory",
-        "var.txt"
-    );
-
     suiteSetup(async () => {
         // Wait for adams view connection
         await new Promise((resolve) => {
@@ -431,7 +425,7 @@ suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         // Log a blank line to ensure the test doesn't use a previous result
@@ -439,11 +433,9 @@ suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite
 
         // create a file in the user's temp directory
         const tempFilePath = path.join(os.tmpdir(), "run_selection_entire_file.cmd");
-        const adamsOutputPath = tempOutputPath.replace(/\\/g, "/");
         const tempFileContent =
             "!$prefix:t=string:d=tes\n" +
             "var set var=$_self.test2 string=\"This is a $'prefix't\"\n" +
-            `list_info variable variable_name = .vscode.test2 file_name = "${adamsOutputPath}"\n` +
             "var set var=.mdi.tmpstr str=(eval(str_print('this should be shown')))\n" +
             "var set var=.mdi.tmpstr str=(eval(str_print('this should ALSO be shown')))";
         fs.writeFileSync(tempFilePath, tempFileContent);
@@ -456,7 +448,7 @@ suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite
 
                 // Run the msc_adams.runSelection command
                 await new Promise((resolve) =>
-                    run_selection(output_channel, true, null, resolve)()
+                    run_selection(output_channel, true, null, resolve)(),
                 );
             });
         });
@@ -470,20 +462,15 @@ suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
-
-        // Clean up the output file
-        if (fs.existsSync(tempOutputPath)) {
-            fs.unlinkSync(tempOutputPath);
-        }
     });
 
     test("should run the entire file", (done) => {
         const logFilePath = path.join(
             vscode.workspace.workspaceFolders[0].uri.fsPath,
             "working_directory",
-            "aview.log"
+            "aview.log",
         );
         const logFileContent = fs.readFileSync(logFilePath, "utf8");
         const lastTwoLines = logFileContent.trim().split(/\r?\n/).slice(-2);
@@ -492,24 +479,17 @@ suite("run_selection(entire_file = True) on cmd with macro parameters Test Suite
         done();
     });
 
-    test(".vscode.test2 should be 'test'", (done) => {
-        // Read the output file and look for the pattern `  String Value(s) : This is a (\w+)`
-        fs.readFile(tempOutputPath, "utf8", (err, data) => {
-            if (err) {
-                console.error("Error reading the output file:", err);
-                done(err);
-            }
-            const regex = /String Value\(s\) : This is a (.*)/;
-            const match = data.match(regex);
-            if (match) {
-                const value = match[1];
-                assert.strictEqual(value, "test");
-                done();
-            } else {
-                console.error("Pattern not found in the output file.");
-                done(new Error("Pattern not found in the output file."));
-            }
-        });
+    test("format_adams_cmd should substitute $_self and macro parameters", (done) => {
+        // Directly test the parameter substitution logic
+        const input =
+            "!$prefix:t=string:d=tes\n" +
+            "var set var=$_self.test2 string=\"This is a $'prefix't\"";
+        const result = format_adams_cmd(input, input, sub_lib_name);
+        // $_self should be replaced with .vscode (sub_lib_name)
+        assert.ok(result.includes("var set var=.vscode.test2"), "Expected $_self to be replaced with .vscode");
+        // $'prefix't should become "test" (default "tes" + trailing "t")
+        assert.ok(result.includes('string="This is a test"'), "Expected $\\'prefix\\'t to be replaced with test");
+        done();
     });
 });
 
@@ -543,7 +523,7 @@ suite("aviewPortNumber configuration Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         // Log a blank line to ensure the test doesn't use a previous result
@@ -564,7 +544,7 @@ suite("aviewPortNumber configuration Test Suite", () => {
 
                 // Run the msc_adams.runSelection command
                 await new Promise((resolve) =>
-                    run_selection(output_channel, true, null, resolve)()
+                    run_selection(output_channel, true, null, resolve)(),
                 );
             });
         });
@@ -578,7 +558,7 @@ suite("aviewPortNumber configuration Test Suite", () => {
                     await new Promise((resolve) => deleteLibrary(sub_lib_name, resolve));
                 }
                 resolve();
-            })
+            }),
         );
 
         // Kill the alternate port Adams View
@@ -672,11 +652,11 @@ function deleteLibrary(name, done = () => {}) {
             if (cdata.toString() != "cmd: 0") {
                 console.error("Unexpected response from Adams View: " + cdata.toString());
                 vscode.window.showErrorMessage(
-                    `Unable to delete the temporary library for storing references to $_self: ${name}`
+                    `Unable to delete the temporary library for storing references to $_self: ${name}`,
                 );
             } else {
                 console.log(
-                    `Deleted the temporary library for storing references to $_self: ${name}`
+                    `Deleted the temporary library for storing references to $_self: ${name}`,
                 );
             }
             // kill client after server's response

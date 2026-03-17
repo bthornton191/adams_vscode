@@ -46,13 +46,15 @@ suite("cmd_completion_provider", () => {
         const provider = cmd_completion_provider(function_names, commands, null);
 
         // Line exactly matches the command key (after stripping existing args)
+        // Position must be at end of "model create" so line.substr(0, character) equals the full command
+        const localPosition = new vscode.Position(0, 12);
         const doc = makeDocument("", "model create");
-        const completions = provider.provideCompletionItems(doc, position, null, {});
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
 
         const labels = completions.map((c) => c.label);
         assert.ok(
             labels.some((l) => l.includes("model_name")),
-            "Expected argument completion for 'model_name'"
+            "Expected argument completion for 'model_name'",
         );
     });
 
@@ -61,13 +63,20 @@ suite("cmd_completion_provider", () => {
         const commands = { "model create": [], "model delete": [] };
         const provider = cmd_completion_provider(function_names, commands, null);
 
-        // Typing "model" — should get "create" and "delete" as next-word completions
-        const doc = makeDocument("model", "model");
-        const completions = provider.provideCompletionItems(doc, position, null, {});
+        // Typing "model " (with trailing space) — idx=2, so command.split(' ')[1] = "create"/"delete"
+        const localPosition = new vscode.Position(0, 6);
+        const doc = makeDocument("", "model ");
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
 
         const labels = completions.map((c) => c.label);
-        assert.ok(labels.some((l) => l.trim() === "create"), "Expected 'create' completion");
-        assert.ok(labels.some((l) => l.trim() === "delete"), "Expected 'delete' completion");
+        assert.ok(
+            labels.some((l) => l.trim() === "create"),
+            "Expected 'create' completion",
+        );
+        assert.ok(
+            labels.some((l) => l.trim() === "delete"),
+            "Expected 'delete' completion",
+        );
     });
 
     test("should not crash when getWordRangeAtPosition returns undefined", () => {

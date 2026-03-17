@@ -277,3 +277,4 @@ function createLibrary(name, done) {
 exports.run_selection = run_selection;
 exports.createLibIfNotExist = createLibIfNotExist;
 exports.sub_lib_name = sub_lib_name;
+exports.format_adams_cmd = format_adams_cmd;

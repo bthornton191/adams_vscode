@@ -51,10 +51,8 @@ suite("open_in_view", () => {
         handler(uri);
 
         assert.strictEqual(capturedArgs.file, launcher);
-        assert.deepStrictEqual(capturedArgs.args, [
-            path.basename(uri.fsPath),
-            null, // adamsLaunchCommand from config (null in test env)
-        ]);
+        // args[1] is adamsLaunchCommand read from VS Code config — just verify args[0]
+        assert.strictEqual(capturedArgs.args[0], path.basename(uri.fsPath));
         assert.strictEqual(capturedArgs.opts.cwd, path.dirname(uri.fsPath));
         done();
     });

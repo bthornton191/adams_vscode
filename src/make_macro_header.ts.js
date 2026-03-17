@@ -3,13 +3,15 @@ const vscode = require("vscode");
 function make_macro_header(reporter = null) {
     return () => {
         const activeEditor = vscode.window.activeTextEditor;
-        vscode.commands.executeCommand(
-            "editor.action.goToLocations",
-            activeEditor.document.uri,
-            vscode.P,
-        );
+        if (activeEditor) {
+            vscode.commands.executeCommand(
+                "editor.action.goToLocations",
+                activeEditor.document.uri,
+                new vscode.Position(0, 0),
+            );
+        }
         vscode.commands.executeCommand("editor.action.insertSnippet", {
-            langeId: "adams_cmd",
+            languageId: "adams_cmd",
             name: "Macro Header",
         });
         if (reporter) reporter.sendTelemetryEvent("make_macro_header");

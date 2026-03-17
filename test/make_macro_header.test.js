@@ -49,7 +49,7 @@ suite("make_macro_header", () => {
         make_macro_header(null)();
 
         const insertSnippetCall = executedCommands.find(
-            (c) => c.command === "editor.action.insertSnippet"
+            (c) => c.command === "editor.action.insertSnippet",
         );
         assert.ok(insertSnippetCall, "Expected editor.action.insertSnippet to be called");
         assert.strictEqual(insertSnippetCall.args[0].name, "Macro Header");

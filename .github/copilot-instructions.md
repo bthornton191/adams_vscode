@@ -27,6 +27,8 @@ This is a VS Code extension for MSC Adams multi-body dynamics simulation softwar
 - Use `suite()` / `test()` (not `describe()` / `it()`).
 - Use `test/utils.js` helpers (`waitForAdamsConnection`, socket helpers) rather than reimplementing connection logic.
 - Place test working files under `test/working_directory/`.
+- **Preferred way to run tests**: Use VS Code's built-in Test Explorer (the beaker icon). This runs tests through the full extension host with Adams available, and results are visible both in the Test Explorer UI and via the `test_failure` tool (which Copilot can query to read results automatically).
+- **Copilot test workflow**: After making changes, use `runTests` with specific test file paths to trigger a VS Code test run and get immediate pass/fail results. Use `test_failure` to read detailed failure info. Iterate until all tests pass. This is the **required** workflow — do not use the terminal to run tests.
 
 ## Resources
 - `resources/adams_design_functions/*.md` — documentation for Adams functions, one file per function. These can be edited manually when documentation needs updating.
