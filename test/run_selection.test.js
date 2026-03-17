@@ -666,3 +666,48 @@ function deleteLibrary(name, done = () => {}) {
         });
     });
 }
+
+// =============================================================================
+// Reporter telemetry tests — no Adams connection required
+// =============================================================================
+
+suite("run_selection reporter telemetry", () => {
+    const os = require("os");
+    const path = require("path");
+    const { run_selection } = require("../src/run_selection.ts.js");
+
+    function makeMockReporter() {
+        const calls = { telemetry: [], errors: [] };
+        return {
+            sendTelemetryEvent: (...args) => calls.telemetry.push(args),
+            sendTelemetryErrorEvent: (...args) => calls.errors.push(args),
+            calls,
+        };
+    }
+
+    test("sendAviewCommands sends error telemetry when Adams is not reachable", (done) => {
+        // Use a port no server is listening on so the connection fails immediately
+        const reporter = makeMockReporter();
+
+        // Temporarily point to a port nothing is listening on
+        const originalGet = vscode.workspace.getConfiguration;
+        vscode.workspace.getConfiguration = (section) => ({
+            get: (key) => (key === "aviewPortNumber" ? 19999 : null),
+            update: () => Promise.resolve(),
+        });
+
+        const tempFilePath = path.join(os.tmpdir(), "reporter_test.py");
+        fs.writeFileSync(tempFilePath, "print('hello')");
+
+        vscode.workspace.openTextDocument(tempFilePath).then((document) => {
+            vscode.window.showTextDocument(document).then(() => {
+                run_selection(output_channel, false, reporter, () => {
+                    vscode.workspace.getConfiguration = originalGet;
+                    assert.strictEqual(reporter.calls.errors.length, 1);
+                    assert.strictEqual(reporter.calls.errors[0][0], "sendAviewCommands");
+                    done();
+                })();
+            });
+        });
+    });
+});
