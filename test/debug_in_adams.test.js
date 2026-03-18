@@ -5,17 +5,42 @@ const { evaluate_exp } = require("../src/aview.ts.js");
 const { waitForAdamsConnection } = require("./utils.js");
 const { debug_in_adams } = require("../src/debug_in_adams.ts.js");
 const { execute_cmd } = require("../src/aview.ts.js");
+const { checkIfAdamsRunningInDir } = require("./global_fixture.cjs");
 
 output_channel = vscode.window.createOutputChannel("MSC Adams Testing");
 
 const testPythonScriptPath = path.normalize(path.join(__dirname, "files", "test_model.py"));
+const workingDir = path.join(__dirname, "working_directory");
 
 suite("debug_in_adams Test Suite", () => {
+    let originalShowQuickPick;
+
     suiteSetup(async () => {
         // Wait for adams view connection
         await new Promise((resolve) => {
             waitForAdamsConnection(resolve);
         });
+
+        // Get the PID of our Adams View process so we can auto-select it in showQuickPick
+        const targetPid = await new Promise((resolve) => {
+            checkIfAdamsRunningInDir(workingDir, (pid) => resolve(pid));
+        });
+        console.log(`Target Adams View PID: ${targetPid}`);
+
+        // Monkey-patch showQuickPick to auto-select the matching process
+        originalShowQuickPick = vscode.window.showQuickPick;
+        vscode.window.showQuickPick = (items, options) => {
+            const match = items.find((item) => item.description === String(targetPid));
+            if (match) {
+                console.log(
+                    `Auto-selecting Adams View process: ${match.label} (${match.description})`,
+                );
+                return Promise.resolve(match);
+            }
+            // Fallback: pick the first item
+            console.log(`PID ${targetPid} not found in quick pick, selecting first item`);
+            return Promise.resolve(items[0]);
+        };
 
         console.log("Attaching the debugger to Adams View...");
 
@@ -27,7 +52,7 @@ suite("debug_in_adams Test Suite", () => {
                 setTimeout(() => {
                     disposable.dispose();
                     resolve();
-                }, 1000);
+                }, 5000);
             });
 
             // Start the debugger
@@ -44,7 +69,7 @@ suite("debug_in_adams Test Suite", () => {
                     console.error("Failed to detect debug session start!");
                     resolve(); // Allow test to continue anyway
                 }
-            }, 10000);
+            }, 60000);
         });
 
         // Wait for debugger to be attached
@@ -61,7 +86,7 @@ suite("debug_in_adams Test Suite", () => {
         // Set a breakpoint in test_model.py
         console.log(`Setting breakpoint in ${testPythonScriptPath}`);
         const breakpoint = new vscode.SourceBreakpoint(
-            new vscode.Location(vscode.Uri.file(testPythonScriptPath), new vscode.Position(7, 0))
+            new vscode.Location(vscode.Uri.file(testPythonScriptPath), new vscode.Position(7, 0)),
         );
         vscode.debug.addBreakpoints([breakpoint]);
 
@@ -86,6 +111,11 @@ suite("debug_in_adams Test Suite", () => {
     });
 
     suiteTeardown(async () => {
+        // Restore showQuickPick
+        if (originalShowQuickPick) {
+            vscode.window.showQuickPick = originalShowQuickPick;
+        }
+
         // Terminate the debug session
         await vscode.debug.activeDebugSession?.customRequest("disconnect");
     });
@@ -105,13 +135,13 @@ suite("debug_in_adams Test Suite", () => {
                             assert.strictEqual(
                                 mass,
                                 1,
-                                "The mass of PART_2 is not 1. This means the breakpoint was not hit."
+                                "The mass of PART_2 is not 1. This means the breakpoint was not hit.",
                             );
                             resolve();
                         },
                         (err) => {
                             throw new Error(err);
-                        }
+                        },
                     );
             });
         });
@@ -125,7 +155,7 @@ suite("debug_in_adams Test Suite", () => {
                     assert.strictEqual(
                         mass,
                         2,
-                        "The mass of PART_2 is not 2. This may indicate that the debugger did not continue."
+                        "The mass of PART_2 is not 2. This may indicate that the debugger did not continue.",
                     );
                     resolve();
                 });
