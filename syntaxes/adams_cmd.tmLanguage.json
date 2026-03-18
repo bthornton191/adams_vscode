@@ -182,8 +182,19 @@
                     "end": "\"",
                     "patterns": [
                         {
-                            "name": "constant.character.escape.adams_cmd",
-                            "match": "\\\\."
+                            "name": "string.quoted.single.adams_cmd",
+                            "begin": "'",
+                            "end": "'",
+                            "patterns": [
+                                {
+                                    "name": "constant.character.escape.adams_cmd",
+                                    "match": "\\\\."
+                                },
+                                {
+                                    "name": "variable.patterns.parameter.reference",
+                                    "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
+                                }
+                            ]
                         },
                         {
                             "name": "variable.patterns.parameter.reference",
@@ -197,8 +208,19 @@
                     "end": "'",
                     "patterns": [
                         {
-                            "name": "constant.character.escape.adams_cmd",
-                            "match": "\\\\."
+                            "name": "string.quoted.double.adams_cmd",
+                            "begin": "\"",
+                            "end": "\"",
+                            "patterns": [
+                                {
+                                    "name": "constant.character.escape.adams_cmd",
+                                    "match": "\\\\."
+                                },
+                                {
+                                    "name": "variable.patterns.parameter.reference",
+                                    "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
+                                }
+                            ]
                         },
                         {
                             "name": "variable.patterns.parameter.reference",
