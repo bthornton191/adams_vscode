@@ -107,7 +107,7 @@ suite("adams_cmd grammar", () => {
         // This is the exact problematic expression reported in issue #11.
         const lines = [
             "variable set variable=$_self.pyExe integer= &",
-            '    (eval(run_python_code("execute_cmd(\'variable set variable=$_self.fileList string=(eval(STR_SPLIT(STR_REPLACE_ALL(STR_SUBSTR(\'+repr(str(files))+\',2,STR_LENGTH(\'+repr(str(files))+\')-2),\\"\\\\\'\\", \\"\\"),\\",\\")))\')")))',
+            '(eval(run_python_code("execute_cmd(\'variable set variable=$_self.fileList string=(eval(STR_SPLIT(STR_REPLACE_ALL(STR_SUBSTR(\'+repr(str(files))+\',2,STR_LENGTH(\'+repr(str(files))+\')-2),"\\\'", ""),",")))\')")))',
             "",
             "variable set variable=after_expr real=1.0",
         ];
@@ -128,7 +128,7 @@ suite("adams_cmd grammar", () => {
     test("issue #11: comment line after complex expression is tokenised as a comment, not a string", () => {
         const lines = [
             "variable set variable=$_self.pyExe integer= &",
-            '    (eval(run_python_code("execute_cmd(\'variable set variable=$_self.fileList string=(eval(STR_SPLIT(STR_REPLACE_ALL(STR_SUBSTR(\'+repr(str(files))+\',2,STR_LENGTH(\'+repr(str(files))+\')-2),\\"\\\\\'\\", \\"\\"),\\",\\")))\')")))',
+            '(eval(run_python_code("execute_cmd(\'variable set variable=$_self.fileList string=(eval(STR_SPLIT(STR_REPLACE_ALL(STR_SUBSTR(\'+repr(str(files))+\',2,STR_LENGTH(\'+repr(str(files))+\')-2),"\\\'", ""),",")))\')")))',
             "! this is a comment",
         ];
 
