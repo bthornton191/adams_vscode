@@ -262,3 +262,4 @@ exports.mochaGlobalSetup = mochaGlobalSetup;
 exports.mochaGlobalTeardown = mochaGlobalTeardown;
 exports.startAdamsView = startAdamsView;
 exports.killAdamsIfRunningInDir = killAdamsIfRunningInDir;
+exports.checkIfAdamsRunningInDir = checkIfAdamsRunningInDir;
