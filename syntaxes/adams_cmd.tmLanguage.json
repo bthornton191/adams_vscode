@@ -182,6 +182,10 @@
                     "end": "\"",
                     "patterns": [
                         {
+                            "name": "constant.character.escape.adams_cmd",
+                            "match": "\\\\."
+                        },
+                        {
                             "name": "variable.patterns.parameter.reference",
                             "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
                         }
@@ -192,6 +196,10 @@
                     "begin": "'",
                     "end": "'",
                     "patterns": [
+                        {
+                            "name": "constant.character.escape.adams_cmd",
+                            "match": "\\\\."
+                        },
                         {
                             "name": "variable.patterns.parameter.reference",
                             "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
