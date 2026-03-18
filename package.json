@@ -472,7 +472,9 @@
         "@vscode/test-electron": "^2.3.9",
         "glob": "^10.3.12",
         "pid-cwd": "^1.2.0",
-        "uuid": "^9.0.1"
+        "uuid": "^9.0.1",
+        "vscode-oniguruma": "^2.0.1",
+        "vscode-textmate": "^9.3.2"
     },
     "extensionDependencies": [
         "ms-python.vscode-pylance",
