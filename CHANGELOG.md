@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.5.0 (March 19th 2026)](#150-march-19th-2026)
   - [1.4.0 (March 18th 2026)](#140-march-18th-2026)
   - [1.3.1 (October 22nd 2025)](#131-october-22nd-2025)
   - [1.2.2 (July 14th 2025)](#122-july-14th-2025)
@@ -33,6 +34,14 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.5.0 (March 19th 2026)
+
+- **Improved** Adams CMD autocomplete with several enhancements:
+  - Arguments already used in the current command are no longer suggested again.
+  - Multi-line commands using the `&` continuation character are now fully supported — used arguments on previous continuation lines are also filtered out.
+  - Argument value completions are now shown for arguments that have a fixed set of allowed values (e.g. `type=`, `friction_enabled=`). When the cursor is after `arg=`, only the valid values are shown.
+  - Command and argument documentation from the Adams View help is now shown in the completion detail panel.
 
 ## 1.4.0 (March 18th 2026)
 
