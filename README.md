@@ -4,8 +4,6 @@
 ![Visual Studio Marketplace Rating Stars](https://img.shields.io/visual-studio-marketplace/stars/savvyanalyst.msc-adams.svg?style=flat-square)
 ![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/savvyanalyst.msc-adams.svg?style=flat-square)
 
-> This is an early version. If you are interested in using it, please [reach out](https://github.com/bthornton191/adams_vscode/discussions) and let me 
-> know which features you are most interested in. Thanks!
 
 # Table of Contents
 - [MSC Adams Extension for Visual Studio Code](#msc-adams-extension-for-visual-studio-code)
@@ -28,7 +26,6 @@
 - [Requirements](#requirements)
 - [Known Issues](#known-issues)
   - [Attaching the Debugger to Adams View does not work in version 2023](#attaching-the-debugger-to-adams-view-does-not-work-in-version-2023)
-  - [Intellisense Adams Command Language *functions* does not work for every function](#intellisense-adams-command-language-functions-does-not-work-for-every-function)
   - [Equal Sign In A String On A Continuation Line](#equal-sign-in-a-string-on-a-continuation-line)
 - [Contributing](#contributing)
 - [Support](#support)
@@ -186,9 +183,6 @@ The debugger appears to attach but fails to stop at break points.
 > `import threading`. You can also automate this by adding 
 > `var set var=.mdi.tmp_int int=(eval(run_python_code("import threading")))` to aviewAS.cmd. 
 
-## Intellisense Adams Command Language *functions* does not work for every function
-It's a work in progress. The help documentation for each function needs to be converted to a 
-markdown file and I simply haven't had time to do every function.
 
 ## Equal Sign In A String On A Continuation Line
 An equal sign in a string on a continuation line (i.e. a line following `&`) breaks syntax 
