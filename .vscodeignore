@@ -5,6 +5,7 @@ vsc-extension-quickstart.md
 .mypy_cache/**
 _ADAMSDEV2_/**
 test/**
+scripts/**
 **aview.log
 doc/figures.pptx
 analytics.py
