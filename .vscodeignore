@@ -13,3 +13,10 @@ adams_vscode.vsix
 **/__pycache__
 stats.csv
 stats.html
+.github
+.mypy_cache
+.vscode-test.js
+run-tests.js
+.agents
+.claude
+test_output.txt

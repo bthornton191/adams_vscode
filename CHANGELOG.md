@@ -1,6 +1,8 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.4.0 (March 18th 2026)](#140-march-18th-2026)
+  - [1.3.1 (October 22nd 2025)](#131-october-22nd-2025)
   - [1.2.2 (July 14th 2025)](#122-july-14th-2025)
   - [1.2.0 (April 30th 2025)](#120-april-30th-2025)
   - [1.1.0 (April 28th 2025)](#110-april-28th-2025)
@@ -32,6 +34,18 @@
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
 
+## 1.4.0 (March 18th 2026)
+
+- **Added** documentation for all remaining design-time functions from the Adams View Function Builder reference.
+- **Fixed** nested and backslash-escaped quotes in CMD string grammar ([Issue 11](https://github.com/bthornton191/adams_vscode/issues/11)).
+- **Improved** security: replaced `exec()` with `execFile()`, added reporter null guards.
+- **Added** comprehensive test coverage for 6 previously untested modules.
+- **Added** copilot instructions for extension development.
+
+## 1.3.1 (October 22nd 2025)
+
+- **Added** configuration option for Adams View connection port.
+- **Improved** type hints in `SystemElement` stubs.
 
 ## 1.2.2 (July 14th 2025)
 
