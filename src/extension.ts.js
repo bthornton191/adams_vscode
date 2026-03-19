@@ -60,7 +60,7 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     // ---------------------------------------------------------------------------
     vscode.languages.registerHoverProvider(
         "adams_cmd",
-        cmd_hover_provider(view_functions, reporter)
+        cmd_hover_provider(view_functions, reporter),
     );
 
     // ---------------------------------------------------------------------------
@@ -68,9 +68,37 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     // ---------------------------------------------------------------------------
     const cmd_files_json = context.asAbsolutePath("resources/adams_view_commands/structured.json");
     const view_commands = JSON.parse(fs.readFileSync(cmd_files_json));
+    const arg_options_json = context.asAbsolutePath(
+        "resources/adams_view_commands/argument_options.json",
+    );
+    const arg_options = JSON.parse(fs.readFileSync(arg_options_json));
+
+    const command_docs = new Map();
+    const cmd_docs_dir = context.asAbsolutePath("resources/adams_view_commands/command_docs");
+    if (fs.existsSync(cmd_docs_dir)) {
+        // Build a normalized→key lookup so filenames like "part_create_rigid_body_name_and_position"
+        // correctly resolve to command keys like "part create rigid_body name_and_position".
+        // Both spaces and underscores are stripped for comparison only.
+        const normalize = (s) => s.replace(/[_ ]/g, "").toLowerCase();
+        const cmd_key_by_normalized = new Map();
+        for (const k of Object.keys(view_commands)) {
+            cmd_key_by_normalized.set(normalize(k), k);
+        }
+        for (const file of fs.readdirSync(cmd_docs_dir)) {
+            if (file.endsWith(".md")) {
+                const stem = path.parse(file).name;
+                const key = cmd_key_by_normalized.get(normalize(stem));
+                if (key) {
+                    command_docs.set(key, fs.readFileSync(path.join(cmd_docs_dir, file), "utf8"));
+                }
+            }
+        }
+    }
+
     vscode.languages.registerCompletionItemProvider(
         "adams_cmd",
-        cmd_completion_provider(view_functions, view_commands, reporter)
+        cmd_completion_provider(view_functions, view_commands, arg_options, command_docs, reporter),
+        "=", // trigger value completions after arg=
     );
 
     // ---------------------------------------------------------------------------
@@ -80,36 +108,36 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
         context.subscriptions.push(
             vscode.commands.registerCommand(
                 "msc_adams.macros.makeHeader",
-                make_macro_header(reporter)
+                make_macro_header(reporter),
             ),
             vscode.commands.registerCommand(
                 "msc_adams.openInView",
-                open_in_view(context, output_channel, reporter)
+                open_in_view(context, output_channel, reporter),
             ),
             vscode.commands.registerCommand(
                 "msc_adams.openViewHere",
-                open_view_here(output_channel, reporter)
+                open_view_here(output_channel, reporter),
             ),
             vscode.commands.registerCommand(
                 "msc_adams.debugInAdams",
-                debug_in_adams(output_channel, reporter)
+                debug_in_adams(output_channel, reporter),
             ),
             vscode.commands.registerCommand(
                 "msc_adams.runSelection",
-                run_selection(output_channel, false, reporter)
+                run_selection(output_channel, false, reporter),
             ),
             vscode.commands.registerCommand(
                 "msc_adams.runFile",
-                run_selection(output_channel, true, reporter)
+                run_selection(output_channel, true, reporter),
             ),
             vscode.commands.registerCommand(
                 "msc_adams.loadStubFiles",
-                load_stub_files(context, output_channel, reporter)
+                load_stub_files(context, output_channel, reporter),
             ),
             vscode.commands.registerCommand(
                 "msc_adams.loadAdamsSitePackages",
-                add_adams_site_packages(output_channel, reporter)
-            )
+                add_adams_site_packages(output_channel, reporter),
+            ),
         );
     }
 
@@ -136,7 +164,7 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
                     } else {
                         // Log warning if file doesn't exist (but don't break tests)
                         output_channel.appendLine(
-                            `[${new Date().toLocaleTimeString()}]: Warning: Adams launch path does not exist: ${adamsLaunchPath}`
+                            `[${new Date().toLocaleTimeString()}]: Warning: Adams launch path does not exist: ${adamsLaunchPath}`,
                         );
                     }
                 } catch (error) {
@@ -144,7 +172,7 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
                     output_channel.appendLine(
                         `[${new Date().toLocaleTimeString()}]: Error checking Adams launch path: ${
                             error.message
-                        }`
+                        }`,
                     );
                 }
             }
@@ -165,7 +193,7 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     if (enableTelemetry) {
         reporter.sendTelemetryEvent(
             "MSC Adams Extension Activated",
-            vscode.workspace.getConfiguration().get("msc-adams")
+            vscode.workspace.getConfiguration().get("msc-adams"),
         );
     }
 }
