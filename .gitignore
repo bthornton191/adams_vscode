@@ -18,3 +18,4 @@ test/working_directory/aviewBS.cmd
 test/working_directory/aview.bin_d.*
 test_output.txt
 test/.vscode/settings.json
+.vscode/settings.json
