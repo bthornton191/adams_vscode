@@ -63,6 +63,7 @@ Ask the user (if not already provided):
    - The **Extension Settings** section — does it list all settings from `package.json` `contributes.configuration`?
    - The **Known Issues** section — are resolved issues still listed?
 5. Only make changes the user approves.
+6. Don't include dev changes. Only update the README to reflect changes that affect end users of the extension.
 
 ### Step 6 — Commit, Tag, and Push
 

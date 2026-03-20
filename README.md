@@ -105,7 +105,14 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 # Extension Settings
 
 This extension contributes the following settings:
-  * msc-adams.adams_launch_command: Path to the mdi.bat file in your Adams installation.
+  * `msc-adams.adamsLaunchCommand`: Path to the mdi.bat file in your Adams installation.
+  * `msc-adams.aviewPortNumber`: Port number for connecting to Adams View (default: `5002`).
+  * `msc-adams.debugOptions`: Options passed to the Python debugger (e.g. `justMyCode`, `subProcess`).
+  * `msc-adams.showDebuggerWarning`: Show a warning when attaching the debugger to Adams View 2023+.
+  * `msc-adams.runInAdams.substituteSelf`: String to replace `$_self` with when running in Adams View.
+  * `msc-adams.runInAdams.substituteParams`: Substitute macro parameters with their default values.
+  * `msc-adams.runInAdams.autoLoadAdamspyStubs`: Automatically add adamspy stub files to the Python intellisense path.
+  * `msc-adams.runInAdams.autoLoadAdamsSitePackages`: Automatically add Adams site-packages to the Python intellisense path.
 
 ## Customizing Syntax Colors
 

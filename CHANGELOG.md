@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.5.1 (March 20th 2026)](#151-march-20th-2026)
   - [1.5.0 (March 19th 2026)](#150-march-19th-2026)
   - [1.4.0 (March 18th 2026)](#140-march-18th-2026)
   - [1.3.1 (October 22nd 2025)](#131-october-22nd-2025)
@@ -34,6 +35,11 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.5.1 (March 20th 2026)
+
+- **Fixed** CMD autocomplete for arguments with parenthesized, quoted, and comma-separated values.
+- **Fixed** missing `point_name` in argument syntax definitions.
 
 ## 1.5.0 (March 19th 2026)
 
