@@ -169,7 +169,7 @@ function get_full_command_context(document, position) {
  * @returns {string}
  */
 function strip_argument_pairs(text) {
-    let result = '';
+    let result = "";
     let i = 0;
 
     while (i < text.length) {
@@ -206,12 +206,12 @@ function consume_argument_value(text, start) {
         return i < text.length ? i + 1 : i;
     }
 
-    if (ch === '(') {
+    if (ch === "(") {
         let depth = 0;
         let i = start;
         while (i < text.length) {
-            if (text[i] === '(') depth++;
-            else if (text[i] === ')') {
+            if (text[i] === "(") depth++;
+            else if (text[i] === ")") {
                 depth--;
                 if (depth === 0) return i + 1;
             }
@@ -231,8 +231,8 @@ function consume_argument_value(text, start) {
  */
 function consume_comma_separated_tail(text, i, value_start) {
     while (true) {
-        var has_trailing_comma = i > value_start && text[i - 1] === ',';
-        var has_following_comma = i < text.length && text[i] === ',';
+        var has_trailing_comma = i > value_start && text[i - 1] === ",";
+        var has_following_comma = i < text.length && text[i] === ",";
 
         if (has_trailing_comma || has_following_comma) {
             var next = i;

@@ -256,9 +256,9 @@ suite("cmd_completion_provider", () => {
         const provider = cmd_completion_provider(function_names, commands);
 
         const lines = [
-            '    xy_plots curve create &',
+            "    xy_plots curve create &",
             '        curve = (eval(.gui.main.gfx.page_1.views[$_self.idx].contents // ".my_curve")) &',
-            '        ',
+            "        ",
         ];
         const localPosition = new vscode.Position(2, lines[2].length);
         const doc = makeDocument("", lines);
@@ -281,7 +281,14 @@ suite("cmd_completion_provider", () => {
 
     test("should handle tab-indented continuation lines", () => {
         const function_names = new Map();
-        const commands = { "part modify rigid_body mass_properties": ["part_name", "mass", "density", "center_of_mass_marker"] };
+        const commands = {
+            "part modify rigid_body mass_properties": [
+                "part_name",
+                "mass",
+                "density",
+                "center_of_mass_marker",
+            ],
+        };
         const provider = cmd_completion_provider(function_names, commands);
 
         const lines = [
@@ -307,7 +314,9 @@ suite("cmd_completion_provider", () => {
 
     test("should handle spaces around = in args", () => {
         const function_names = new Map();
-        const commands = { "geometry create shape cylinder": ["cylinder", "length", "radius", "sides"] };
+        const commands = {
+            "geometry create shape cylinder": ["cylinder", "length", "radius", "sides"],
+        };
         const provider = cmd_completion_provider(function_names, commands);
 
         const lines = [
@@ -339,8 +348,13 @@ suite("cmd_completion_provider", () => {
         const function_names = new Map();
         const commands = {
             "force create element_like bushing": [
-                "bushing_name", "i_marker_name", "j_marker_name",
-                "stiffness", "damping", "tstiffness", "tdamping",
+                "bushing_name",
+                "i_marker_name",
+                "j_marker_name",
+                "stiffness",
+                "damping",
+                "tstiffness",
+                "tdamping",
             ],
         };
         const provider = cmd_completion_provider(function_names, commands);
@@ -377,8 +391,12 @@ suite("cmd_completion_provider", () => {
         const function_names = new Map();
         const commands = {
             "force create direct force_vector": [
-                "force_vector_name", "i_marker_name", "j_part_name",
-                "ref_marker_name", "x_force_function", "y_force_function",
+                "force_vector_name",
+                "i_marker_name",
+                "j_part_name",
+                "ref_marker_name",
+                "x_force_function",
+                "y_force_function",
                 "z_force_function",
             ],
         };
@@ -386,15 +404,15 @@ suite("cmd_completion_provider", () => {
 
         const lines = [
             "force create direct force_vector &",
-            '    force_vector_name = $model.fv_1 &',
-            '    i_marker_name = $model.part_1.mkr_i &',
-            '    j_part_name = $model.ground &',
-            '    ref_marker_name = $model.ground.ref_mkr &',
+            "    force_vector_name = $model.fv_1 &",
+            "    i_marker_name = $model.part_1.mkr_i &",
+            "    j_part_name = $model.ground &",
+            "    ref_marker_name = $model.ground.ref_mkr &",
             '    x_force_function = "0" &',
             '    y_force_function = "IMPACT(DY(",          &',
             '                        "       0, ",         &',
             '                        "       $model.pen_depth)" &',
-            '    ',
+            "    ",
         ];
         const localPosition = new vscode.Position(9, lines[9].length);
         const doc = makeDocument("", lines);
@@ -447,17 +465,21 @@ suite("cmd_completion_provider", () => {
         const function_names = new Map();
         const commands = {
             "constraint create motion_generator": [
-                "motion_name", "i_marker_name", "j_marker_name",
-                "axis", "time_derivative", "function",
+                "motion_name",
+                "i_marker_name",
+                "j_marker_name",
+                "axis",
+                "time_derivative",
+                "function",
             ],
         };
         const provider = cmd_completion_provider(function_names, commands);
 
         const lines = [
             "constraint create motion_generator &",
-            '    motion_name = .my_model.motion_1 &',
-            '    i_marker_name = .my_model.part_1.mkr_i &',
-            '    j_marker_name = .my_model.ground.mkr_j &',
+            "    motion_name = .my_model.motion_1 &",
+            "    i_marker_name = .my_model.part_1.mkr_i &",
+            "    j_marker_name = .my_model.ground.mkr_j &",
             '    function = "360d*(1-cos(2*pi*time))" &',
             "    ",
         ];
