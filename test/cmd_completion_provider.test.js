@@ -250,6 +250,266 @@ suite("cmd_completion_provider", () => {
         assert.ok(labels.includes("no"), "Expected 'no' value completion");
     });
 
+    test("should return argument completions when a previous arg has a parenthesized value", () => {
+        const function_names = new Map();
+        const commands = { "xy_plots curve create": ["curve", "curve_name", "x_variable"] };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = [
+            '    xy_plots curve create &',
+            '        curve = (eval(.gui.main.gfx.page_1.views[$_self.idx].contents // ".my_curve")) &',
+            '        ',
+        ];
+        const localPosition = new vscode.Position(2, lines[2].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            !labels.some((l) => l.includes("curve=")),
+            "'curve' should be excluded (already used)",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("curve_name")),
+            "Expected 'curve_name' completion",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("x_variable")),
+            "Expected 'x_variable' completion",
+        );
+    });
+
+    test("should handle tab-indented continuation lines", () => {
+        const function_names = new Map();
+        const commands = { "part modify rigid_body mass_properties": ["part_name", "mass", "density", "center_of_mass_marker"] };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = [
+            "part modify rigid_body mass_properties &",
+            "\tpart_name = .my_model.part_1 &",
+            "\tmass = 10.5 &",
+            "\t",
+        ];
+        const localPosition = new vscode.Position(3, lines[3].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("density")),
+            "Expected 'density' completion on tab-indented continuation",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("center_of_mass_marker")),
+            "Expected 'center_of_mass_marker' completion on tab-indented continuation",
+        );
+    });
+
+    test("should handle spaces around = in args", () => {
+        const function_names = new Map();
+        const commands = { "geometry create shape cylinder": ["cylinder", "length", "radius", "sides"] };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = [
+            "geometry create shape cylinder &",
+            "    cylinder = $model.cyl_1 &",
+            "    length = 10.0 &",
+            "    ",
+        ];
+        const localPosition = new vscode.Position(3, lines[3].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            !labels.some((l) => l.includes("cylinder=")),
+            "'cylinder' should be excluded (already used with spaces around =)",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("length=")),
+            "'length' should be excluded (already used with spaces around =)",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("radius")),
+            "Expected 'radius' completion",
+        );
+    });
+
+    test("should handle comma-separated parenthesized values", () => {
+        const function_names = new Map();
+        const commands = {
+            "force create element_like bushing": [
+                "bushing_name", "i_marker_name", "j_marker_name",
+                "stiffness", "damping", "tstiffness", "tdamping",
+            ],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = [
+            "force create element_like bushing &",
+            "    bushing_name = $model.bushing_1 &",
+            "    i_marker_name = $model.ground.mkr_i &",
+            "    j_marker_name = $model.part_1.mkr_j &",
+            "    stiffness = ($model.k_val), ($model.k_val), 0 &",
+            "    damping = ($model.d_val), ($model.d_val), 0 &",
+            "    ",
+        ];
+        const localPosition = new vscode.Position(6, lines[6].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            !labels.some((l) => l.trim() === "stiffness="),
+            "'stiffness' should be excluded (already used with comma-separated values)",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("tstiffness")),
+            "Expected 'tstiffness' completion after comma-separated paren values",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("tdamping")),
+            "Expected 'tdamping' completion after comma-separated paren values",
+        );
+    });
+
+    test("should handle comma-separated quoted string values", () => {
+        const function_names = new Map();
+        const commands = {
+            "force create direct force_vector": [
+                "force_vector_name", "i_marker_name", "j_part_name",
+                "ref_marker_name", "x_force_function", "y_force_function",
+                "z_force_function",
+            ],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = [
+            "force create direct force_vector &",
+            '    force_vector_name = $model.fv_1 &',
+            '    i_marker_name = $model.part_1.mkr_i &',
+            '    j_part_name = $model.ground &',
+            '    ref_marker_name = $model.ground.ref_mkr &',
+            '    x_force_function = "0" &',
+            '    y_force_function = "IMPACT(DY(",          &',
+            '                        "       0, ",         &',
+            '                        "       $model.pen_depth)" &',
+            '    ',
+        ];
+        const localPosition = new vscode.Position(9, lines[9].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("z_force_function")),
+            "Expected 'z_force_function' completion after comma-separated quoted values",
+        );
+        assert.ok(
+            !labels.some((l) => l.trim() === "y_force_function="),
+            "'y_force_function' should be excluded (already used)",
+        );
+    });
+
+    test("should handle nested paren values with curly braces", () => {
+        const function_names = new Map();
+        const commands = {
+            "marker create": ["marker", "location", "orientation", "relative_to"],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = [
+            "marker create &",
+            "    marker = $model.ground.mkr_1 &",
+            "    location = (loc_relative_to({0, 0, 0}, $model.part_1.ref_mkr)) &",
+            "    ",
+        ];
+        const localPosition = new vscode.Position(3, lines[3].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("orientation")),
+            "Expected 'orientation' completion after nested paren value with curly braces",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("relative_to")),
+            "Expected 'relative_to' completion",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("location=")),
+            "'location' should be excluded (already used)",
+        );
+    });
+
+    test("should handle quoted string values containing parens", () => {
+        const function_names = new Map();
+        const commands = {
+            "constraint create motion_generator": [
+                "motion_name", "i_marker_name", "j_marker_name",
+                "axis", "time_derivative", "function",
+            ],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = [
+            "constraint create motion_generator &",
+            '    motion_name = .my_model.motion_1 &',
+            '    i_marker_name = .my_model.part_1.mkr_i &',
+            '    j_marker_name = .my_model.ground.mkr_j &',
+            '    function = "360d*(1-cos(2*pi*time))" &',
+            "    ",
+        ];
+        const localPosition = new vscode.Position(5, lines[5].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("axis")),
+            "Expected 'axis' completion after quoted string with parens",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("time_derivative")),
+            "Expected 'time_derivative' completion",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("function=")),
+            "'function' should be excluded (already used)",
+        );
+    });
+
+    test("should handle comma-separated eval paren values for location args", () => {
+        const function_names = new Map();
+        const commands = {
+            "marker create": ["marker_name", "location", "orientation"],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = [
+            "marker create &",
+            "    marker_name = $model.ground.stop_mkr &",
+            "    location = (eval(loc_global({0,0,0}, $model.part_1.center_mkr)[1])), &",
+            "               (eval(loc_global({0,0,0}, $model.part_2.ref_mkr)[2])), &",
+            "               (eval(loc_global({0,0,0}, $model.part_1.center_mkr)[3])) &",
+            "    ",
+        ];
+        const localPosition = new vscode.Position(5, lines[5].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("orientation")),
+            "Expected 'orientation' completion after comma-separated eval paren values",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("marker_name=")),
+            "'marker_name' should be excluded (already used)",
+        );
+    });
+
     test("should filter argument value completions by partial input", () => {
         const function_names = new Map();
         const commands = { "simulation single_run transient": ["type", "initial_static"] };

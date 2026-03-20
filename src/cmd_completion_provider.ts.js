@@ -27,10 +27,7 @@ function cmd_completion_provider(
 
             // Strip all argument=value pairs (including the incomplete trailing one)
             // to isolate the command name.
-            const command_key = full_text
-                .replace(/\s+\w+\s*=\s*([^\s]+|"[^"]*")/g, "") // complete pairs
-                .replace(/\s+\w+\s*=\s*\S*$/, "") // trailing incomplete
-                .trim();
+            const command_key = strip_argument_pairs(full_text);
 
             // Functions
             for (var [name, doc] of function_names.entries()) {
@@ -163,6 +160,95 @@ function get_full_command_context(document, position) {
     }
 
     return parts.join(" ");
+}
+
+/**
+ * Strips argument=value pairs from command text to isolate the command name.
+ * Handles simple values, quoted strings, and parenthesized expressions with nesting.
+ * @param {string} text
+ * @returns {string}
+ */
+function strip_argument_pairs(text) {
+    let result = '';
+    let i = 0;
+
+    while (i < text.length) {
+        if (/\s/.test(text[i])) {
+            let ws_start = i;
+            while (i < text.length && /\s/.test(text[i])) i++;
+
+            // Check if the next characters form  word  =
+            let arg_match = text.slice(i).match(/^(\w+\s*=\s*)/);
+            if (arg_match) {
+                let value_start = i + arg_match[0].length;
+                i = consume_argument_value(text, value_start);
+                i = consume_comma_separated_tail(text, i, value_start);
+            } else {
+                result += text.slice(ws_start, i);
+            }
+        } else {
+            result += text[i];
+            i++;
+        }
+    }
+
+    return result.trim();
+}
+
+function consume_argument_value(text, start) {
+    if (start >= text.length) return start;
+
+    var ch = text[start];
+
+    if (ch === '"') {
+        let i = start + 1;
+        while (i < text.length && text[i] !== '"') i++;
+        return i < text.length ? i + 1 : i;
+    }
+
+    if (ch === '(') {
+        let depth = 0;
+        let i = start;
+        while (i < text.length) {
+            if (text[i] === '(') depth++;
+            else if (text[i] === ')') {
+                depth--;
+                if (depth === 0) return i + 1;
+            }
+            i++;
+        }
+        return i;
+    }
+
+    let i = start;
+    while (i < text.length && !/\s/.test(text[i])) i++;
+    return i;
+}
+
+/**
+ * After consuming an argument value, continues consuming comma-separated
+ * continuation values (e.g. stiffness = 1e6, 1e6, 1e6).
+ */
+function consume_comma_separated_tail(text, i, value_start) {
+    while (true) {
+        var has_trailing_comma = i > value_start && text[i - 1] === ',';
+        var has_following_comma = i < text.length && text[i] === ',';
+
+        if (has_trailing_comma || has_following_comma) {
+            var next = i;
+            if (has_following_comma) next++;
+            while (next < text.length && /\s/.test(text[next])) next++;
+
+            if (next >= text.length) break;
+            // Stop if the next token looks like a new arg=value pair
+            if (/^\w+\s*=/.test(text.slice(next))) break;
+
+            i = consume_argument_value(text, next);
+        } else {
+            break;
+        }
+    }
+    return i;
 }
 
 function get_indent_level(line, indent_type) {
