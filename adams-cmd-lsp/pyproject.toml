@@ -1,0 +1,17 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "adams-cmd-lsp"
+version = "0.1.0"
+description = "LSP server and CLI linter for MSC Adams CMD language"
+requires-python = ">=3.9"
+dependencies = ["pygls>=2.0", "lsprotocol"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[project.scripts]
+adams-cmd-lint = "adams_cmd_lsp.cli:main"
+adams-cmd-lsp = "adams_cmd_lsp.server:main"
