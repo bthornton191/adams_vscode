@@ -335,3 +335,34 @@ def test_e104_for_end_balanced():
     text = "for variable_name = i from = 1 to = 10\nend"
     diags = _lint(text, rule_fn=rule_control_flow_balance)
     assert "E104" not in _codes(diags)
+
+
+# ---------------------------------------------------------------------------
+# E101 — Single-quoted string false-positive regression
+# ---------------------------------------------------------------------------
+
+def test_e101_no_false_positive_single_quoted_exclamation():
+    """'!!' inside a single-quoted string must NOT trigger E101 (false-positive).
+
+    The line 'var set var=.mdi.tmpstr str=(eval(str_print('HELLO WORLD!!')))' has
+    balanced parentheses. Previously, _find_comment_start() treated '!!' as an
+    inline comment, stripping the closing ')))' before the paren counter ran,
+    which incorrectly produced an E101 diagnostic.
+    """
+    line = "var set var=.mdi.tmpstr str=(eval(str_print('HELLO WORLD!!')))"
+    diags = _lint(line, rule_fn=rule_unbalanced_parens)
+    assert "E101" not in _codes(diags)
+
+
+def test_e101_single_quoted_parens_balanced():
+    """Parens inside single-quoted string should not contribute to paren depth."""
+    line = "var set var=.mdi.tmpstr str='(not a paren)'"
+    diags = _lint(line, rule_fn=rule_unbalanced_parens)
+    assert "E101" not in _codes(diags)
+
+
+def test_e101_still_detects_real_unbalanced():
+    """Genuine unbalanced parens outside any string are still flagged."""
+    line = "model create model_name=(unclosed"
+    diags = _lint(line, rule_fn=rule_unbalanced_parens)
+    assert "E101" in _codes(diags)

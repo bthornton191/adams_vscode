@@ -290,3 +290,46 @@ def test_parse_mixed_file():
     assert types["comment"] == 1
     assert types["control"] == 2  # if + end
     assert types["command"] == 2  # model create + marker create
+
+
+# ---------------------------------------------------------------------------
+# Single-quoted string handling
+# ---------------------------------------------------------------------------
+
+def test_comment_start_inside_single_quoted_string():
+    """'!' inside single-quoted string must NOT be treated as a comment start."""
+    line = "var set var=.mdi.tmpstr str=(eval(str_print('HELLO WORLD!!')))"
+    assert _find_comment_start(line) == len(line)
+
+
+def test_comment_start_after_single_quoted_string():
+    """'!' after a closed single-quoted string IS a comment."""
+    line = "var set var=.mdi.tmpstr str='hello' ! comment"
+    idx = _find_comment_start(line)
+    assert line[idx] == '!'
+
+
+def test_consume_single_quoted_string():
+    """Single-quoted string value should be consumed in full."""
+    text = "'HELLO WORLD!!' rest"
+    end = _consume_argument_value(text, 0)
+    assert text[:end] == "'HELLO WORLD!!'"
+
+
+def test_consume_parens_with_single_quoted_string_inside():
+    """Parens containing a single-quoted string with '!' are consumed fully."""
+    text = "(eval(str_print('HELLO WORLD!!')))"
+    end = _consume_argument_value(text, 0)
+    assert text[:end] == "(eval(str_print('HELLO WORLD!!')))"
+
+
+def test_parse_single_quoted_exclamation_not_comment():
+    """Full parse: line with single-quoted '!!' should preserve text after the parens."""
+    line = "var set var=.mdi.tmpstr str=(eval(str_print('HELLO WORLD!!')))"
+    stmts = parse(line)
+    assert len(stmts) == 1
+    stmt = stmts[0]
+    assert not stmt.is_comment
+    assert not stmt.is_blank
+    # The raw_text must NOT be truncated at the '!!' — closing ))) must be present
+    assert stmt.raw_text.endswith(")))")
