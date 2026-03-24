@@ -21,19 +21,25 @@ adams-cmd-lsp/                         Python package root
     symbols.py                         Single-file symbol table
     linter.py                          Orchestrator: parse -> symbols -> rules
     diagnostics.py                     Diagnostic dataclass + Severity enum
-    server.py                          pygls LSP server (~200-300 lines)
+    server.py                          pygls LSP server (~125 lines)
     cli.py                             adams-cmd-lint CLI entry point
     data/
       command_schema.json              Generated schema (committed to repo)
   tests/
-    test_parser.py
-    test_schema.py
-    test_rules.py
-    test_symbols.py
-    test_linter.py
-    test_cli.py
-    test_server.py
-    fixtures/                          Test .cmd files
+    test_parser.py                     37 tests
+    test_schema.py                     20 tests
+    test_rules.py                      40 tests
+    test_symbols.py                    11 tests
+    test_linter.py                     11 tests
+    test_cli.py                        13 tests
+    test_server.py                     7 tests
+                                       ─────────
+                                       139 total
+
+bundled/                               Python runtime for VS Code
+  tool/
+    lsp_server.py                      Bootstraps sys.path -> runs adams_cmd_lsp.server.main()
+  libs/                                gitignored — populated by `npm run bundle-lsp`
 
 scripts/
   generate_command_schema.py           One-time schema generator (reads commands.exp)
@@ -45,6 +51,14 @@ scripts/
 - Python 3.9+ (guaranteed by VS Code extension's `extensionDependencies` on `ms-python.python`)
 - Runtime: `pygls>=2.0`, `lsprotocol`
 - Dev: `pytest`
+- Build backend: `setuptools.build_meta` (NOT `setuptools.backends._legacy:_Backend`)
+- Must include `[tool.setuptools.package-data]` in `pyproject.toml` for `data/*.json`
+
+### Bundling for VS Code
+- Run `npm run bundle-lsp` (or VS Code task *Bundle LSP Dependencies*) to pip-install into `bundled/libs/`
+- Must re-bundle after every Python source change
+- `bundled/tool/lsp_server.py` is the VS Code entry point — it bootstraps `sys.path` to include `bundled/libs/` then calls `adams_cmd_lsp.server.main()`
+- `bundled/libs/` is gitignored
 
 ### Proprietary data protection
 - `commands.exp`, `language.src`, `commands.more` are closed-source Adams files — NEVER commit them
@@ -52,10 +66,10 @@ scripts/
 - The schema generator should print a reminder about reviewing before commit
 
 ### Testing
-- Pure unit tests, NO Adams View required
+- Pure unit tests, NO Adams View required — 139 tests total
 - Run with: `cd adams-cmd-lsp && pytest`
-- Use `tests/fixtures/` for test CMD files
-- Can also reference `test/files/*.cmd` from the parent repo for integration-level checks
+- Test fixtures reference `test/files/*.cmd` from the parent repo via relative path
+- Tests guard with `if not path.exists(): return` when fixtures are unavailable
 
 ## pygls 2.x API Patterns
 
@@ -140,11 +154,13 @@ The parser is a port from `src/cmd_completion_provider.ts.js`. Key functions to 
 
 1. **`group_continuation_lines(lines)`** — Join lines ending with `&`, tracking original line/column positions
 2. **`extract_command_key(text)`** — Strip all `arg=value` pairs to isolate the command key (port of `strip_argument_pairs`)
-3. **`consume_argument_value(text, start)`** — Consume quoted strings, parenthesized expressions (with nesting), or bare words
+3. **`consume_argument_value(text, start)`** — Consume double-quoted strings, single-quoted strings, parenthesized expressions (with nesting), or bare words
 4. **`consume_comma_separated_tail(text, i, value_start)`** — Continue consuming comma-separated values after initial value
 5. **`extract_arguments(text, line_offsets)`** — Extract all `arg=value` pairs with line/column positions
 
-Critical detail: when continuation lines are joined, maintain a mapping from character positions in the joined string back to original (line, column) for accurate diagnostic positions.
+Critical details:
+- When continuation lines are joined, maintain a mapping from character positions in the joined string back to original (line, column) for accurate diagnostic positions.
+- Single-quoted strings (`'...'`) are used in Adams CMD for `FUNCTION='...'` values and can contain `!` characters. The parser's `_find_comment_start()` tracks both `"..."` and `'...'` to avoid treating `!` inside quotes as comments.
 
 Control flow keywords (`if`, `else`, `end`, `for`, `while`) are NOT Adams commands — they are built-in and should NOT be validated against the command schema. Only the FIRST token determines control flow; `variable set variable_name = if_needed` is not control flow.
 
@@ -222,7 +238,7 @@ Each rule is a function: `rule_xxx(statements, schema, symbols) -> list[Diagnost
 | W005 | Warning | Object name (`NDBWD_*`) omitted — auto-generated but explicit preferred |
 | I006 | Info | Manual `adams_id` assignment — auto-assign is best practice |
 | E006 | Warning | Mutual exclusion conflict (two exclusive args provided) |
-| E101 | Error | Unbalanced parentheses |
+| E101 | Error | Unbalanced parentheses (skips `()` inside `"..."` and `'...'`) |
 | E102 | Error | Unclosed quote |
 | E103 | Error | Orphan continuation line |
 | E104 | Error | Unbalanced if/end, else without if, etc. |
@@ -332,3 +348,7 @@ Implement sequentially — each phase builds on the previous. The full plan has 
 - **Continuation line positions:** When joining `&` lines, the character-to-line/column mapping must be maintained for accurate diagnostic positions.
 - **Control flow is not in schema:** `if`/`else`/`end`/`for`/`while` are built-in, not Adams commands. Don't validate them against the command schema.
 - **Exclusive group suppression:** Required args in mutual exclusion groups must not be flagged as missing when a sibling member is provided.
+- **Single-quoted strings:** Adams CMD uses `'...'` for values like `FUNCTION='step(time,...)'`. These can contain `!` (comment delimiter) and `()` (parentheses). The comment finder, argument value consumer, and paren depth counter must all track single-quote boundaries to avoid false positives (E101, E102).
+- **Build-backend:** Use `setuptools.build_meta`, not `setuptools.backends._legacy:_Backend` (which doesn't exist).
+- **Package data:** `pyproject.toml` must include `[tool.setuptools.package-data]` with `adams_cmd_lsp = ["data/*.json"]` or the schema won't be included in the installed package.
+- **Re-bundle after changes:** After modifying any Python source in `adams-cmd-lsp/`, run `npm run bundle-lsp` to update `bundled/libs/`. The VS Code extension loads from `bundled/`, not from `adams-cmd-lsp/` directly.

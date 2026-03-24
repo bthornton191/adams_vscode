@@ -2,7 +2,9 @@
 
 ## Purpose of This Document
 
-This is a complete, self-contained implementation plan for building an Adams CMD Language Server (LSP) and CLI linter. It is intended to be handed to an AI coding agent with **zero prior context** about this codebase. Every design decision, data format, parsing algorithm, edge case, and file location is documented here.
+This is the original design document for the Adams CMD Language Server (LSP) and CLI linter. **All phases (0–5) are fully implemented.** The package has 139 passing tests.
+
+> **Note:** This document was written before implementation and served as the blueprint. Some details have diverged from the original plan during implementation — notably the `pyproject.toml` build-backend, `bundled/tool/lsp_server.py` entry point, and single-quoted string handling in the parser. These differences are noted inline with `[UPDATED]` markers. For the current working reference, see `.agents/skills/adams-cmd-lsp-builder/SKILL.md`.
 
 ---
 
@@ -105,6 +107,11 @@ adams_vscode/                              (existing repo root)
 │
 ├── scripts/
 │   └── generate_command_schema.py         (NEW — parse commands.exp + language.src → command_schema.json)
+│
+├── bundled/                               (NEW — Python runtime dependencies)
+│   ├── tool/
+│   │   └── lsp_server.py                  (NEW — bootstraps sys.path, runs adams_cmd_lsp.server.main())
+│   └── libs/                              (gitignored — populated by `npm run bundle-lsp`)
 │
 ├── src/
 │   ├── cmd_lsp_client.ts.js               (NEW — VS Code LSP client wrapper)
@@ -931,10 +938,17 @@ Also check the reverse — schema commands not in structured.json (may be debug-
 ### 6.1. Project Scaffold
 
 **File: `adams-cmd-lsp/pyproject.toml`**
+
+> [UPDATED] The build-backend below has been corrected from the original plan.
+> The original specified `setuptools.backends._legacy:_Backend`, which does not
+> exist. The correct value is `setuptools.build_meta`. Additionally,
+> `[tool.setuptools.package-data]` is required to include `data/*.json` in the
+> installed package.
+
 ```toml
 [build-system]
 requires = ["setuptools>=64"]
-build-backend = "setuptools.backends._legacy:_Backend"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "adams-cmd-lsp"
@@ -949,6 +963,9 @@ dev = ["pytest"]
 [project.scripts]
 adams-cmd-lint = "adams_cmd_lsp.cli:main"
 adams-cmd-lsp = "adams_cmd_lsp.server:main"
+
+[tool.setuptools.package-data]
+adams_cmd_lsp = ["data/*.json"]
 ```
 
 ### 6.2. Diagnostics (`diagnostics.py`)
@@ -1105,12 +1122,20 @@ def extract_command_key(text):
 ```
 
 **Value consumption (port of `consume_argument_value`):**
+
+> [UPDATED] The implementation also handles single-quoted strings (`'...'`), which
+> the original plan omitted. Adams CMD uses single-quoted strings in contexts like
+> `FUNCTION='...'` that can contain `!` characters (which are otherwise comment
+> delimiters). The parser's `_find_comment_start()`, `_consume_argument_value()`,
+> and `rule_unbalanced_parens()` all track single-quoted string boundaries to
+> avoid false positives.
+
 ```python
 def consume_argument_value(text, start):
     """Consume a single argument value starting at position start.
 
     Handles:
-    - Quoted strings: "..."
+    - Quoted strings: "..." and '...'
     - Parenthesized expressions: (...) with nesting
     - Bare words: sequences of non-whitespace chars
     """
@@ -1598,6 +1623,12 @@ def rule_exclusive_conflict(statements, schema, symbols):
 ```
 
 **E101 — Unbalanced parentheses:**
+
+> [UPDATED] The implementation also tracks single-quoted strings (`'...'`) in
+> addition to double-quoted strings. Parentheses inside single-quoted strings
+> (e.g., `FUNCTION='step(time,0,0,1,100)'`) are correctly ignored by the paren
+> depth counter.
+
 ```python
 def rule_unbalanced_parens(statements, schema, symbols):
     diagnostics = []
