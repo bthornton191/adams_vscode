@@ -337,12 +337,15 @@ def rule_unbalanced_parens(statements, schema, symbols):
         if stmt.is_comment or stmt.is_blank:
             continue
         depth = 0
-        in_string = False
+        in_double = False
+        in_single = False
         text = stmt.raw_text
         for i, ch in enumerate(text):
-            if ch == '"':
-                in_string = not in_string
-            elif not in_string:
+            if ch == '"' and not in_single:
+                in_double = not in_double
+            elif ch == "'" and not in_double:
+                in_single = not in_single
+            elif not in_double and not in_single:
                 if ch == '(':
                     depth += 1
                 elif ch == ')':

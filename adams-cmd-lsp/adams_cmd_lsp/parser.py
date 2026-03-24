@@ -51,13 +51,16 @@ _CONTROL_FLOW_KEYWORDS = frozenset(
 def _find_comment_start(line: str) -> int:
     """Return the index of the first unquoted '!' comment character, or len(line).
 
-    Correctly ignores '!' inside double-quoted strings.
+    Correctly ignores '!' inside double-quoted or single-quoted strings.
     """
-    in_string = False
+    in_double = False
+    in_single = False
     for i, ch in enumerate(line):
-        if ch == '"':
-            in_string = not in_string
-        elif ch == '!' and not in_string:
+        if ch == '"' and not in_single:
+            in_double = not in_double
+        elif ch == "'" and not in_double:
+            in_single = not in_single
+        elif ch == '!' and not in_double and not in_single:
             return i
     return len(line)
 
@@ -196,23 +199,33 @@ def _consume_argument_value(text: str, start: int) -> int:
 
     ch = text[start]
 
-    # Quoted string
+    # Quoted string (double-quoted)
     if ch == '"':
         i = start + 1
         while i < len(text) and text[i] != '"':
             i += 1
         return i + 1 if i < len(text) else i
 
+    # Quoted string (single-quoted)
+    if ch == "'":
+        i = start + 1
+        while i < len(text) and text[i] != "'":
+            i += 1
+        return i + 1 if i < len(text) else i
+
     # Parenthesised expression (with nesting, ignores quoted contents)
     if ch == '(':
         depth = 0
-        in_str = False
+        in_double = False
+        in_single = False
         i = start
         while i < len(text):
             c = text[i]
-            if c == '"':
-                in_str = not in_str
-            elif not in_str:
+            if c == '"' and not in_single:
+                in_double = not in_double
+            elif c == "'" and not in_double:
+                in_single = not in_single
+            elif not in_double and not in_single:
                 if c == '(':
                     depth += 1
                 elif c == ')':
