@@ -41,15 +41,17 @@ This is a VS Code extension for MSC Adams multi-body dynamics simulation softwar
 - Versioning follows semver; update `CHANGELOG.md` with every meaningful change.
 
 ## Adams CMD LSP (Python Package)
-The `adams-cmd-lsp/` subdirectory contains a Python package that provides an LSP server and CLI linter for Adams CMD files. This is a separate codebase from the VS Code extension JS code.
+The `adams-cmd-lsp/` subdirectory contains a fully implemented Python package that provides an LSP server and CLI linter for Adams CMD files. This is a separate codebase from the VS Code extension JS code.
 
 - **Language:** Python 3.9+, standard library + `pygls>=2.0` + `lsprotocol`
+- **Build backend:** `setuptools.build_meta` (in `pyproject.toml`). Requires `[tool.setuptools.package-data]` for `data/*.json`.
 - **Package layout:** `adams-cmd-lsp/adams_cmd_lsp/` (source), `adams-cmd-lsp/tests/` (tests)
 - **Entry points:** `adams-cmd-lsp` (LSP server), `adams-cmd-lint` (CLI linter), `python -m adams_cmd_lsp` (LSP server)
 - **Schema:** `adams-cmd-lsp/adams_cmd_lsp/data/command_schema.json` — generated once from Adams source files via `scripts/generate_command_schema.py`, committed to repo
-- **Tests:** `cd adams-cmd-lsp && pytest` — pure unit tests, no Adams View required
-- **Integration:** The VS Code extension starts the LSP server via `src/cmd_lsp_client.ts.js` using `vscode-languageclient`
-- **Implementation plan:** See `adams-cmd-lsp-plan.md` for the full design document with parsing algorithms, rule definitions, and schema format
+- **Tests:** `cd adams-cmd-lsp && pytest` — 139 pure unit tests, no Adams View required
+- **Integration:** The VS Code extension starts the LSP server via `src/cmd_lsp_client.ts.js` using `vscode-languageclient`. The actual Python entry point is `bundled/tool/lsp_server.py`, which bootstraps `sys.path` to include `bundled/libs/` and then runs `adams_cmd_lsp.server.main()`.
+- **Bundling:** Run `npm run bundle-lsp` (or the VS Code task *Bundle LSP Dependencies*) to pip-install the package into `bundled/libs/`. This must be done after any Python source changes. The `bundled/libs/` directory is gitignored.
+- **Implementation plan:** See `adams-cmd-lsp-plan.md` for the original design document with parsing algorithms, rule definitions, and schema format
 
 ## Recommendations
 These are areas worth paying attention to when writing or reviewing code — not hard rules, but patterns that have caused bugs or are easy to get wrong in this codebase.
