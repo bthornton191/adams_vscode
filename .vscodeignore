@@ -21,3 +21,5 @@ run-tests.js
 .agents
 .claude
 test_output.txt
+adams-cmd-lsp/**
+bundled/libs/**/__pycache__/**
