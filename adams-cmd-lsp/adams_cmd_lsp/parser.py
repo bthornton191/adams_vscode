@@ -51,17 +51,29 @@ _CONTROL_FLOW_KEYWORDS = frozenset(
 def _find_comment_start(line: str) -> int:
     """Return the index of the first unquoted '!' comment character, or len(line).
 
-    Correctly ignores '!' inside double-quoted or single-quoted strings.
+    In Adams CMD, '!' is a comment delimiter only when it appears OUTSIDE
+    parentheses.  Inside parentheses it is the logical NOT operator (e.g.
+    ``!DB_EXISTS(...)``) or the first character of the inequality operator
+    ``!=``.  This function tracks paren depth so that '!' inside any level
+    of parentheses is never mistaken for a comment start.
+
+    Also correctly ignores '!' inside double-quoted or single-quoted strings.
     """
     in_double = False
     in_single = False
+    paren_depth = 0
     for i, ch in enumerate(line):
         if ch == '"' and not in_single:
             in_double = not in_double
         elif ch == "'" and not in_double:
             in_single = not in_single
-        elif ch == '!' and not in_double and not in_single:
-            return i
+        elif not in_double and not in_single:
+            if ch == '(':
+                paren_depth += 1
+            elif ch == ')' and paren_depth > 0:
+                paren_depth -= 1
+            elif ch == '!' and paren_depth == 0:
+                return i
     return len(line)
 
 
