@@ -109,6 +109,12 @@ def main():
         metavar="PATH",
         help="Path to command_schema.json (default: bundled)",
     )
+    # vscode-languageclient passes --stdio automatically; accept and ignore it.
+    parser.add_argument(
+        "--stdio",
+        action="store_true",
+        help="Use stdio transport (default, passed automatically by VS Code)",
+    )
     args = parser.parse_args()
 
     _schema = Schema.load(args.schema) if args.schema else Schema.load()

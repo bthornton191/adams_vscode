@@ -13,6 +13,7 @@
  */
 function cmd_lsp_client(output_channel, reporter) {
     const vscode = require("vscode");
+    const path = require("path");
     const { LanguageClient, TransportKind } = require("vscode-languageclient/node");
 
     let client = null;
@@ -33,9 +34,12 @@ function cmd_lsp_client(output_channel, reporter) {
             vscode.workspace.getConfiguration("python").get("defaultInterpreterPath") ||
             "python";
 
+        // Launch the bundled wrapper script — no user pip-install required.
+        const server_script = path.join(context.extensionPath, "bundled", "tool", "lsp_server.py");
+
         const server_options = {
             command: python_path,
-            args: ["-m", "adams_cmd_lsp"],
+            args: [server_script],
             transport: TransportKind.stdio,
         };
 

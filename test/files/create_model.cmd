@@ -10,8 +10,9 @@ part create rigid_body name_and_position  &
     part_name = "hello_part3"
 
 
-geometry create &
-    geometry_name = "hello" &
+geometry create shape cylinder &
+    cylinder_name="hello_cylinder" &
+    center_marker="mkr"
 
 part create rigid_body name_and_position 
 
