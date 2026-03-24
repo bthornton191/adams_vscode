@@ -366,3 +366,43 @@ def test_e101_still_detects_real_unbalanced():
     line = "model create model_name=(unclosed"
     diags = _lint(line, rule_fn=rule_unbalanced_parens)
     assert "E101" in _codes(diags)
+
+
+# ---------------------------------------------------------------------------
+# E101 — '!' as NOT operator / '!=' inside parentheses false-positive regressions
+# ---------------------------------------------------------------------------
+
+def test_e101_no_false_positive_not_operator_in_parens():
+    """'!' as logical NOT inside parens must NOT trigger E101.
+
+    'if condition=(eval(!DB_EXISTS(".part")))' has balanced parens.
+    Previously, _find_comment_start() truncated at '!', stripping the
+    closing ')))' and producing a false E101.
+    """
+    line = 'if condition=(eval(!DB_EXISTS(".part")))'
+    diags = _lint(line, rule_fn=rule_unbalanced_parens)
+    assert "E101" not in _codes(diags)
+
+
+def test_e101_no_false_positive_not_equal_in_parens():
+    """'!=' operator inside parens must NOT trigger E101.
+
+    'if condition=(eval($oml_pitch != 0))' has balanced parens.
+    Previously, _find_comment_start() truncated at '!=', leaving
+    unclosed '(' and producing a false E101.
+    """
+    line = "if condition=(eval($oml_pitch != 0))"
+    diags = _lint(line, rule_fn=rule_unbalanced_parens)
+    assert "E101" not in _codes(diags)
+
+
+def test_e101_no_false_positive_logical_and_before_not_operator():
+    """'&&' before '!' inside nested parens must NOT trigger E101.
+
+    'if condition=((eval("$x" == "yes") && !DB_EXISTS(".bp")))' is fully
+    balanced. Previously, the '!' caused truncation after '&&', leaving
+    two unclosed parens and producing a false E101.
+    """
+    line = 'if condition=((eval("$x" == "yes") && !DB_EXISTS(".bp")))'
+    diags = _lint(line, rule_fn=rule_unbalanced_parens)
+    assert "E101" not in _codes(diags)

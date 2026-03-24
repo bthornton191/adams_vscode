@@ -333,3 +333,69 @@ def test_parse_single_quoted_exclamation_not_comment():
     assert not stmt.is_blank
     # The raw_text must NOT be truncated at the '!!' — closing ))) must be present
     assert stmt.raw_text.endswith(")))")
+
+
+# ---------------------------------------------------------------------------
+# '!' as NOT operator / '!=' inside parentheses
+# ---------------------------------------------------------------------------
+
+def test_comment_start_not_operator_inside_parens():
+    """'!' as logical NOT operator inside '(...)' must NOT be treated as a comment."""
+    line = "if condition=(eval(!DB_EXISTS(\".part\")))"
+    assert _find_comment_start(line) == len(line)
+
+
+def test_comment_start_not_equal_operator_inside_parens():
+    """'!' in '!=' inside '(...)' must NOT be treated as a comment."""
+    line = "if condition=(eval($oml_pitch != 0))"
+    assert _find_comment_start(line) == len(line)
+
+
+def test_comment_start_not_operator_inside_nested_parens():
+    """'!' inside deeply nested parens is not a comment."""
+    line = "if condition=((eval(\"yes\" == \"yes\") && !DB_EXISTS(\".part\")))"
+    assert _find_comment_start(line) == len(line)
+
+
+def test_comment_start_after_closing_paren_is_comment():
+    """'!' AFTER all parens are closed IS a comment."""
+    line = "if condition=(eval(DB_EXISTS(\".part\"))) ! check"
+    idx = _find_comment_start(line)
+    assert line[idx] == '!'
+    assert line[idx:] == "! check"
+
+
+def test_parse_not_operator_in_condition():
+    """if condition=(eval(!DB_EXISTS(...))) should parse as a single control-flow
+    statement with raw_text preserved (not truncated at '!')."""
+    line = "if condition=(eval(!DB_EXISTS(\".part\")))"
+    stmts = parse(line)
+    assert len(stmts) == 1
+    stmt = stmts[0]
+    assert stmt.is_control_flow
+    assert stmt.raw_text.endswith(")))")
+
+
+def test_parse_not_equal_in_condition():
+    """if condition=(eval($x != 0)) should parse as a single statement, not truncated."""
+    line = "if condition=(eval($oml_pitch != 0))"
+    stmts = parse(line)
+    assert len(stmts) == 1
+    stmt = stmts[0]
+    assert stmt.is_control_flow
+    assert "!= 0" in stmt.raw_text
+
+
+def test_parse_logical_and_before_not_operator_no_false_continuation():
+    """'if condition=((eval(...) && !db_exists(...)))' must NOT be treated as a
+    continuation line — the '&&' after comment-stripping the '!' must not be
+    mistaken for a trailing '&' continuation marker."""
+    line = 'if condition=((eval("$x" == "yes") && !DB_EXISTS(".bp")))'
+    next_line = "    plugin load plugin=my_plugin"
+    stmts = parse(line + "\n" + next_line)
+    # Must parse as two separate statements, not one merged continuation
+    assert len(stmts) == 2
+    assert stmts[0].is_control_flow
+    assert stmts[0].line_start == 0
+    assert stmts[0].line_end == 0   # must NOT absorb the next line
+    assert stmts[1].line_start == 1
