@@ -296,13 +296,29 @@
                         "description": "Show a pop-up message when trying to connect the debugger to Adams View 2023 or higher",
                         "default": true
                     },
-                    "msc-adams.aviewPortNumber": {
-                        "type": "integer",
-                        "title": "Port number for connecting to adams view",
-                        "description": "By default, the Adams View command server listens on port 5002. You can change this in Adams View using the ADAMS_LISTENER_PORT environment variable. If you change it there, make sure to update this setting to match.",
-                        "default": 5002
-                    }
-                }
+                     "msc-adams.aviewPortNumber": {
+                         "type": "integer",
+                         "title": "Port number for connecting to adams view",
+                         "description": "By default, the Adams View command server listens on port 5002. You can change this in Adams View using the ADAMS_LISTENER_PORT environment variable. If you change it there, make sure to update this setting to match.",
+                         "default": 5002
+                     },
+                     "msc-adams.linter.enabled": {
+                         "type": "boolean",
+                         "default": true,
+                         "description": "Enable the Adams CMD linter (requires the adams-cmd-lsp Python package to be installed in the active Python environment)."
+                     },
+                     "msc-adams.linter.pythonPath": {
+                         "type": "string",
+                         "default": "",
+                         "description": "Path to the Python interpreter used to run the Adams CMD linter. Leave empty to use the interpreter selected by the Python extension."
+                     },
+                     "msc-adams.linter.severity": {
+                         "type": "string",
+                         "enum": ["error", "warning", "info"],
+                         "default": "info",
+                         "description": "Minimum severity level for the Adams CMD linter to report. 'info' reports everything; 'error' reports only hard errors."
+                     }
+                 }
             }
         ],
         "configurationDefaults": {
@@ -483,7 +499,8 @@
     ],
     "dependencies": {
         "@vscode/extension-telemetry": "^0.9.7",
-        "temp": "^0.9.4"
+        "temp": "^0.9.4",
+        "vscode-languageclient": "^9.0.1"
     },
     "scripts": {
         "test": "run-tests.js"

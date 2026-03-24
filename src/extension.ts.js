@@ -12,6 +12,7 @@ const { cmd_completion_provider } = require("./cmd_completion_provider.ts");
 const { cmd_hover_provider } = require("./cmd_hover_provider.ts");
 const { link_provider } = require("./link_provider.ts.js");
 const { add_adams_site_packages } = require("../src/add_adams_site_packages.ts.js");
+const { cmd_lsp_client } = require("./cmd_lsp_client.ts.js");
 
 //Create output channel
 const output_channel = vscode.window.createOutputChannel("MSC Adams");
@@ -100,6 +101,12 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
         cmd_completion_provider(view_functions, view_commands, arg_options, command_docs, reporter),
         "=", // trigger value completions after arg=
     );
+
+    // ---------------------------------------------------------------------------
+    // LSP Client (Adams CMD Linter)
+    // ---------------------------------------------------------------------------
+    const lsp = cmd_lsp_client(output_channel, reporter);
+    lsp.start(context);
 
     // ---------------------------------------------------------------------------
     // Commands
