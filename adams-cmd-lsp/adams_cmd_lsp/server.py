@@ -76,7 +76,9 @@ def did_change(params: types.DidChangeTextDocumentParams):
 
 @server.feature(types.TEXT_DOCUMENT_DID_CLOSE)
 def did_close(params: types.DidCloseTextDocumentParams):
-    server.publish_diagnostics(params.text_document.uri, [])
+    server.text_document_publish_diagnostics(
+        types.PublishDiagnosticsParams(uri=params.text_document.uri, diagnostics=[])
+    )
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_SAVE)

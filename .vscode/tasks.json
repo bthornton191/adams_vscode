@@ -81,7 +81,7 @@
         {
             "type": "shell",
             "label": "Bundle LSP Dependencies",
-            "command": "if exist bundled\\libs rmdir /s /q bundled\\libs && python -m pip install --target .\\bundled\\libs --no-cache-dir .\\adams-cmd-lsp",
+            "command": "python -c \"import shutil;shutil.rmtree('bundled\\\\libs', ignore_errors=True)\" && python -m pip install --target .\\bundled\\libs --no-cache-dir .\\adams-cmd-lsp",
             "group": {
                 "kind": "build",
                 "isDefault": false

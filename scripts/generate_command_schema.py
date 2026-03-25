@@ -654,11 +654,40 @@ Do not commit proprietary data from commands.exp or language.src.
         for cmd_key, overrides in patches.get("commands", {}).items():
             if cmd_key in commands:
                 for field, value in overrides.items():
-                    commands[cmd_key][field] = value
+                    if field == "required_overrides":
+                        # Apply per-argument required flag overrides
+                        for arg_name, req_val in value.items():
+                            if arg_name in commands[cmd_key].get("args", {}):
+                                commands[cmd_key]["args"][arg_name]["required"] = req_val
+                    elif field == "arg_overrides":
+                        # Apply arbitrary per-argument field overrides
+                        for arg_name, arg_fields in value.items():
+                            if arg_name in commands[cmd_key].get("args", {}):
+                                commands[cmd_key]["args"][arg_name].update(arg_fields)
+                    else:
+                        commands[cmd_key][field] = value
                 patched += 1
             else:
                 print(f"  WARNING: patch target '{cmd_key}' not found in generated schema")
         print(f"  Applied patches to {patched} commands.")
+
+        # new_commands: entries that don't exist in commands.exp at all.
+        # Format: same as a regular commands entry (args + exclusive_groups).
+        # Also adds the command's tokens to command_tree as a leaf node.
+        new_cmds = patches.get("new_commands", {})
+        for cmd_key, cmd_def in new_cmds.items():
+            commands[cmd_key] = cmd_def
+            # Walk/create the command_tree path and add a leaf node.
+            tokens = cmd_key.split()
+            node = command_tree
+            for token in tokens:
+                children = node.setdefault("children", {})
+                if token not in children:
+                    children[token] = {"children": {}, "min_prefix": 1}
+                node = children[token]
+            node["is_leaf"] = True
+        if new_cmds:
+            print(f"  Added {len(new_cmds)} new commands from 'new_commands' section.")
 
     # ------------------------------------------------------------------
     # Step 8: Write output

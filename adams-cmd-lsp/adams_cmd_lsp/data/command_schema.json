@@ -91,7 +91,7 @@
           "type": "existing_object",
           "object_type": "Mechanism",
           "db_type": "DB_MECHANISM",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -100,7 +100,7 @@
           "type": "existing_object",
           "object_type": "Run",
           "db_type": "DB_RUN",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -642,7 +642,7 @@
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "inertia_marker": {
@@ -705,7 +705,7 @@
           "type": "existing_object",
           "object_type": "Material",
           "db_type": "DB_MATERIAL",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         }
       },
@@ -1913,7 +1913,7 @@
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "density": {
@@ -1927,7 +1927,7 @@
           "type": "existing_object",
           "object_type": "Material",
           "db_type": "DB_MATERIAL",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         }
       },
@@ -1936,7 +1936,8 @@
           "group": 1,
           "members": [
             "center_of_mass_marker",
-            "material_type"
+            "material_type",
+            "density"
           ]
         }
       ]
@@ -2052,7 +2053,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "static_hold": {
@@ -2446,7 +2447,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 6
         },
         "routine": {
@@ -2494,7 +2495,7 @@
           "type": "existing_object",
           "object_type": "Part",
           "db_type": "DB_PART",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "mesh_opts": {
@@ -5218,7 +5219,7 @@
           "type": "new_object",
           "object_type": "Part",
           "db_type": "NDBWD_PART",
-          "required": true,
+          "required": false,
           "min_prefix": 6
         },
         "view_name": {
@@ -5242,7 +5243,7 @@
           "type": "new_object",
           "object_type": "Flex_body",
           "db_type": "NDBWD_FLEX_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 5
         },
         "point_mass_name": {
@@ -5257,7 +5258,7 @@
           "type": "new_object",
           "object_type": "Point_mass",
           "db_type": "NDBWD_POINT_MASS",
-          "required": true,
+          "required": false,
           "min_prefix": 6
         },
         "equation_name": {
@@ -5272,19 +5273,11 @@
           "type": "new_object",
           "object_type": "Equ",
           "db_type": "NDB_EQU",
-          "required": true,
+          "required": false,
           "min_prefix": 5
         }
       },
       "exclusive_groups": [
-        {
-          "group": 1,
-          "members": [
-            "part_name",
-            "new_part_name",
-            "view_name"
-          ]
-        },
         {
           "group": 2,
           "members": [
@@ -5304,8 +5297,10 @@
         {
           "group": 4,
           "members": [
-            "equation_name",
-            "new_equation_name"
+            "new_part_name",
+            "new_equation_name",
+            "new_flexible_body_name",
+            "new_point_mass_name"
           ]
         }
       ]
@@ -5520,7 +5515,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -5531,7 +5527,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -5692,14 +5689,6 @@
             "in_plane_orientation",
             "natural_coordinates_relative_orientation"
           ]
-        },
-        {
-          "group": 3,
-          "members": [
-            "vx",
-            "vy",
-            "vz"
-          ]
         }
       ]
     },
@@ -5836,14 +5825,6 @@
             "in_plane_orientation",
             "natural_coordinates_relative_orientation"
           ]
-        },
-        {
-          "group": 2,
-          "members": [
-            "vx",
-            "vy",
-            "vz"
-          ]
         }
       ]
     },
@@ -5941,7 +5922,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -5952,7 +5934,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -6240,7 +6223,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -6251,7 +6235,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -6589,14 +6574,14 @@
           "type": "existing_object",
           "object_type": "Acurve",
           "db_type": "DB_ACURVE",
-          "required": true,
+          "required": false,
           "min_prefix": 5
         },
         "ref_profile_name": {
           "type": "existing_object",
           "object_type": "Gwire",
           "db_type": "DB_GWIRE",
-          "required": true,
+          "required": false,
           "min_prefix": 5
         },
         "ref_marker_name": {
@@ -6638,7 +6623,15 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "ref_curve_name",
+            "ref_profile_name"
+          ]
+        }
+      ]
     },
     "geometry create curve chain": {
       "args": {
@@ -6874,21 +6867,21 @@
           "type": "existing_object",
           "object_type": "Graph",
           "db_type": "DB_GRAPH",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "trace_marker": {
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "base_marker": {
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "curve_type": {
@@ -7241,7 +7234,15 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "profile_curve",
+            "points_for_profile"
+          ]
+        }
+      ]
     },
     "geometry create shape extrusion": {
       "args": {
@@ -7349,7 +7350,25 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "profile_curve",
+            "points_for_profile"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "path_curve",
+            "path_points",
+            "length_along_z_axis",
+            "profiles_loft",
+            "centerline_loft"
+          ]
+        }
+      ]
     },
     "geometry create shape torus": {
       "args": {
@@ -7959,35 +7978,35 @@
           "type": "existing_object",
           "object_type": "Force",
           "db_type": "DB_FORCE",
-          "required": true,
+          "required": false,
           "min_prefix": 7
         },
         "joint_name": {
           "type": "existing_object",
           "object_type": "Joint",
           "db_type": "DB_JOINT",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "jprim_name": {
           "type": "existing_object",
           "object_type": "Jprim",
           "db_type": "DB_JPRIM",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "curve_curve_name": {
           "type": "existing_object",
           "object_type": "Ccurve",
           "db_type": "DB_CCURVE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "point_curve_name": {
           "type": "existing_object",
           "object_type": "Pcurve",
           "db_type": "DB_PCURVE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "all_force_elements": {
@@ -8007,7 +8026,17 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "joint_name",
+            "jprim_name",
+            "curve_curve_name",
+            "point_curve_name"
+          ]
+        }
+      ]
     },
     "geometry create shape picture": {
       "args": {
@@ -10299,7 +10328,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -10310,7 +10340,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -11844,7 +11875,7 @@
           "required": true,
           "array": true,
           "min_values": 2,
-          "max_values": 2,
+          "max_values": 3,
           "min_prefix": 1
         },
         "type_of_freedom": {
@@ -11869,7 +11900,7 @@
         "motion_multipliers": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 2,
           "max_values": 2,
@@ -11920,7 +11951,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "routine": {
@@ -11985,7 +12016,15 @@
           "min_prefix": 8
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "motion_multipliers",
+            "user_function"
+          ]
+        }
+      ]
     },
     "constraint create primitive_joint at_point": {
       "args": {
@@ -12070,7 +12109,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "constraint create primitive_joint inline": {
       "args": {
@@ -12155,7 +12209,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "constraint create primitive_joint inplane": {
       "args": {
@@ -12240,7 +12309,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "constraint create primitive_joint orientation": {
       "args": {
@@ -12325,7 +12409,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "constraint create primitive_joint parallel_axis": {
       "args": {
@@ -12410,7 +12509,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "constraint create primitive_joint perpendicular": {
       "args": {
@@ -12495,7 +12609,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "constraint create primitive_joint point_point": {
       "args": {
@@ -12586,7 +12715,22 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "constraint create higher_pair_contact point_curve": {
       "args": {
@@ -12702,7 +12846,22 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "i_marker_name",
+            "location"
+          ]
+        }
+      ]
     },
     "constraint create higher_pair_contact curve_curve": {
       "args": {
@@ -12913,7 +13072,7 @@
         "axis": {
           "type": "unknown",
           "raw_type": "MOTION_AXES",
-          "required": true,
+          "required": false,
           "enum_values": [
             "x",
             "y",
@@ -12934,7 +13093,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "routine": {
@@ -12985,6 +13144,20 @@
           "members": [
             "function",
             "user_function"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "joint_name",
+            "i_marker_name"
+          ]
+        },
+        {
+          "group": 3,
+          "members": [
+            "joint_name",
+            "j_marker_name"
           ]
         }
       ]
@@ -15163,7 +15336,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -15174,7 +15348,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -15234,7 +15409,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "routine": {
@@ -15396,28 +15571,28 @@
         },
         "x_force_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
         },
         "y_force_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
         },
         "z_force_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
         },
         "xyz_force_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -15425,7 +15600,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "routine": {
@@ -15434,7 +15609,36 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "j_floating_marker_name",
+            "j_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "x_force_function",
+            "xyz_force_function"
+          ]
+        },
+        {
+          "group": 3,
+          "members": [
+            "y_force_function",
+            "xyz_force_function"
+          ]
+        },
+        {
+          "group": 4,
+          "members": [
+            "z_force_function",
+            "xyz_force_function"
+          ]
+        }
+      ]
     },
     "force create direct torque_vector": {
       "args": {
@@ -15488,7 +15692,7 @@
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "error": {
@@ -15499,28 +15703,28 @@
         },
         "x_torque_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
         },
         "y_torque_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
         },
         "z_torque_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
         },
         "xyz_torque_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -15528,7 +15732,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "routine": {
@@ -15537,7 +15741,22 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "j_floating_marker_name",
+            "j_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "xyz_torque_function",
+            "x_torque_function"
+          ]
+        }
+      ]
     },
     "force create direct general_force": {
       "args": {
@@ -15572,14 +15791,14 @@
           "type": "existing_object",
           "object_type": "Fmarker",
           "db_type": "DB_FMARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "j_part_name": {
           "type": "existing_object",
           "object_type": "Body",
           "db_type": "DB_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "j_marker_id": {
@@ -15591,7 +15810,7 @@
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "error": {
@@ -15602,42 +15821,42 @@
         },
         "x_force_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
         },
         "y_force_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
         },
         "z_force_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
         },
         "x_torque_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
         },
         "y_torque_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
         },
         "z_torque_function": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -15659,7 +15878,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "routine": {
@@ -15668,7 +15887,30 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "j_floating_marker_name",
+            "j_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "xyz_force_function",
+            "x_force_function"
+          ]
+        },
+        {
+          "group": 3,
+          "members": [
+            "user_function",
+            "x_force_function",
+            "xyz_force_function"
+          ]
+        }
+      ]
     },
     "force create direct multi_point_force": {
       "args": {
@@ -15776,12 +16018,12 @@
         },
         "case_index": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "scale": {
           "type": "function",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -15789,7 +16031,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "routine": {
@@ -15800,7 +16042,7 @@
         "force_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "j_floating_marker_name": {
@@ -15823,7 +16065,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "case_index",
+            "user_function"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "scale",
+            "user_function"
+          ]
+        }
+      ]
     },
     "force create direct fe_load": {
       "args": {
@@ -16136,7 +16393,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "force create element_like bushing": {
       "args": {
@@ -16281,7 +16553,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "force create element_like field": {
       "args": {
@@ -16460,7 +16747,22 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "force create element_like translational_spring_damper": {
       "args": {
@@ -16516,14 +16818,14 @@
           "type": "existing_object",
           "object_type": "Body",
           "db_type": "DB_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "j_part_name": {
           "type": "existing_object",
           "object_type": "Body",
           "db_type": "DB_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "location": {
@@ -16562,18 +16864,33 @@
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "j_marker_name": {
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "force create element_like rotational_spring_damper": {
       "args": {
@@ -16686,7 +17003,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "force create element_like friction": {
       "args": {
@@ -18526,7 +18858,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -18537,7 +18870,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -18588,7 +18922,7 @@
           "type": "existing_object",
           "object_type": "Matrix",
           "db_type": "DB_MATRIX",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "interpolation_order": {
@@ -18621,7 +18955,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "minimum_parameter": {
@@ -18642,7 +18976,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "matrix_name",
+            "user_function"
+          ]
+        }
+      ]
     },
     "data_element create spline": {
       "args": {
@@ -18697,7 +19039,7 @@
         },
         "file_name": {
           "type": "string",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "block_name": {
@@ -18718,7 +19060,7 @@
         "x": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 4,
           "max_values": 4,
@@ -18727,7 +19069,7 @@
         "y": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 4,
           "max_values": 4,
@@ -18746,14 +19088,14 @@
           "type": "existing_object",
           "object_type": "Data",
           "db_type": "DB_DATA",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "y_result_set_component_name": {
           "type": "existing_object",
           "object_type": "Data",
           "db_type": "DB_DATA",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -18766,7 +19108,22 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "file_name",
+            "x"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "file_name",
+            "y"
+          ]
+        }
+      ]
     },
     "data_element create variable": {
       "args": {
@@ -18806,7 +19163,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "routine": {
@@ -19066,7 +19423,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "values",
+            "result_set_component_names"
+          ]
+        }
+      ]
     },
     "data_element create matrix sparse": {
       "args": {
@@ -20188,7 +20553,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -20199,7 +20565,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 2
         }
@@ -21784,7 +22151,7 @@
           "type": "new_object",
           "object_type": "Animation",
           "db_type": "NDB_ANIMATION",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "time_range": {
@@ -21868,14 +22235,14 @@
           "type": "new_object",
           "object_type": "Normal_mode_ani",
           "db_type": "NDB_NORMAL_MODE_ANI",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "eigen_solution_name": {
           "type": "existing_object",
           "object_type": "Eigen",
           "db_type": "DB_EIGEN",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "mode_number": {
@@ -21949,7 +22316,7 @@
           "type": "new_object",
           "object_type": "Forced_vibration_ani",
           "db_type": "NDB_FORCED_VIBRATION_ANI",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "frequency": {
@@ -22160,7 +22527,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "analysis_name": {
@@ -22545,7 +22912,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -22554,7 +22921,7 @@
           "type": "existing_object",
           "object_type": "Page",
           "db_type": "DB_PAGE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "type": {
@@ -22580,8 +22947,7 @@
           "group": 1,
           "members": [
             "page_name",
-            "type",
-            "time_window"
+            "animation_name"
           ]
         }
       ]
@@ -22592,7 +22958,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -22621,7 +22987,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -22660,7 +23026,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -22689,7 +23055,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "view_name": {
@@ -22784,7 +23150,7 @@
           "type": "existing_object",
           "object_type": "Animation",
           "db_type": "DB_ANIMATION",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -22793,7 +23159,7 @@
           "type": "existing_object",
           "object_type": "Page",
           "db_type": "DB_PAGE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -22825,7 +23191,7 @@
           "type": "existing_object",
           "object_type": "Animation",
           "db_type": "DB_ANIMATION",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -22834,7 +23200,7 @@
           "type": "existing_object",
           "object_type": "Page",
           "db_type": "DB_PAGE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -22866,7 +23232,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -23446,7 +23812,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -23457,7 +23824,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -24013,7 +24381,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -24024,7 +24393,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -24057,7 +24427,7 @@
           "type": "existing_object",
           "object_type": "Graph",
           "db_type": "DB_GRAPH",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -24066,14 +24436,14 @@
           "type": "existing_object",
           "object_type": "Part",
           "db_type": "DB_PART",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "i_flex": {
           "type": "existing_object",
           "object_type": "Flex_body",
           "db_type": "DB_FLEX_BODY",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -24098,7 +24468,7 @@
           "type": "existing_object",
           "object_type": "Graph",
           "db_type": "DB_GRAPH",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -24107,14 +24477,14 @@
           "type": "existing_object",
           "object_type": "Part",
           "db_type": "DB_PART",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "j_flex": {
           "type": "existing_object",
           "object_type": "Flex_body",
           "db_type": "DB_FLEX_BODY",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -24168,7 +24538,24 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "i_geometry",
+            "i_part",
+            "i_flex"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_geometry",
+            "j_part",
+            "j_flex"
+          ]
+        }
+      ]
     },
     "clearance modify": {
       "args": {
@@ -24395,7 +24782,7 @@
         "cyl_radius": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 5
         },
         "cyl_thickness": {
@@ -24407,13 +24794,13 @@
         "rect_height": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 6
         },
         "rect_base": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 6
         },
         "rect_thickness": {
@@ -24425,13 +24812,13 @@
         "major_radius": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "minor_radius": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "start_angle": {
@@ -24451,31 +24838,31 @@
         "ib_height": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 4
         },
         "ib_base": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 4
         },
         "ib_flange": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 4
         },
         "ib_web": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 4
         },
         "xy_points": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -24483,7 +24870,7 @@
         "zy_points": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -24667,7 +25054,7 @@
         "xy_points": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -24675,7 +25062,7 @@
         "zy_points": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -26303,7 +26690,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 6
         },
         "routine": {
@@ -26611,7 +26998,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -26622,7 +27010,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -27232,7 +27621,7 @@
         "output_type": {
           "type": "unknown",
           "raw_type": "OUTPUT_TYPE",
-          "required": true,
+          "required": false,
           "enum_values": [
             "displacement",
             "velocity",
@@ -27245,34 +27634,34 @@
           "type": "existing_object",
           "object_type": "Part",
           "db_type": "DB_PART",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "joint_name": {
           "type": "existing_object",
           "object_type": "Joint",
           "db_type": "DB_JOINT",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "jprim_name": {
           "type": "existing_object",
           "object_type": "Jprim",
           "db_type": "DB_JPRIM",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "force_name": {
           "type": "existing_object",
           "object_type": "Force",
           "db_type": "DB_FORCE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "all": {
           "type": "unknown",
           "raw_type": "MREQUEST_ENTITIES",
-          "required": true,
+          "required": false,
           "enum_values": [
             "parts",
             "joints",
@@ -27282,7 +27671,18 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "part_name",
+            "joint_name",
+            "jprim_name",
+            "force_name",
+            "all"
+          ]
+        }
+      ]
     },
     "output_control create request": {
       "args": {
@@ -27340,7 +27740,7 @@
         "output_type": {
           "type": "unknown",
           "raw_type": "OUTPUT_TYPE",
-          "required": true,
+          "required": false,
           "enum_values": [
             "displacement",
             "velocity",
@@ -27353,7 +27753,7 @@
           "type": "existing_object",
           "object_type": "Triad",
           "db_type": "DB_TRIAD",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "j_marker_name": {
@@ -27380,7 +27780,7 @@
         "user_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "f1": {
@@ -28187,7 +28587,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -28198,7 +28599,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -28241,7 +28643,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -28252,7 +28655,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -28295,7 +28699,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -28306,7 +28711,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -28363,7 +28769,7 @@
           "type": "new_object",
           "object_type": "Run",
           "db_type": "NDBWD_RUN",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "user_executable": {
@@ -28442,7 +28848,7 @@
         },
         "adams_command_file": {
           "type": "string",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -28552,7 +28958,7 @@
         },
         "adams_command_file": {
           "type": "string",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -28593,18 +28999,21 @@
             "full_factorial",
             "user1",
             "user2",
-            "user3"
+            "user3",
+            "box_behnken",
+            "casewise",
+            "central_composite"
           ],
           "min_prefix": 1
         },
         "number_of_user_trials": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 11
         },
         "user_matrix": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 6
@@ -28616,7 +29025,15 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "analysis_name",
+            "adams_command_file"
+          ]
+        }
+      ]
     },
     "optimize fit_response_surface": {
       "args": {
@@ -28729,7 +29146,7 @@
         },
         "adams_command_file": {
           "type": "string",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -28846,7 +29263,15 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "analysis_name",
+            "adams_command_file"
+          ]
+        }
+      ]
     },
     "optimize objective create": {
       "args": {
@@ -28878,7 +29303,7 @@
         },
         "result_set_component": {
           "type": "string",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "output_characteristic": {
@@ -28902,14 +29327,14 @@
           "type": "existing_object",
           "object_type": "Measure",
           "db_type": "DB_MEASURE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "function_name": {
           "type": "existing_object",
           "object_type": "Expr_func",
           "db_type": "DB_EXPR_FUNC",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "n_components": {
@@ -28922,14 +29347,14 @@
           "type": "existing_object",
           "object_type": "Vvar",
           "db_type": "DB_VVAR",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "macro_name": {
           "type": "existing_object",
           "object_type": "Macro",
           "db_type": "DB_MACRO",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
@@ -29095,7 +29520,7 @@
         },
         "result_set_component": {
           "type": "string",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "output_characteristic": {
@@ -29119,28 +29544,28 @@
           "type": "existing_object",
           "object_type": "Measure",
           "db_type": "DB_MEASURE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "function_name": {
           "type": "existing_object",
           "object_type": "Expr_func",
           "db_type": "DB_EXPR_FUNC",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "variable_name": {
           "type": "existing_object",
           "object_type": "Vvar",
           "db_type": "DB_VVAR",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "macro_name": {
           "type": "existing_object",
           "object_type": "Macro",
           "db_type": "DB_MACRO",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
@@ -30349,14 +30774,14 @@
           "type": "existing_object",
           "object_type": "Vvar",
           "db_type": "DB_VVAR",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "objective_names": {
           "type": "existing_object",
           "object_type": "Objective",
           "db_type": "DB_OBJECTIVE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -30365,7 +30790,7 @@
           "type": "existing_object",
           "object_type": "Measure",
           "db_type": "DB_MEASURE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "output_characteristic": {
@@ -30392,7 +30817,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "objective_names",
+            "measure_name"
+          ]
+        }
+      ]
     },
     "simulation multi_run tsf_sweep": {
       "args": {
@@ -30423,7 +30856,7 @@
           "type": "existing_object",
           "object_type": "Objective",
           "db_type": "DB_OBJECTIVE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -30432,7 +30865,7 @@
           "type": "existing_object",
           "object_type": "Measure",
           "db_type": "DB_MEASURE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "output_characteristic": {
@@ -30459,7 +30892,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "objective_names",
+            "measure_name"
+          ]
+        }
+      ]
     },
     "simulation multi_run doe": {
       "args": {
@@ -30483,7 +30924,7 @@
           "type": "existing_object",
           "object_type": "Vvar",
           "db_type": "DB_VVAR",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -30492,7 +30933,7 @@
           "type": "existing_object",
           "object_type": "Objective",
           "db_type": "DB_OBJECTIVE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -30501,7 +30942,7 @@
           "type": "existing_object",
           "object_type": "Measure",
           "db_type": "DB_MEASURE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "output_characteristic": {
@@ -30542,25 +30983,25 @@
         },
         "number_of_user_trials": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 11
         },
         "user_matrix": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
         },
         "rows_in_table": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "table_of_values": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -30572,7 +31013,22 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "objective_names",
+            "measure_name"
+          ]
+        },
+        {
+          "group": 3,
+          "members": [
+            "rows_in_table",
+            "number_of_user_trials"
+          ]
+        }
+      ]
     },
     "simulation multi_run preview_doe": {
       "args": {
@@ -30668,7 +31124,7 @@
           "type": "existing_object",
           "object_type": "Vvar",
           "db_type": "DB_VVAR",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -30677,14 +31133,14 @@
           "type": "existing_object",
           "object_type": "Objective",
           "db_type": "DB_OBJECTIVE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "measure_name": {
           "type": "existing_object",
           "object_type": "Measure",
           "db_type": "DB_MEASURE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "output_characteristic": {
@@ -30725,7 +31181,15 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "objective_name",
+            "measure_name"
+          ]
+        }
+      ]
     },
     "simulation multi_run save": {
       "args": {
@@ -31046,7 +31510,7 @@
           "type": "existing_object",
           "object_type": "Objective",
           "db_type": "DB_OBJECTIVE",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -31055,7 +31519,7 @@
           "type": "existing_object",
           "object_type": "Measure",
           "db_type": "DB_MEASURE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "output_characteristic": {
@@ -32011,7 +32475,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32065,7 +32530,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32119,7 +32585,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32173,7 +32640,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32227,7 +32695,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32281,7 +32750,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32349,7 +32819,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32419,7 +32890,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32470,7 +32942,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32521,7 +32994,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32572,7 +33046,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32637,7 +33112,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32707,7 +33183,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32765,7 +33242,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32828,7 +33306,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32891,7 +33370,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -32943,7 +33423,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -33032,14 +33513,14 @@
           "type": "existing_object",
           "object_type": "Lse",
           "db_type": "DB_LSE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "general_state_equation_name": {
           "type": "existing_object",
           "object_type": "Gse",
           "db_type": "DB_GSE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "matrix_name": {
@@ -33121,7 +33602,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "linear_state_equation_name",
+            "general_state_equation_name"
+          ]
+        }
+      ]
     },
     "numeric_results modify": {
       "args": {
@@ -33338,7 +33827,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -33411,7 +33901,8 @@
             "torque",
             "pressure",
             "force_time",
-            "torque_time"
+            "torque_time",
+            "length"
           ],
           "min_prefix": 1
         }
@@ -35913,7 +36404,7 @@
         "plot_name": {
           "type": "unknown",
           "raw_type": "MDB_PLOT",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "curve_name": {
@@ -36247,7 +36738,21 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "vaxis_data",
+            "vmeasure",
+            "y_expression_text",
+            "y_values",
+            "ddata",
+            "dmeasure",
+            "dexpression_text",
+            "dvalues"
+          ]
+        }
+      ]
     },
     "xy_plots curve modify": {
       "args": {
@@ -36642,7 +37147,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -36676,7 +37182,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -36787,7 +37294,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -36821,7 +37329,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -37048,7 +37557,7 @@
           "type": "existing_object",
           "object_type": "Eigen",
           "db_type": "DB_EIGEN",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -37075,7 +37584,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "plot_name",
+            "eigen_solution_name"
+          ]
+        }
+      ]
     },
     "xy_plots complex_scattering modify": {
       "args": {
@@ -37928,21 +38445,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode phase_plot coefficient_input": {
       "args": {
@@ -37993,21 +38519,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode phase_plot tfsiso_input": {
       "args": {
@@ -38049,21 +38584,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode phase_plot lse_input": {
       "args": {
@@ -38119,21 +38663,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode phase_plot state_matrix_input": {
       "args": {
@@ -38189,21 +38742,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode magnitude_plot measures_input": {
       "args": {
@@ -38357,21 +38919,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode magnitude_plot coefficient_input": {
       "args": {
@@ -38422,21 +38993,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode magnitude_plot tfsiso_input": {
       "args": {
@@ -38478,21 +39058,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode magnitude_plot lse_input": {
       "args": {
@@ -38548,21 +39137,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode magnitude_plot state_matrix_input": {
       "args": {
@@ -38618,21 +39216,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode both_phase_and_magn measures_input": {
       "args": {
@@ -38762,21 +39369,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode both_phase_and_magn coefficient_input": {
       "args": {
@@ -38819,21 +39435,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode both_phase_and_magn tfsiso_input": {
       "args": {
@@ -38867,21 +39492,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode both_phase_and_magn lse_input": {
       "args": {
@@ -38929,21 +39563,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots bode both_phase_and_magn state_matrix_input": {
       "args": {
@@ -38991,21 +39634,30 @@
         "frequency_step": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "log_samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "samples": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "samples",
+            "log_samples",
+            "frequency_step"
+          ]
+        }
+      ]
     },
     "xy_plots fft_window create": {
       "args": {
@@ -39374,22 +40026,7 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": [
-        {
-          "group": 1,
-          "members": [
-            "type",
-            "orientation"
-          ]
-        },
-        {
-          "group": 2,
-          "members": [
-            "height",
-            "width"
-          ]
-        }
-      ]
+      "exclusive_groups": []
     },
     "ptemplate modify": {
       "args": {
@@ -39444,22 +40081,7 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": [
-        {
-          "group": 1,
-          "members": [
-            "type",
-            "orientation"
-          ]
-        },
-        {
-          "group": 2,
-          "members": [
-            "height",
-            "width"
-          ]
-        }
-      ]
+      "exclusive_groups": []
     },
     "ptemplate delete": {
       "args": {
@@ -39808,7 +40430,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "visibility": {
@@ -39829,7 +40451,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "type": {
@@ -39875,7 +40497,7 @@
           "type": "existing_object",
           "object_type": "Anim_base",
           "db_type": "DB_ANIM_BASE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "ranking": {
@@ -41384,7 +42006,8 @@
             "unigraphics",
             "jt",
             "dxf",
-            "dwg"
+            "dwg",
+            "vda"
           ],
           "min_prefix": 2
         },
@@ -41571,7 +42194,11 @@
             "igs",
             "stp",
             "dxf",
-            "dwg"
+            "dwg",
+            "catiav4",
+            "catiav5",
+            "acis",
+            "vda"
           ],
           "min_prefix": 1
         },
@@ -41599,26 +42226,26 @@
           "type": "existing_object",
           "object_type": "Mechanism",
           "db_type": "DB_MECHANISM",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "analysis_name": {
           "type": "existing_object",
           "object_type": "Run",
           "db_type": "DB_RUN",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "frame_number": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "part_name": {
           "type": "existing_object",
           "object_type": "Body",
           "db_type": "DB_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "display_summary": {
@@ -41647,8 +42274,8 @@
         {
           "group": 1,
           "members": [
-            "analysis_name",
-            "frame_number"
+            "model_name",
+            "part_name"
           ]
         }
       ]
@@ -42017,26 +42644,26 @@
           "type": "existing_object",
           "object_type": "Mechanism",
           "db_type": "DB_MECHANISM",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "analysis_name": {
           "type": "existing_object",
           "object_type": "Run",
           "db_type": "DB_RUN",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "frame_number": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "part_name": {
           "type": "existing_object",
           "object_type": "Body",
           "db_type": "DB_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "active_only": {
@@ -42055,8 +42682,8 @@
         {
           "group": 1,
           "members": [
-            "analysis_name",
-            "frame_number"
+            "model_name",
+            "part_name"
           ]
         }
       ]
@@ -42373,14 +43000,14 @@
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "flexible_body_name": {
           "type": "existing_object",
           "object_type": "Flex_body",
           "db_type": "DB_FLEX_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "analysis_name": {
@@ -42466,7 +43093,15 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "marker_name",
+            "flexible_body_name"
+          ]
+        }
+      ]
     },
     "file notebook read": {
       "args": {
@@ -42621,7 +43256,7 @@
         "model_name": {
           "type": "unknown",
           "raw_type": "MDB_MECHANISM",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "assembly_retain": {
@@ -42638,7 +43273,7 @@
         "part_name": {
           "type": "unknown",
           "raw_type": "MDB_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "location": {
@@ -42662,7 +43297,7 @@
         "fe_part_name": {
           "type": "unknown",
           "raw_type": "MDB_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
@@ -42678,18 +43313,14 @@
           "group": 2,
           "members": [
             "part_name",
-            "location",
-            "orientation",
-            "relative_to"
+            "fe_part_name"
           ]
         },
         {
           "group": 3,
           "members": [
-            "fe_part_name",
-            "location",
-            "orientation",
-            "relative_to"
+            "model_name",
+            "part_name"
           ]
         }
       ]
@@ -42716,26 +43347,26 @@
           "type": "existing_object",
           "object_type": "Mechanism",
           "db_type": "DB_MECHANISM",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "analysis_name": {
           "type": "existing_object",
           "object_type": "Run",
           "db_type": "DB_RUN",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "frame_number": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "part_name": {
           "type": "existing_object",
           "object_type": "Body",
           "db_type": "DB_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "active_only": {
@@ -42754,8 +43385,8 @@
         {
           "group": 1,
           "members": [
-            "analysis_name",
-            "frame_number"
+            "model_name",
+            "part_name"
           ]
         }
       ]
@@ -43126,7 +43757,7 @@
         "orientation": {
           "type": "unknown",
           "raw_type": "MNFXFORM_ORIENT",
-          "required": true,
+          "required": false,
           "enum_values": [
             "global_x",
             "global_y",
@@ -43153,38 +43784,38 @@
         "v_distance": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "pl_point_1": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "pl_point_2": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "pl_point_3": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "pl_distance": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 4
         },
         "point_1": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 7
         },
         "point_2": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 7
         },
         "ep_distance": {
@@ -43215,34 +43846,16 @@
         {
           "group": 1,
           "members": [
-            "md_db_file_name",
-            "index_in_database"
+            "orientation",
+            "pl_point_1",
+            "point_1"
           ]
         },
         {
           "group": 2,
           "members": [
-            "orientation",
-            "marker",
-            "user_input",
-            "v_distance"
-          ]
-        },
-        {
-          "group": 3,
-          "members": [
-            "pl_point_1",
-            "pl_point_2",
-            "pl_point_3",
+            "v_distance",
             "pl_distance"
-          ]
-        },
-        {
-          "group": 4,
-          "members": [
-            "point_1",
-            "point_2",
-            "ep_distance"
           ]
         }
       ]
@@ -43293,7 +43906,7 @@
         "orientation": {
           "type": "unknown",
           "raw_type": "MNFXFORM_ORIENT",
-          "required": true,
+          "required": false,
           "enum_values": [
             "global_x",
             "global_y",
@@ -43319,38 +43932,38 @@
         },
         "location": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "pl_point_1": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "pl_point_2": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "pl_point_3": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "point_1": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 7
         },
         "point_2": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 7
         },
         "angle": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "node_number_offset": {
@@ -43375,32 +43988,17 @@
         {
           "group": 1,
           "members": [
-            "md_db_file_name",
-            "index_in_database"
+            "orientation",
+            "pl_point_1",
+            "point_1"
           ]
         },
         {
           "group": 2,
           "members": [
-            "orientation",
-            "marker",
-            "user_input",
-            "location"
-          ]
-        },
-        {
-          "group": 3,
-          "members": [
+            "location",
             "pl_point_1",
-            "pl_point_2",
-            "pl_point_3"
-          ]
-        },
-        {
-          "group": 4,
-          "members": [
-            "point_1",
-            "point_2"
+            "point_1"
           ]
         }
       ]
@@ -43534,7 +44132,7 @@
         "orientation": {
           "type": "unknown",
           "raw_type": "MNFXFORM_ORIENT",
-          "required": true,
+          "required": false,
           "enum_values": [
             "global_x",
             "global_y",
@@ -43560,32 +44158,32 @@
         },
         "location": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "pl_point_1": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "pl_point_2": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "pl_point_3": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "point_1": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 7
         },
         "point_2": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 7
         },
         "node_number_offset": {
@@ -43608,13 +44206,6 @@
       },
       "exclusive_groups": [
         {
-          "group": 1,
-          "members": [
-            "md_db_file_name",
-            "index_in_database"
-          ]
-        },
-        {
           "group": 2,
           "members": [
             "bdf_file_name",
@@ -43628,24 +44219,16 @@
           "group": 3,
           "members": [
             "orientation",
-            "marker",
-            "user_input",
-            "location"
+            "pl_point_1",
+            "point_1"
           ]
         },
         {
           "group": 4,
           "members": [
+            "location",
             "pl_point_1",
-            "pl_point_2",
-            "pl_point_3"
-          ]
-        },
-        {
-          "group": 5,
-          "members": [
-            "point_1",
-            "point_2"
+            "point_1"
           ]
         }
       ]
@@ -48614,7 +49197,8 @@
             "revolution",
             "extrusion",
             "plane",
-            "all"
+            "all",
+            "vda"
           ],
           "min_prefix": 1
         },
@@ -48690,15 +49274,7 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": [
-        {
-          "group": 1,
-          "members": [
-            "youngs_modulus",
-            "poissons_ratio"
-          ]
-        }
-      ]
+      "exclusive_groups": []
     },
     "material modify": {
       "args": {
@@ -48766,15 +49342,7 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": [
-        {
-          "group": 1,
-          "members": [
-            "youngs_modulus",
-            "poissons_ratio"
-          ]
-        }
-      ]
+      "exclusive_groups": []
     },
     "material delete": {
       "args": {
@@ -48836,7 +49404,7 @@
           "type": "existing_object",
           "object_type": "Marker",
           "db_type": "DB_MARKER",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -48845,7 +49413,7 @@
           "type": "existing_object",
           "object_type": "Graph",
           "db_type": "DB_GRAPH",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -48854,7 +49422,7 @@
           "type": "existing_object",
           "object_type": "Flex_body",
           "db_type": "DB_FLEX_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 5
         },
         "i_edge": {
@@ -48873,7 +49441,7 @@
           "type": "existing_object",
           "object_type": "Graph",
           "db_type": "DB_GRAPH",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
@@ -48882,7 +49450,7 @@
           "type": "existing_object",
           "object_type": "Flex_body",
           "db_type": "DB_FLEX_BODY",
-          "required": true,
+          "required": false,
           "min_prefix": 5
         },
         "j_edge": {
@@ -48945,43 +49513,43 @@
         "stiffness": {
           "type": "real",
           "unit": "stiffness",
-          "required": true,
+          "required": false,
           "min_prefix": 4
         },
         "damping": {
           "type": "real",
           "unit": "damping",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "dmax": {
           "type": "real",
           "unit": "length",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "exponent": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "penalty": {
           "type": "real",
           "unit": "damping",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "restitution_coefficient": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "normal_function": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 8
         },
         "normal_routine": {
@@ -49116,49 +49684,10 @@
       },
       "exclusive_groups": [
         {
-          "group": 1,
-          "members": [
-            "i_flex",
-            "i_edge",
-            "i_edge_index"
-          ]
-        },
-        {
-          "group": 2,
-          "members": [
-            "j_flex",
-            "j_edge",
-            "j_edge_index"
-          ]
-        },
-        {
-          "group": 3,
-          "members": [
-            "i_flip_normal",
-            "j_flip_normal"
-          ]
-        },
-        {
           "group": 4,
           "members": [
             "i_flip_geometry_name",
             "j_flip_geometry_name"
-          ]
-        },
-        {
-          "group": 5,
-          "members": [
-            "stiffness",
-            "damping",
-            "dmax",
-            "exponent"
-          ]
-        },
-        {
-          "group": 6,
-          "members": [
-            "penalty",
-            "restitution_coefficient"
           ]
         },
         {
@@ -49169,21 +49698,25 @@
           ]
         },
         {
-          "group": 8,
-          "members": [
-            "coulomb_friction",
-            "mu_static",
-            "mu_dynamic",
-            "friction_transition_velocity",
-            "stiction",
-            "max_stiction_deformation"
-          ]
-        },
-        {
           "group": 9,
           "members": [
             "friction_function",
             "friction_routine"
+          ]
+        },
+        {
+          "group": 11,
+          "members": [
+            "j_geometry_name",
+            "j_flex"
+          ]
+        },
+        {
+          "group": 12,
+          "members": [
+            "stiffness",
+            "penalty",
+            "normal_function"
           ]
         }
       ]
@@ -49500,29 +50033,6 @@
       },
       "exclusive_groups": [
         {
-          "group": 1,
-          "members": [
-            "i_flex",
-            "i_edge",
-            "i_edge_index"
-          ]
-        },
-        {
-          "group": 2,
-          "members": [
-            "j_flex",
-            "j_edge",
-            "j_edge_index"
-          ]
-        },
-        {
-          "group": 3,
-          "members": [
-            "i_flip_normal",
-            "j_flip_normal"
-          ]
-        },
-        {
           "group": 4,
           "members": [
             "i_flip_geometry_name",
@@ -49530,37 +50040,10 @@
           ]
         },
         {
-          "group": 5,
-          "members": [
-            "stiffness",
-            "damping",
-            "dmax",
-            "exponent"
-          ]
-        },
-        {
-          "group": 6,
-          "members": [
-            "penalty",
-            "restitution_coefficient"
-          ]
-        },
-        {
           "group": 7,
           "members": [
             "normal_function",
             "normal_routine"
-          ]
-        },
-        {
-          "group": 8,
-          "members": [
-            "coulomb_friction",
-            "mu_static",
-            "mu_dynamic",
-            "friction_transition_velocity",
-            "stiction",
-            "max_stiction_deformation"
           ]
         },
         {
@@ -49754,19 +50237,19 @@
         },
         "location": {
           "type": "location",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "pick": {
           "type": "unknown",
           "raw_type": "SCREEN_COORDS",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "screen_coords": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 2,
           "max_values": 2,
@@ -49831,7 +50314,22 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "location",
+            "pick"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "location",
+            "screen_coords"
+          ]
+        }
+      ]
     },
     "notes modify": {
       "args": {
@@ -54168,7 +54666,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "database_fields",
+            "strings"
+          ]
+        }
+      ]
     },
     "interface field read": {
       "args": {
@@ -55042,7 +55548,7 @@
         },
         "range": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "indices": {
@@ -55111,175 +55617,22 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "range",
+            "use_row_selected"
+          ]
+        }
+      ]
     },
     "interface data_table set cell": {
-      "args": {
-        "data_table_name": {
-          "type": "existing_object",
-          "object_type": "Gi_data_table",
-          "db_type": "DB_GI_DATA_TABLE",
-          "required": true,
-          "min_prefix": 1
-        },
-        "use_cell_selected": {
-          "type": "boolean",
-          "required": false,
-          "default": "true",
-          "enum_values": [
-            "true"
-          ],
-          "min_prefix": 6
-        },
-        "use_row_selected": {
-          "type": "boolean",
-          "required": false,
-          "default": "true",
-          "min_prefix": 5
-        },
-        "row_range": {
-          "type": "integer",
-          "required": true,
-          "min_prefix": 2
-        },
-        "use_column_selected": {
-          "type": "boolean",
-          "required": false,
-          "default": "true",
-          "min_prefix": 6
-        },
-        "column_range": {
-          "type": "integer",
-          "required": true,
-          "min_prefix": 2
-        },
-        "order": {
-          "type": "unknown",
-          "raw_type": "MATRIX_INPUT_ORDER",
-          "required": false,
-          "default": "by_column",
-          "enum_values": [
-            "by_column",
-            "by_row"
-          ],
-          "min_prefix": 1
-        },
-        "repeat_strings": {
-          "type": "boolean",
-          "required": false,
-          "default": "yes",
-          "enum_values": [
-            "yes",
-            "no"
-          ],
-          "min_prefix": 3
-        },
-        "strings": {
-          "type": "string",
-          "required": true,
-          "array": true,
-          "min_values": 0,
-          "min_prefix": 1
-        },
-        "reals": {
-          "type": "real",
-          "unit": "real",
-          "required": true,
-          "array": true,
-          "min_values": 0,
-          "min_prefix": 3
-        },
-        "integers": {
-          "type": "integer",
-          "required": true,
-          "array": true,
-          "min_values": 0,
-          "min_prefix": 1
-        },
-        "enabled": {
-          "type": "boolean",
-          "required": false,
-          "default": "yes*",
-          "enum_values": [
-            "yes",
-            "no"
-          ],
-          "min_prefix": 2
-        },
-        "action": {
-          "type": "unknown",
-          "raw_type": "COL_ACTION",
-          "required": false,
-          "default": "replace",
-          "enum_values": [
-            "replace",
-            "append",
-            "prefix"
-          ],
-          "min_prefix": 1
-        },
-        "change_background": {
-          "type": "boolean",
-          "required": false,
-          "default": "no",
-          "min_prefix": 2
-        },
-        "execute": {
-          "type": "boolean",
-          "required": false,
-          "default": "no",
-          "min_prefix": 2
-        }
-      },
+      "args": {},
       "exclusive_groups": []
     },
     "interface data_table set selected": {
-      "args": {
-        "data_table_name": {
-          "type": "existing_object",
-          "object_type": "Gi_data_table",
-          "db_type": "DB_GI_DATA_TABLE",
-          "required": true,
-          "min_prefix": 1
-        },
-        "strings": {
-          "type": "string",
-          "required": true,
-          "array": true,
-          "min_values": 0,
-          "min_prefix": 1
-        },
-        "reals": {
-          "type": "real",
-          "unit": "real",
-          "required": true,
-          "array": true,
-          "min_values": 0,
-          "min_prefix": 3
-        },
-        "action": {
-          "type": "unknown",
-          "raw_type": "COL_ACTION",
-          "required": false,
-          "default": "replace",
-          "enum_values": [
-            "replace",
-            "append",
-            "prefix"
-          ],
-          "min_prefix": 1
-        },
-        "repeat_strings": {
-          "type": "boolean",
-          "required": false,
-          "default": "yes",
-          "enum_values": [
-            "yes",
-            "no"
-          ],
-          "min_prefix": 3
-        }
-      },
+      "args": {},
       "exclusive_groups": []
     },
     "interface data_table sort": {
@@ -55972,7 +56325,7 @@
         },
         "row_range": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 2,
           "max_values": 2,
@@ -55982,7 +56335,7 @@
           "type": "existing_object",
           "object_type": "All",
           "db_type": "DB_ALL",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 8
@@ -55995,7 +56348,7 @@
         },
         "column_range": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 2,
           "max_values": 2,
@@ -56003,7 +56356,7 @@
         },
         "field_name_of_columns": {
           "type": "string",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -56028,7 +56381,24 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "row_range",
+            "object_rows",
+            "use_row_selected"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "column_range",
+            "field_name_of_columns",
+            "use_column_selected"
+          ]
+        }
+      ]
     },
     "interface object_table set selected": {
       "args": {
@@ -58594,28 +58964,28 @@
         },
         "view_index": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "model": {
           "type": "existing_object",
           "object_type": "Mechanism",
           "db_type": "DB_MECHANISM",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "plot": {
           "type": "existing_object",
           "object_type": "Plot",
           "db_type": "DB_PLOT",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "ptemplate": {
           "type": "existing_object",
           "object_type": "Ptemplate",
           "db_type": "DB_PTEMPLATE",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         }
       },
@@ -58647,7 +59017,7 @@
         "action": {
           "type": "unknown",
           "raw_type": "PLOT_PAGE_MODES",
-          "required": true,
+          "required": false,
           "enum_values": [
             "next",
             "previous",
@@ -58660,12 +59030,12 @@
           "type": "existing_object",
           "object_type": "Page",
           "db_type": "DB_PAGE",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "number": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         }
       },
@@ -58773,46 +59143,57 @@
           "type": "existing_object",
           "object_type": "Mechanism",
           "db_type": "DB_MECHANISM",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "plot_name": {
           "type": "existing_object",
           "object_type": "Plot",
           "db_type": "DB_PLOT",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "animation_name": {
           "type": "existing_object",
           "object_type": "Animation",
           "db_type": "DB_ANIMATION",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "analysis_name": {
           "type": "existing_object",
           "object_type": "Run",
           "db_type": "DB_RUN",
-          "required": true,
+          "required": false,
           "min_prefix": 3
         },
         "eigen_solution_name": {
           "type": "existing_object",
           "object_type": "Eigen",
           "db_type": "DB_EIGEN",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "report_name": {
           "type": "existing_object",
           "object_type": "Report",
           "db_type": "DB_REPORT",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 2,
+          "members": [
+            "animation_name",
+            "analysis_name",
+            "eigen_solution_name",
+            "plot_name",
+            "page_name"
+          ]
+        }
+      ]
     },
     "interface plot window update_toolbar": {
       "args": {},
@@ -58837,7 +59218,11 @@
             "orbital2d",
             "vertical",
             "plotcurve3D",
-            "plot4d"
+            "plot4d",
+            "result",
+            "measure",
+            "object",
+            "request"
           ],
           "min_prefix": 1
         }
@@ -60191,7 +60576,8 @@
           "enum_values": [
             "yes",
             "no",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 3
         },
@@ -60203,7 +60589,8 @@
           "enum_values": [
             "yes",
             "no",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -60317,19 +60704,19 @@
         "angular_lower_bound": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "angular_upper_bound": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "angular_boundary_penetration": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "stiffness": {
@@ -60369,7 +60756,7 @@
         "angular_shift": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "coefficients": {
@@ -60381,11 +60768,26 @@
         "angular_coefficients": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "shift",
+            "angular_shift"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "coefficients",
+            "angular_coefficients"
+          ]
+        }
+      ]
     },
     "panel set twindow_function _cosine_fourier_series": {
       "args": {
@@ -60397,13 +60799,13 @@
         "shift": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_shift": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "frequency": {
@@ -60415,17 +60817,32 @@
         "coefficients": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_coefficients": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "shift",
+            "angular_shift"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "coefficients",
+            "angular_coefficients"
+          ]
+        }
+      ]
     },
     "panel set twindow_function _sine_fourier_series": {
       "args": {
@@ -60437,13 +60854,13 @@
         "shift": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_shift": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "frequency": {
@@ -60455,17 +60872,32 @@
         "coefficients": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_coefficients": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "shift",
+            "angular_shift"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "coefficients",
+            "angular_coefficients"
+          ]
+        }
+      ]
     },
     "panel set twindow_function haversine": {
       "args": {
@@ -60477,53 +60909,82 @@
         "begin_at": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "end_at": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_begin_at": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "angular_end_at": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "initial_function_value": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "final_function_value": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_initial_function_value": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "angular_final_function_value": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "begin_at",
+            "angular_begin_at"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "end_at",
+            "angular_end_at"
+          ]
+        },
+        {
+          "group": 3,
+          "members": [
+            "initial_function_value",
+            "angular_initial_function_value"
+          ]
+        },
+        {
+          "group": 4,
+          "members": [
+            "final_function_value",
+            "angular_final_function_value"
+          ]
+        }
+      ]
     },
     "panel set twindow_function impact": {
       "args": {
@@ -60540,25 +61001,25 @@
         "free_length": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "boundary_penetration": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_free_length": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "angular_boundary_penetration": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "stiffness": {
@@ -60580,7 +61041,22 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "free_length",
+            "angular_free_length"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "boundary_penetration",
+            "angular_boundary_penetration"
+          ]
+        }
+      ]
     },
     "panel set twindow_function polynomial": {
       "args": {
@@ -60592,29 +61068,44 @@
         "shift": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_shift": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "coefficients": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_coefficients": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "shift",
+            "angular_shift"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "coefficients",
+            "angular_coefficients"
+          ]
+        }
+      ]
     },
     "panel set twindow_function simple_harmonic_function": {
       "args": {
@@ -60626,37 +61117,37 @@
         "shift": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_shift": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "amplitude": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "average_value_of_displacement": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "angular_amplitude": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "angular_average_value_of_displacement": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 10
         },
         "frequency": {
@@ -60672,7 +61163,22 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "amplitude",
+            "angular_amplitude"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "average_value_of_displacement",
+            "angular_average_value_of_displacement"
+          ]
+        }
+      ]
     },
     "panel set twindow_function step": {
       "args": {
@@ -60684,49 +61190,49 @@
         "begin_at": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "end_at": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_begin_at": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "angular_end_at": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "initial_function_value": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "final_function_value": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "angular_initial_function_value": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "angular_final_function_value": {
           "type": "real",
           "unit": "angle",
-          "required": true,
+          "required": false,
           "min_prefix": 9
         },
         "step5": {
@@ -60739,7 +61245,36 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "begin_at",
+            "angular_begin_at"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "end_at",
+            "angular_end_at"
+          ]
+        },
+        {
+          "group": 3,
+          "members": [
+            "initial_function_value",
+            "angular_initial_function_value"
+          ]
+        },
+        {
+          "group": 4,
+          "members": [
+            "final_function_value",
+            "angular_final_function_value"
+          ]
+        }
+      ]
     },
     "panel set twindow_function akima_spline": {
       "args": {
@@ -62766,113 +63301,173 @@
       "args": {
         "number_of_steps": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "step_size": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "end_time": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "duration": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "end_time",
+            "duration"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "number_of_steps",
+            "step_size"
+          ]
+        }
+      ]
     },
     "panel set acf_twindow dynamic_simulation": {
       "args": {
         "number_of_steps": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "step_size": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "end_time": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "duration": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "end_time",
+            "duration"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "number_of_steps",
+            "step_size"
+          ]
+        }
+      ]
     },
     "panel set acf_twindow kinematic_simulation": {
       "args": {
         "number_of_steps": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "step_size": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "end_time": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "duration": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "end_time",
+            "duration"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "number_of_steps",
+            "step_size"
+          ]
+        }
+      ]
     },
     "panel set acf_twindow static_simulation": {
       "args": {
         "number_of_steps": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "step_size": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "end_time": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "duration": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "end_time",
+            "duration"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "number_of_steps",
+            "step_size"
+          ]
+        }
+      ]
     },
     "panel set acf_twindow nastran_export": {
       "args": {
@@ -63523,12 +64118,12 @@
         },
         "file_name": {
           "type": "string",
-          "required": true,
+          "required": false,
           "min_prefix": 2
         },
         "buffer": {
           "type": "string",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "autosave": {
@@ -63544,7 +64139,15 @@
           "min_prefix": 2
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "file_name",
+            "buffer"
+          ]
+        }
+      ]
     },
     "panel set acf_twindow reload": {
       "args": {
@@ -63561,12 +64164,12 @@
         },
         "file_name": {
           "type": "string",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "buffer": {
           "type": "string",
-          "required": true,
+          "required": false,
           "min_prefix": 1
         },
         "output_prefix": {
@@ -63580,7 +64183,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "file_name",
+            "buffer"
+          ]
+        }
+      ]
     },
     "panel set acf_twindow output_file_separator": {
       "args": {
@@ -64019,7 +64630,7 @@
         "real_value": {
           "type": "real",
           "unit": "real",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 2
@@ -64078,14 +64689,14 @@
         },
         "integer_value": {
           "type": "integer",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 3
         },
         "string_value": {
           "type": "string",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -64094,7 +64705,7 @@
           "type": "existing_object",
           "object_type": "All",
           "db_type": "DB_ALL",
-          "required": true,
+          "required": false,
           "array": true,
           "min_values": 0,
           "min_prefix": 1
@@ -64959,7 +65570,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -64970,7 +65582,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -65067,7 +65680,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -65078,7 +65692,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -65089,7 +65704,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -65197,7 +65813,7 @@
           "required": false,
           "array": true,
           "min_values": 0,
-          "min_prefix": 8
+          "min_prefix": 6
         },
         "type_filter": {
           "type": "existing_object",
@@ -65306,7 +65922,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         },
@@ -65327,7 +65944,8 @@
           "enum_values": [
             "on",
             "off",
-            "no_opinion"
+            "no_opinion",
+            "toggle"
           ],
           "min_prefix": 1
         }
@@ -68084,6 +68702,226 @@
         }
       },
       "exclusive_groups": []
+    },
+    "view management orient": {
+      "args": {
+        "view": {
+          "type": "existing_object",
+          "object_type": "View",
+          "db_type": "DB_VIEW",
+          "required": true,
+          "min_prefix": 2
+        },
+        "up_axis": {
+          "type": "unknown",
+          "raw_type": "AXIS_DIRECTION",
+          "required": false,
+          "enum_values": [
+            "X_pos",
+            "X_neg",
+            "Y_pos",
+            "Y_neg",
+            "Z_pos",
+            "Z_neg"
+          ],
+          "min_prefix": 2
+        },
+        "forward_axis": {
+          "type": "unknown",
+          "raw_type": "AXIS_DIRECTION",
+          "required": false,
+          "enum_values": [
+            "X_pos",
+            "X_neg",
+            "Y_pos",
+            "Y_neg",
+            "Z_pos",
+            "Z_neg"
+          ],
+          "min_prefix": 2
+        }
+      },
+      "exclusive_groups": []
+    },
+    "mdi modify_macro": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi delete_macro": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi exit_macro": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi flexlink": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi gui_utl_check_sim": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi graphic_force": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "snapshot": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "reset": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "aview postprocessing plots create": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "aview postprocessing config save": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "aview toolkit warning": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "adams.switchtocmd()": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "int data_table set cell": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "xy_plot curve create": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "numeric_results create modes": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "int data_table set selected": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "file temporary_settings apply": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "file temporary_settings revert": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "file temporary_settings read": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "file temporary_settings write": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "part modify flexible_body modal_content": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi durability nodal_plot": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi durability export_unit_matrix": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi durability import_fef": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi durability export_q": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi durability fsi_recovery": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi durability hotspots write": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi durability fepart": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi vibration modal_info_display": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi vibration vibration_analysis_linear solve": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi vibration vibration_analysis_linear multirun_full_solve": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi vibration modal_energy set": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi vibration eigen_info_display": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi vibration export_q": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi vibration forced_vibration_analysis create": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi marker delete_unused": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "mdi flx_unv2mnf": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "files delete": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "files chmod": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "vflex make flex": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "vibration actuator create": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "vibration input_channel create": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "vibration output_channel create": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "vibration vibration_analysis create": {
+      "args": {},
+      "exclusive_groups": []
+    },
+    "vibration vibration_analysis modify": {
+      "args": {},
+      "exclusive_groups": []
     }
   },
   "command_tree": {
@@ -68372,6 +69210,9 @@
                   "deformed_mode_display": {
                     "children": {},
                     "is_leaf": true,
+                    "min_prefix": 1
+                  },
+                  "modal_content": {
                     "min_prefix": 1
                   }
                 },
@@ -72154,6 +72995,23 @@
               }
             },
             "min_prefix": 2
+          },
+          "temporary_settings": {
+            "min_prefix": 18,
+            "children": {
+              "apply": {
+                "min_prefix": 5
+              },
+              "revert": {
+                "min_prefix": 6
+              },
+              "read": {
+                "min_prefix": 1
+              },
+              "write": {
+                "min_prefix": 5
+              }
+            }
           }
         },
         "min_prefix": 2
@@ -72226,6 +73084,11 @@
                 "children": {},
                 "is_leaf": true,
                 "min_prefix": 2
+              },
+              "orient": {
+                "children": {},
+                "is_leaf": true,
+                "min_prefix": 1
               }
             },
             "min_prefix": 1
@@ -75322,6 +76185,231 @@
           }
         },
         "min_prefix": 3
+      },
+      "mdi": {
+        "min_prefix": 1,
+        "children": {
+          "modify_macro": {
+            "min_prefix": 1,
+            "is_leaf": true
+          },
+          "delete_macro": {
+            "min_prefix": 1,
+            "is_leaf": true
+          },
+          "exit_macro": {
+            "min_prefix": 1,
+            "is_leaf": true
+          },
+          "flexlink": {
+            "min_prefix": 1,
+            "is_leaf": true
+          },
+          "gui_utl_check_sim": {
+            "min_prefix": 1,
+            "is_leaf": true
+          },
+          "graphic_force": {
+            "min_prefix": 1,
+            "is_leaf": true
+          },
+          "durability": {
+            "min_prefix": 1,
+            "children": {
+              "nodal_plot": {
+                "min_prefix": 10
+              },
+              "export_unit_matrix": {
+                "min_prefix": 18
+              },
+              "import_fef": {
+                "min_prefix": 10
+              },
+              "export_q": {
+                "min_prefix": 1
+              },
+              "fsi_recovery": {
+                "min_prefix": 12
+              },
+              "hotspots": {
+                "min_prefix": 8,
+                "children": {
+                  "write": {
+                    "min_prefix": 5
+                  }
+                }
+              },
+              "fepart": {
+                "min_prefix": 1
+              }
+            }
+          },
+          "vibration": {
+            "min_prefix": 9,
+            "children": {
+              "modal_info_display": {
+                "min_prefix": 18
+              },
+              "vibration_analysis_linear": {
+                "min_prefix": 25,
+                "children": {
+                  "solve": {
+                    "min_prefix": 5
+                  },
+                  "multirun_full_solve": {
+                    "min_prefix": 19
+                  }
+                }
+              },
+              "modal_energy": {
+                "min_prefix": 1,
+                "children": {
+                  "set": {
+                    "min_prefix": 3
+                  }
+                }
+              },
+              "eigen_info_display": {
+                "min_prefix": 18
+              },
+              "export_q": {
+                "min_prefix": 1
+              },
+              "forced_vibration_analysis": {
+                "min_prefix": 25,
+                "children": {
+                  "create": {
+                    "min_prefix": 6
+                  }
+                }
+              }
+            }
+          },
+          "marker": {
+            "min_prefix": 1,
+            "children": {
+              "delete_unused": {
+                "min_prefix": 13
+              }
+            }
+          },
+          "flx_unv2mnf": {
+            "min_prefix": 1
+          }
+        }
+      },
+      "snapshot": {
+        "min_prefix": 1,
+        "is_leaf": true
+      },
+      "reset": {
+        "min_prefix": 1,
+        "is_leaf": true
+      },
+      "aview": {
+        "min_prefix": 1,
+        "children": {
+          "postprocessing": {
+            "min_prefix": 1,
+            "children": {
+              "plots": {
+                "min_prefix": 1,
+                "children": {
+                  "create": {
+                    "min_prefix": 1,
+                    "is_leaf": true
+                  }
+                }
+              },
+              "config": {
+                "min_prefix": 1,
+                "children": {
+                  "save": {
+                    "min_prefix": 1,
+                    "is_leaf": true
+                  }
+                }
+              }
+            }
+          },
+          "toolkit": {
+            "min_prefix": 1,
+            "children": {
+              "warning": {
+                "min_prefix": 1,
+                "is_leaf": true
+              }
+            }
+          }
+        }
+      },
+      "adams.switchtocmd()": {
+        "min_prefix": 1,
+        "is_leaf": true
+      },
+      "files": {
+        "min_prefix": 2,
+        "children": {
+          "delete": {
+            "min_prefix": 6
+          },
+          "chmod": {
+            "min_prefix": 5
+          }
+        }
+      },
+      "vflex": {
+        "min_prefix": 5,
+        "children": {
+          "make": {
+            "min_prefix": 4,
+            "children": {
+              "flex": {
+                "min_prefix": 4
+              }
+            }
+          }
+        }
+      },
+      "vibration": {
+        "min_prefix": 2,
+        "children": {
+          "actuator": {
+            "min_prefix": 8,
+            "children": {
+              "create": {
+                "min_prefix": 6
+              }
+            }
+          },
+          "input_channel": {
+            "min_prefix": 13,
+            "children": {
+              "create": {
+                "min_prefix": 6
+              }
+            }
+          },
+          "output_channel": {
+            "min_prefix": 14,
+            "children": {
+              "create": {
+                "min_prefix": 6
+              }
+            }
+          },
+          "vibration_analysis": {
+            "min_prefix": 18,
+            "children": {
+              "create": {
+                "min_prefix": 6
+              },
+              "modify": {
+                "min_prefix": 6
+              }
+            }
+          }
+        }
       }
     }
   }

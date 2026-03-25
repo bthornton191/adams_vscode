@@ -144,3 +144,34 @@ def test_severity_map_covers_all_severities():
     """_SEVERITY_MAP should map all Severity enum members."""
     for sev in Severity:
         assert sev in srv._SEVERITY_MAP, f"Severity.{sev.name} missing from _SEVERITY_MAP"
+
+
+# ---------------------------------------------------------------------------
+# did_close — must clear diagnostics via text_document_publish_diagnostics
+# ---------------------------------------------------------------------------
+
+def test_did_close_clears_diagnostics(monkeypatch):
+    """Closing a document must publish an empty diagnostics list.
+
+    In pygls 2.x the method is text_document_publish_diagnostics(), NOT the
+    pygls 1.x server.publish_diagnostics() shortcut.  This test guards against
+    regression to the old API (which raises AttributeError at runtime).
+    """
+    published = []
+
+    def mock_publish(params):
+        published.append(params)
+
+    monkeypatch.setattr(srv.server, "text_document_publish_diagnostics", mock_publish)
+
+    close_params = types.DidCloseTextDocumentParams(
+        text_document=types.TextDocumentIdentifier(uri="file:///test.cmd")
+    )
+    srv.did_close(close_params)
+
+    assert len(published) == 1, "did_close must publish diagnostics exactly once"
+    params = published[0]
+    assert params.uri == "file:///test.cmd"
+    assert params.diagnostics == [], (
+        f"did_close must publish empty diagnostics list, got: {params.diagnostics}"
+    )

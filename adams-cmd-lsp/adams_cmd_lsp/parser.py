@@ -57,12 +57,24 @@ def _find_comment_start(line: str) -> int:
     ``!=``.  This function tracks paren depth so that '!' inside any level
     of parentheses is never mistaken for a comment start.
 
-    Also correctly ignores '!' inside double-quoted or single-quoted strings.
+    Also correctly ignores '!' inside double-quoted or single-quoted strings,
+    including strings that contain backslash-escaped quote characters (\\" or \\').
     """
     in_double = False
     in_single = False
     paren_depth = 0
-    for i, ch in enumerate(line):
+    i = 0
+    n = len(line)
+    while i < n:
+        ch = line[i]
+        if ch == '\\' and i + 1 < n:
+            next_ch = line[i + 1]
+            if in_double and next_ch == '"':
+                i += 2  # skip escaped double-quote inside double-quoted string
+                continue
+            if in_single and next_ch == "'":
+                i += 2  # skip escaped single-quote inside single-quoted string
+                continue
         if ch == '"' and not in_single:
             in_double = not in_double
         elif ch == "'" and not in_double:
@@ -74,7 +86,8 @@ def _find_comment_start(line: str) -> int:
                 paren_depth -= 1
             elif ch == '!' and paren_depth == 0:
                 return i
-    return len(line)
+        i += 1
+    return n
 
 
 def _strip_comment(line: str) -> str:
@@ -117,12 +130,10 @@ def _group_continuation_lines(
     for every character position in joined_text, which physical line
     and column it came from.  This enables precise diagnostic positions.
 
-    Blank lines and comment-only lines inside a continuation group are
-    absorbed silently (they contribute zero characters but do not break
-    the group).  This matches real Adams parser behavior: once a trailing
-    '&' starts a continuation, Adams keeps reading -- blank lines AND
-    comment-only lines are ignored -- until a non-blank, non-comment line
-    that does NOT end with '&' terminates the group.
+    Comment-only lines inside a continuation group are absorbed silently.
+    Lines that are blank (empty or whitespace-only without '&') terminate
+    the group.  Lines containing only '&' (spacer lines) are absorbed --
+    they do not break the group.
     Note: a '&' appearing after '!' in a comment line is NOT a
     continuation marker -- it is part of the comment.
     """
@@ -140,13 +151,21 @@ def _group_continuation_lines(
         while i < n:
             raw = lines[i]
 
-            # Blank lines and comment-only lines inside a continuation group are
-            # absorbed silently -- this matches real Adams parser behavior where
-            # a trailing '&' keeps consuming lines until a non-blank, non-comment
-            # line that does NOT end with '&' terminates the group.
-            if in_continuation and (not raw.strip() or _is_comment_only(raw)):
-                i += 1
-                continue
+            # Inside a continuation group:
+            # - Comment-only lines are absorbed silently.
+            # - Lines containing only '&' (optionally preceded by whitespace)
+            #   are absorbed as placeholder spacer lines -- a common pattern
+            #   in generated Adams CMD files.
+            # - Blank lines (empty or whitespace-only, with NO '&') terminate
+            #   the continuation group.
+            if in_continuation:
+                if _is_comment_only(raw):
+                    i += 1
+                    continue
+                if not raw.strip():
+                    # Empty or whitespace-only without '&' — break the group
+                    i += 1
+                    break
 
             is_cont = _is_continuation(raw)
             text_part = _strip_continuation(raw) if is_cont else _strip_comment(raw)
@@ -219,16 +238,30 @@ def _consume_argument_value(text: str, start: int) -> int:
     ch = text[start]
 
     # Quoted string (double-quoted)
+    # Handles backslash-escaped quotes (\") inside the string.
     if ch == '"':
         i = start + 1
-        while i < len(text) and text[i] != '"':
+        while i < len(text):
+            c = text[i]
+            if c == '\\' and i + 1 < len(text) and text[i + 1] == '"':
+                i += 2  # skip escaped quote
+                continue
+            if c == '"':
+                break
             i += 1
         return i + 1 if i < len(text) else i
 
     # Quoted string (single-quoted)
+    # Handles backslash-escaped quotes (\') inside the string.
     if ch == "'":
         i = start + 1
-        while i < len(text) and text[i] != "'":
+        while i < len(text):
+            c = text[i]
+            if c == '\\' and i + 1 < len(text) and text[i + 1] == "'":
+                i += 2  # skip escaped quote
+                continue
+            if c == "'":
+                break
             i += 1
         return i + 1 if i < len(text) else i
 
@@ -254,10 +287,21 @@ def _consume_argument_value(text: str, start: int) -> int:
             i += 1
         return i  # unclosed paren
 
-    # Bare word
+    # Bare word (may contain embedded quoted segments, e.g. .MODEL."Part 1")
     i = start
     while i < len(text) and not text[i].isspace():
-        i += 1
+        ch = text[i]
+        if ch in ('"', "'"):
+            # Consume through the matching closing quote so that spaces inside
+            # quoted segments (e.g. "Part 1") do not terminate the bare word.
+            quote = ch
+            i += 1
+            while i < len(text) and text[i] != quote:
+                i += 1
+            if i < len(text):
+                i += 1  # consume the closing quote
+        else:
+            i += 1
     return i
 
 
@@ -265,6 +309,9 @@ def _consume_comma_separated_tail(text: str, i: int, value_start: int) -> int:
     """After consuming a value, continue consuming comma-separated values.
 
     Handles: stiffness=1e6, 1e6, 1e6
+    Also handles whitespace before a leading comma, e.g.:
+        points_for_profile = 30.0, 0.0, 60.0         , 60.0, 0.0, 80.0
+    which arises when comma-prefixed continuation lines are joined.
     Stops when a new word= pattern or end of text is reached.
     """
     while True:
@@ -273,10 +320,24 @@ def _consume_comma_separated_tail(text: str, i: int, value_start: int) -> int:
                               and i > 0 and text[i - 1] == ',')
         has_following_comma = (i < len(text) and text[i] == ',')
 
-        if has_trailing_comma or has_following_comma:
-            next_pos = i
-            if has_following_comma:
-                next_pos += 1
+        # Also look past whitespace for a leading comma, e.g. "val   , next_val".
+        # This pattern arises when Adams CMD continuation lines start with ", val"
+        # (polyline coordinates, macro commands= arrays, etc.) and are joined.
+        ws_comma_pos = -1
+        if not has_trailing_comma and not has_following_comma:
+            j = i
+            while j < len(text) and text[j].isspace():
+                j += 1
+            if j < len(text) and text[j] == ',':
+                ws_comma_pos = j
+
+        if has_trailing_comma or has_following_comma or ws_comma_pos >= 0:
+            if ws_comma_pos >= 0:
+                next_pos = ws_comma_pos + 1
+            else:
+                next_pos = i
+                if has_following_comma:
+                    next_pos += 1
             while next_pos < len(text) and text[next_pos].isspace():
                 next_pos += 1
 

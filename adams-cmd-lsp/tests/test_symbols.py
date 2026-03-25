@@ -88,11 +88,16 @@ def test_build_symbol_table_multiple_creates():
 
 
 def test_build_symbol_table_skips_comments_and_blanks():
-    """Comments and blank lines produce no symbols."""
+    """Comments and blank lines produce no user symbols (only builtins)."""
     schema = Schema.load()
     stmts = parse("! just a comment\n\n")
     table = build_symbol_table(stmts, schema)
-    assert table.symbols == {}
+    # The table should contain only pre-populated builtins (ground, colors, views, etc.)
+    # — no user-defined symbols.  The builtins dict is non-empty.
+    assert not table.has("my_model"), "No user symbols should be created from a comment"
+    assert not table.has(".model.PART_1"), "No user symbols should be created from a comment"
+    # Builtins must still be present
+    assert table.has("ground"), "ground builtin must always be present"
 
 
 def test_build_symbol_table_skips_unknown_commands():
@@ -156,3 +161,69 @@ def test_build_symbol_table_model_name_normalized():
     table = build_symbol_table(stmts, schema)
     assert table.has(".model"), "Model 'model' (no dot) must be findable as '.model'"
     assert table.has("model"), "Model 'model' must still be findable as 'model'"
+
+
+# ---------------------------------------------------------------------------
+# Dynamic prefix — eval expression support
+# ---------------------------------------------------------------------------
+
+def test_symbol_table_register_dynamic_prefix():
+    """register_dynamic_prefix stores a prefix; has_dynamic_prefix_match returns True."""
+    table = SymbolTable()
+    table.register_dynamic_prefix(".model.part_")
+    assert table.has_dynamic_prefix_match(".model.part_1")
+    assert table.has_dynamic_prefix_match(".model.part_1.cm")
+    assert table.has_dynamic_prefix_match(".model.part_99.marker")
+
+
+def test_symbol_table_dynamic_prefix_case_insensitive():
+    """Dynamic prefix matching is case-insensitive."""
+    table = SymbolTable()
+    table.register_dynamic_prefix(".Model.Part_")
+    assert table.has_dynamic_prefix_match(".model.part_1")
+    assert table.has_dynamic_prefix_match(".MODEL.PART_1.CM")
+
+
+def test_symbol_table_dynamic_prefix_no_match_for_unrelated_name():
+    """A reference with a different root does not match the dynamic prefix."""
+    table = SymbolTable()
+    table.register_dynamic_prefix(".model.part_")
+    assert not table.has_dynamic_prefix_match(".model.other_1")
+    assert not table.has_dynamic_prefix_match(".other_model.part_1")
+
+
+def test_symbol_table_no_dynamic_prefixes_returns_false():
+    """has_dynamic_prefix_match returns False when no prefixes are registered."""
+    table = SymbolTable()
+    assert not table.has_dynamic_prefix_match(".model.part_1")
+
+
+def test_build_symbol_table_eval_new_object_registers_dynamic_prefix():
+    """marker_name = (eval(...)) must register the leading literal as a dynamic prefix."""
+    schema = Schema.load()
+    text = (
+        'marker create &\n'
+        '    marker_name = (eval(".model.mass_" // RTOI(i) // ".cm")) &\n'
+        '    location    = 0.0, 0.0, 0.0\n'
+    )
+    stmts = parse(text)
+    table = build_symbol_table(stmts, schema)
+    # The eval expression prefix ".model.mass_" must be registered
+    assert table.has_dynamic_prefix_match(".model.mass_1.cm"), (
+        "Dynamic prefix '.model.mass_' should match '.model.mass_1.cm'"
+    )
+    assert table.has_dynamic_prefix_match(".model.mass_42"), (
+        "Dynamic prefix '.model.mass_' should match any suffix"
+    )
+    # Plain symbol registration must NOT be contaminated
+    assert not table.has(".model.mass_1.cm"), (
+        "Eval expression must not be registered as a plain symbol"
+    )
+
+
+def test_build_symbol_table_plain_new_object_still_registers_symbol():
+    """Non-eval new_object args are still registered as plain symbols (no regression)."""
+    schema = Schema.load()
+    stmts = parse("marker create marker_name = .model.PART_1.MAR_1 location = 0,0,0")
+    table = build_symbol_table(stmts, schema)
+    assert table.has(".model.PART_1.MAR_1"), "Plain name must still register as a symbol"
