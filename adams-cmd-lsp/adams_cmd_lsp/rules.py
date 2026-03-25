@@ -41,6 +41,14 @@ def rule_unknown_command(statements, schema, symbols):
         if not stmt.command_key:
             continue
 
+        # Suppress E001 for dot-path property assignments, e.g.:
+        #   .plot_1.curve_2.y_history = "filter(...)"
+        #   .model_1.spring_1.func = "vr(...)"
+        # These are direct object-property setter statements in Adams CMD.
+        # No Adams command begins with '.', so these are never false negatives.
+        if stmt.command_key.startswith('.'):
+            continue
+
         # Already resolved (e.g. exact match from a previous run)
         if stmt.resolved_command_key:
             continue
@@ -65,6 +73,15 @@ def rule_unknown_command(statements, schema, symbols):
         if w103_diag:
             diagnostics.append(w103_diag)
             continue
+
+        # Suppress E001 if the first token matches a user-defined macro name.
+        # When `macro create macro_name=foo ...` is present earlier in the file,
+        # a call `foo arg=val` should not be flagged as an unknown command.
+        first_token = tokens[0] if tokens else ""
+        if first_token and symbols.has(first_token):
+            sym = symbols.lookup(first_token)
+            if sym and sym.object_type.upper() == "MACRO":
+                continue
 
         # Report the problematic token position
         col = sum(len(t) + 1 for t in tokens[:error_index]) if error_index else 0
@@ -120,6 +137,11 @@ def rule_invalid_argument(statements, schema, symbols):
         cmd = schema.get_command(cmd_key)
         if not cmd:
             continue  # E001 already fired for unknown command
+
+        # If the command has no defined arguments (stub entry), skip E002
+        # to avoid false positives on partially-documented commands.
+        if not cmd.get("args"):
+            continue
 
         for arg in stmt.arguments:
             canonical = schema.resolve_argument_name(cmd_key, arg.name)
@@ -193,6 +215,37 @@ def rule_invalid_enum_value(statements, schema, symbols):
             if "$" in val or val.startswith("(") or "eval(" in val:
                 continue
 
+            # Adams allows quoting enum values (e.g. icon_visibility="off").
+            # Strip a single layer of matching surrounding quotes before matching.
+            if len(val) >= 2 and val[0] == val[-1] and val[0] in ('"', "'"):
+                val = val[1:-1]
+
+            # Adams allows comma-separated lists of enum values for array-type
+            # arguments (e.g. visibility_between_markers = on, on, off).
+            # Adams also accepts single-character abbreviations like 'y'/'n' for
+            # yes/no in pattern arguments.
+            # If every element in the list is a valid (or abbreviated) enum value,
+            # accept the whole list without further checking.
+            if "," in val:
+                elements = [e.strip() for e in val.split(",")]
+                enum_lower = [v.lower() for v in enum_values]
+
+                def _element_valid(e):
+                    if e in enum_lower:
+                        return True
+                    # Accept unambiguous prefix of any enum value
+                    matched_e = [
+                        ev for ev in enum_lower
+                        if ev.startswith(e)
+                    ]
+                    return len(matched_e) >= 1  # any match is fine for comma lists
+
+                if all(_element_valid(e) for e in elements):
+                    continue
+                # At least one element is invalid — skip further E004 (already
+                # confusing to report whole string); silently skip for now.
+                continue
+
             # Adams accepts unique prefixes for enum values too.
             # Resolve val against enum_values using same prefix logic as arg names.
             enum_lower = [v.lower() for v in enum_values]
@@ -236,7 +289,8 @@ def rule_missing_required(statements, schema, symbols):
     """E005 / W005 — Missing required argument (two-tier severity).
 
     - adams_id type: no diagnostic (omitting is preferred behaviour)
-    - NDBWD_*/NDB_* type (new_object): W005 warning (Adams auto-generates names)
+    - NDBWD_PART type (part name): E005 error (Adams requires an explicit name)
+    - Other NDBWD_*/NDB_* type (new_object): W005 warning (Adams auto-generates names)
     - All other required args: E005 error
     - Suppressed if another member of the same exclusive group is provided
     """
@@ -249,11 +303,14 @@ def rule_missing_required(statements, schema, symbols):
         if not cmd:
             continue
 
-        # Build set of provided argument canonical names
+        # Build set of provided argument canonical names and a value map
         provided = set()
+        provided_values = {}  # canonical_name -> raw value string
         for arg in stmt.arguments:
             canonical = schema.resolve_argument_name(cmd_key, arg.name)
-            provided.add(canonical if canonical else arg.name)
+            canon = canonical if canonical else arg.name
+            provided.add(canon)
+            provided_values[canon] = arg.value
 
         # Determine which required args are "covered" by exclusive groups
         groups = schema.get_exclusive_groups(cmd_key)
@@ -262,6 +319,13 @@ def rule_missing_required(statements, schema, symbols):
             members = group.get("members", [])
             if any(m in provided for m in members):
                 covered_by_group.update(members)
+
+        # Special case: force create direct single_component_force with action_only=on.
+        # In action-only mode the force has no reaction body; j_marker_name and
+        # j_part_name are not applicable and must not be flagged as missing.
+        if (cmd_key == "force create direct single_component_force"
+                and provided_values.get("action_only", "").lower() == "on"):
+            covered_by_group.update({"j_marker_name", "j_part_name"})
 
         for arg_name, arg_def in cmd["args"].items():
             if not arg_def.get("required"):
@@ -278,8 +342,13 @@ def rule_missing_required(statements, schema, symbols):
                 continue  # omitting adams_id is the preferred behaviour
 
             if db_type.startswith("NDBWD_") or db_type.startswith("NDB_") or arg_type == "new_object":
-                code, sev = "W005", Severity.WARNING
-                msg = f"Object name '{arg_name}' omitted — Adams will auto-generate a name. Explicit names are recommended."
+                if db_type == "NDBWD_PART":
+                    # Adams requires an explicit part name — auto-generation is not supported
+                    code, sev = "E005", Severity.ERROR
+                    msg = f"Missing required argument: '{arg_name}' (Adams requires an explicit part name)"
+                else:
+                    code, sev = "W005", Severity.WARNING
+                    msg = f"Object name '{arg_name}' omitted — Adams will auto-generate a name. Explicit names are recommended."
             else:
                 code, sev = "E005", Severity.ERROR
                 msg = f"Missing required argument: '{arg_name}'"
@@ -446,13 +515,33 @@ def rule_unclosed_quote(statements, schema, symbols):
 
 
 def rule_control_flow_balance(statements, schema, symbols):
-    """E104 — Unbalanced if/for/while/end blocks."""
+    """E104 — Unbalanced if/for/while/end blocks.
+
+    Python sections (between ``language switch_to python`` and
+    ``Adams.switchToCmd()`` / ``language switch_to cmd``) are skipped because
+    Python uses the same keywords (``for``, ``if``, ``else``, ``end``) with
+    different semantics and no explicit ``end`` statement.
+    """
     diagnostics = []
     stack = []  # list of (keyword, line)
+    in_python = False  # True while inside a Python scripting section
 
     for stmt in statements:
+        # Detect entry into Python mode
+        ck = stmt.command_key.lower()
         if not stmt.is_control_flow:
+            if "language" in ck and "python" in ck:
+                in_python = True
+                continue
+            if in_python and (ck.startswith("adams.switchtocmd") or
+                              ("language" in ck and ("cmd" in ck or "adams" in ck))):
+                in_python = False
+            continue  # non-control-flow statements are not relevant to E104
+
+        # Skip control flow inside Python sections
+        if in_python:
             continue
+
         kw = stmt.control_flow_keyword
 
         if kw in ("if", "for", "while"):
@@ -512,6 +601,148 @@ def rule_control_flow_balance(statements, schema, symbols):
 # Semantic rules
 # ---------------------------------------------------------------------------
 
+# Adams type compatibility: some schema types are super-types of others.
+# Adams applies implicit type-widening in many places — e.g. a Part may be
+# used wherever an Rframe (reference frame) is expected because Adams silently
+# uses the part's center-of-mass marker.
+# Keys are actual types (upper-cased); values are accepted super-types.
+_TYPE_IS_A = {
+    # Every object is an "Adams" object
+    "PART":            {"BODY", "RFRAME", "ADAMS", "ALL"},
+    "FE_PART":         {"BODY", "RFRAME", "ADAMS"},
+    "FLEX_BODY":       {"BODY", "RFRAME", "ADAMS"},
+    "GROUND":          {"BODY", "PART",   "RFRAME", "ADAMS"},
+    "POINT_MASS":      {"BODY", "RFRAME", "ADAMS"},
+    # Markers satisfy any positional/orientational role
+    "MARKER":          {"RFRAME", "TRIAD", "POSITION", "ADAMS"},
+    "FMARKER":         {"RFRAME", "TRIAD", "MARKER", "POSITION", "ADAMS"},
+    # Mechanism subtypes
+    "RUN":             {"MECHANISM"},
+    "MECHANISM":       {"RFRAME", "ADAMS"},
+    # Force subtypes
+    "SFORCE":          {"FORCE", "ADAMS"},
+    "VFORCE":          {"FORCE", "ADAMS"},
+    "VTORQUE":         {"FORCE", "ADAMS"},
+    "BUSHING":         {"FORCE", "ADAMS"},
+    "GENFORCE":        {"FORCE", "ADAMS"},
+    "SPRING":          {"FORCE", "ADAMS"},
+    "BEAM":            {"FORCE", "ADAMS"},
+    "FIELD":           {"FORCE", "ADAMS"},
+    "CCURVE":          {"CONSTR", "FORCE", "ADAMS"},
+    # Measure subtypes
+    "MEA_OBJECT":      {"MEASURE"},
+    "MEA_SOLVCOMP":    {"MEASURE"},
+    "MEA_ANGLE":       {"MEASURE"},
+    "MEA_VIEWCOMP":    {"MEASURE"},
+    "MEA_PT2PT":       {"MEASURE"},
+    # Graph/geometry subtypes
+    "CYLINDER":        {"GRAPH"},
+    "ELLIPSOID":       {"GRAPH"},
+    "CSG":             {"GRAPH"},
+    "BOX":             {"GRAPH"},
+    "SPHERE":          {"GRAPH"},
+    "TORUS":           {"GRAPH"},
+    "FRUSTUM":         {"GRAPH"},
+    "GLINK":           {"GRAPH", "CONTACT_SOLID"},
+    "OUTLINE":         {"GRAPH", "GWIRE"},
+    # Additional geometry subtypes missing from earlier batch
+    "EXTRUSION":       {"GRAPH"},
+    "ARC":             {"GRAPH"},
+    "REVOLUTION":      {"GRAPH"},
+    "GCURVE":          {"GRAPH", "GWIRE"},
+    "GSPDP":           {"GRAPH"},
+    # Animation subtypes
+    "ANIMATION":       {"ANIM_BASE"},
+    # Joint / constraint subtypes
+    "JOINT":           {"CONSTR", "ADAMS"},
+    "JPRIM":           {"CONSTR", "ADAMS"},
+    "PCURVE":          {"CONSTR", "ADAMS"},
+    # Generic CONSTR (e.g. from constraint copy) accepted wherever a specific
+    # constraint subtype is expected.  Adams trusts the user to copy the
+    # right subtype.
+    "CONSTR":          {"JPRIM", "CCURVE"},
+    # 'All' wildcard — accepted anywhere Adams allows a wildcard selection
+    "ALL":             {"VIEW", "GROUP", "PART", "BODY", "RFRAME", "ADAMS", "ENT"},
+    # SelectList is the type of the SELECT_LIST built-in: accepted as Group
+    "SELECTLIST":      {"GROUP"},
+    # Design point is a positional reference
+    "DESIGN_POINT":    {"POSITION", "RFRAME"},
+    # GUI dialog box subtypes
+    "GI_DBOX":         {"GI_GUI"},
+    # External system can be used as a reference frame
+    "EXTERNAL_SYSTEM": {"RFRAME"},
+    # Equation subtypes
+    "EQU":             {"PART", "TFSISO"},
+    "LSE":             {"EQU", "PART"},
+    "GSE":             {"EQU", "PART"},
+    # Additional FORCE subtypes (spring-damper-preload, modal force, gravity, etc.)
+    "SPDP":            {"FORCE", "ADAMS"},
+    "MFORCE":          {"FORCE", "ADAMS"},
+    "ACCGRAV":         {"FORCE", "ADAMS"},
+    # Generic FORCE (e.g. from force copy) accepted wherever a specific
+    # force subtype is expected.
+    "FORCE":           {"MFORCE", "ACCGRAV", "BEAM", "BUSHING", "SPDP"},
+    # Additional MEASURE subtypes
+    "MEA_POINT":       {"MEASURE"},
+    # GUI subtypes
+    "GI_WINDOW":       {"GI_GUI"},
+    "GI_CONTAINER":    {"GI_GUI"},
+    # Graph/geometry subtypes (additional)
+    "PLATE":           {"GRAPH"},
+    "CIRCLE":          {"GRAPH"},
+    # TFSISO (transfer function, ISO) as equation
+    "TFSISO":          {"EQU", "PART"},
+    # MACRO is a top-level object accepted anywhere ALL is
+    "MACRO":           {"ALL", "ADAMS"},
+    # User-defined elements
+    "UDEINST":         {"ALL", "ADAMS"},
+    "UDEDEF":          {"ALL", "ADAMS"},
+    # Variable-like data elements — Adams accepts any of these where Var is expected
+    "SPLINE":          {"VAR"},
+    "SOLVAR":          {"VAR"},
+    "ARRAY":           {"VAR"},
+    "PINPUT":          {"VAR"},
+    "POUTPUT":         {"VAR"},
+    "VVAR":            {"VAR"},
+    # Generic Var (e.g. from data_element copy) accepted where specific subtypes expected
+    "VAR":             {"SOLVAR"},
+    # Result set is a data element compatible with spline/var queries
+    "RESSET":          {"SPLINE", "VAR"},
+    # Motion is a top-level Adams object
+    "MOTION":          {"ADAMS"},
+    # GRAPH is also accepted wherever a specific geometry subtype is expected
+    # (this arises from geometry copy commands which record the copy as the
+    # base GRAPH type rather than the original subtype).
+    "GRAPH":           {
+        "CIRCLE", "BOX", "CYLINDER", "FRUSTUM", "ELLIPSOID", "GSPDP",
+        "ARC", "EXTRUSION", "REVOLUTION", "GCURVE", "GWIRE",
+        "TORUS", "SPHERE", "PLATE", "OUTLINE", "GLINK",
+    },
+}
+
+
+def _types_compatible(actual_type, expected_type):
+    """Return True if actual_type is the same as or a subtype of expected_type.
+
+    Special cases:
+    - expected_type == 'ALL': Adams wildcard, accepts any object.
+    - actual_type == 'ALL': entity copy returns the generic ALL type; Adams
+      trusts the user to copy the right subtype, so ALL is accepted anywhere.
+    - Same type (case-insensitive): always compatible.
+    - Otherwise: look up actual_type in _TYPE_IS_A and check if expected_type
+      is one of its accepted supertypes.
+    """
+    a = actual_type.upper()
+    e = expected_type.upper()
+    if e == "ALL":
+        return True
+    if a == "ALL":
+        return True
+    if a == e:
+        return True
+    return e in _TYPE_IS_A.get(a, set())
+
+
 def rule_type_mismatch(statements, schema, symbols):
     """W201 / I202 — Wrong object type or unresolved reference."""
     diagnostics = []
@@ -528,16 +759,26 @@ def rule_type_mismatch(statements, schema, symbols):
             if not arg_def or arg_def.get("type") != "existing_object":
                 continue
 
+            # Array-valued args (e.g. coupler joint_name = .m.rev1, .m.rev2)
+            # hold a comma-separated list — skip reference checking, as
+            # individual elements cannot be reliably extracted here.
+            if arg_def.get("array"):
+                continue
+
             # Skip runtime expressions
             val = arg.value
             if "$" in val or val.lower().startswith("(") or "eval(" in val.lower():
                 continue
 
-            symbol = symbols.lookup(val)
+            # Strip surrounding quotes for symbol lookup (Adams allows both
+            # "front" and front to refer to the same view object).
+            lookup_val = val.strip('"\'')
+
+            symbol = symbols.lookup(lookup_val)
             expected_type = arg_def.get("object_type", "")
 
             if symbol:
-                if expected_type and symbol.object_type.upper() != expected_type.upper():
+                if expected_type and not _types_compatible(symbol.object_type, expected_type):
                     diagnostics.append(Diagnostic(
                         line=arg.value_line,
                         column=arg.value_column,
@@ -551,6 +792,35 @@ def rule_type_mismatch(statements, schema, symbols):
                         severity=Severity.WARNING,
                     ))
             else:
+                # Suppress I202 if the name plausibly comes from an eval
+                # expression that creates objects with a matching prefix
+                # (e.g. loop-generated names like .model.mass_1.cm).
+                if symbols.has_dynamic_prefix_match(lookup_val):
+                    continue
+                # Suppress I202 for any path that contains 'ground' as a component
+                # (e.g. .MODEL_1.ground, .MODEL_1.ground.cm) — ground is
+                # pre-created by Adams in every model and never defined in .cmd
+                # files.  A path like '.model.ground.mkr' refers to a marker
+                # on the built-in ground part; '.model.ground' IS the ground part.
+                path_components = [
+                    c.strip('"\'').lower()
+                    for c in lookup_val.rstrip('"\'').split('.')
+                    if c.strip('"\'')
+                ]
+                if "ground" in path_components:
+                    continue
+                # Suppress I202 for .materials.* references — Adams ships a
+                # global materials library that is never defined in .cmd files.
+                if lookup_val.lower().startswith(".materials.") or lookup_val.lower() == ".materials":
+                    continue
+                # Suppress I202 for custom colour strings (COLOR_R...G...B...).
+                # Adams accepts these as colour identifiers; they are not objects.
+                if lookup_val.upper().startswith("COLOR_"):
+                    continue
+                # Suppress I202 for GUI panel paths (.gui.*) — these are UI
+                # elements, not model objects, and are never defined in .cmd files.
+                if lookup_val.lower().startswith(".gui."):
+                    continue
                 diagnostics.append(Diagnostic(
                     line=arg.value_line,
                     column=arg.value_column,

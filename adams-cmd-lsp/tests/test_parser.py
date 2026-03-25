@@ -38,6 +38,20 @@ def test_comment_start_after_string():
     assert _find_comment_start(line) == 16
 
 
+def test_comment_start_escaped_quote_in_string():
+    """'!' after a backslash-escaped quote inside a string must not be a comment.
+
+    Line: "  format=\\"#! /bin/csh -f\\"", &
+    The '#!' is inside the outer double-quoted string. The \\" sequences are
+    escaped quotes, not string terminators. The '!' must not be treated as a
+    comment start.
+    """
+    line = '    "  format=\\"#! /bin/csh -f\\"", &'
+    assert _find_comment_start(line) == len(line), (
+        "! inside a string with escaped quotes must not be a comment start"
+    )
+
+
 # ---------------------------------------------------------------------------
 # _consume_argument_value
 # ---------------------------------------------------------------------------
@@ -52,6 +66,20 @@ def test_consume_quoted_string():
     text = '"hello world" rest'
     end = _consume_argument_value(text, 0)
     assert text[:end] == '"hello world"'
+
+
+def test_consume_quoted_string_escaped_double_quote():
+    """Escaped \" inside a double-quoted string must not terminate the string."""
+    text = r'"say \"hello\" now" rest'
+    end = _consume_argument_value(text, 0)
+    assert text[:end] == r'"say \"hello\" now"'
+
+
+def test_consume_quoted_string_escaped_single_quote():
+    """Escaped \' inside a single-quoted string must not terminate the string."""
+    text = r"'it\'s fine' rest"
+    end = _consume_argument_value(text, 0)
+    assert text[:end] == r"'it\'s fine'"
 
 
 def test_consume_parenthesised():
@@ -93,6 +121,111 @@ def test_comma_tail_stops_at_arg_pair():
     end = _consume_argument_value(text, 0)
     end = _consume_comma_separated_tail(text, end, 0)
     assert text[end:].strip().startswith("part_name=")
+
+
+def test_comma_tail_whitespace_before_comma():
+    """Values separated by spaces-then-comma (e.g. polyline coords on continuation lines).
+
+    After joining: 'points_for_profile = 30.0, 0.0, 60.0         , 60.0, 0.0, 80.0'
+    The value consumer sees '30.0,' then '0.0,' then '60.0' (no trailing comma).
+    The next non-space char is ',' — must continue consuming.
+    """
+    text = "30.0, 0.0, 60.0         , 60.0, 0.0, 80.0"
+    end = _consume_argument_value(text, 0)
+    end = _consume_comma_separated_tail(text, end, 0)
+    assert text[:end] == "30.0, 0.0, 60.0         , 60.0, 0.0, 80.0"
+
+
+def test_comma_tail_whitespace_comma_stops_at_arg():
+    """Whitespace-before-comma lookahead must stop at an arg=value token."""
+    text = '60.0         angle_extent = 180.0'
+    end = _consume_argument_value(text, 0)
+    end = _consume_comma_separated_tail(text, end, 0)
+    assert text[end:].strip().startswith("angle_extent")
+
+
+def test_extract_key_geometry_shape_polyline():
+    """geometry create shape revolution with comma-continuation polyline points.
+
+    Real Adams CMD pattern — points_for_profile value spans multiple continuation
+    lines, each starting with ', x, y, z'.  The command key must be just
+    'geometry create shape revolution', not contaminated with coordinate data.
+    """
+    text = (
+        'geometry create shape revolution '
+        'revolution_name = .m.REV7 '
+        'points_for_profile = 30.0, 0.0, 60.0'
+        '         , 60.0, 0.0, 60.0'
+        '         , 60.0, 0.0, 80.0'
+        '         , 40.0, 0.0, 80.0 '
+        'angle_extent = 180.0 '
+        'number_of_sides = 20'
+    )
+    assert _extract_command_key(text) == "geometry create shape revolution"
+
+
+def test_parse_geometry_shape_revolution_polyline():
+    """Full parse of geometry create shape revolution with multi-line polyline.
+
+    Command key must be 'geometry create shape revolution'.
+    points_for_profile must contain all coordinate triplets.
+    """
+    text = (
+        'geometry create shape revolution  &\n'
+        '   revolution_name = .m.ground.REV7  &\n'
+        '   adams_id = 69  &\n'
+        '   points_for_profile = 30.0, 0.0, 60.0  &\n'
+        '      , 60.0, 0.0, 60.0  &\n'
+        '      , 60.0, 0.0, 80.0  &\n'
+        '      , 40.0, 0.0, 80.0  &\n'
+        '   angle_extent = 180.0  &\n'
+        '   number_of_sides = 20\n'
+    )
+    stmts = parse(text)
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    stmt = real[0]
+    assert stmt.command_key == 'geometry create shape revolution', (
+        f"command_key contaminated with coordinate data: {stmt.command_key!r}"
+    )
+    arg_names = [a.name for a in stmt.arguments]
+    assert 'points_for_profile' in arg_names
+    pfp = next(a for a in stmt.arguments if a.name == 'points_for_profile')
+    # All continuation coordinate sets must be in the value
+    assert '60.0, 0.0, 80.0' in pfp.value, (
+        f"Continuation coordinates missing from points_for_profile: {pfp.value!r}"
+    )
+
+
+def test_parse_macro_create_commands_quoted_array():
+    """macro create commands= with comma-separated quoted strings on continuation lines.
+
+    The commands= argument takes an array of quoted Adams CMD strings.  Each
+    element is a double-quoted string, and elements are separated by ' , &'
+    (space-comma-continuation) across lines.  The command key must be just
+    'macro create' and commands= must capture all quoted strings.
+    """
+    text = (
+        'macro create macro=.mdi.MyMacro &\n'
+        '  wrap_in_undo=no &\n'
+        '  commands= &\n'
+        '     "undo begin suppres=yes" , &\n'
+        '     "assembly create instance &", &\n'
+        '     "undo end"\n'
+    )
+    stmts = parse(text)
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    stmt = real[0]
+    assert stmt.command_key == 'macro create', (
+        f"command_key contaminated: {stmt.command_key!r}"
+    )
+    arg_names = [a.name for a in stmt.arguments]
+    assert 'commands' in arg_names
+    cmd_arg = next(a for a in stmt.arguments if a.name == 'commands')
+    assert '"undo end"' in cmd_arg.value, (
+        f"Last quoted string missing from commands value: {cmd_arg.value!r}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -402,45 +535,47 @@ def test_parse_logical_and_before_not_operator_no_false_continuation():
 
 
 def test_continuation_blank_line_absorbed():
-    """A blank line inside a continuation group must NOT break the group.
+    """A '&'-only spacer line inside a continuation group must be absorbed.
 
-    Real Adams behavior: trailing '&' keeps consuming lines regardless of
-    blank lines -- only a non-blank, non-comment line without '&' terminates
-    the continuation.
+    Real Adams files use lines containing only '&' (or spaces + '&') as
+    placeholder spacers inside continuation blocks.  These must not break
+    the group.  A truly empty line (no '&') DOES break the continuation.
     """
     text = (
         "part create rigid_body name_and_position &\n"
-        "\n"
+        "     &\n"                          # spacer line: spaces + '&'
         "  part_name = .model.PART_1\n"
     )
     stmts = parse(text)
     # All three physical lines must form ONE logical statement
-    assert len(stmts) == 1
-    assert stmts[0].line_start == 0
-    assert stmts[0].line_end == 2
-    assert "part_name" in [a.name for a in stmts[0].arguments]
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    assert real[0].line_start == 0
+    assert real[0].line_end == 2
+    assert "part_name" in [a.name for a in real[0].arguments]
 
 
 def test_continuation_multiple_blank_lines_absorbed():
-    """Multiple consecutive blank lines inside a continuation group are all absorbed."""
+    """Multiple consecutive '&'-only spacer lines inside a continuation are all absorbed."""
     text = (
         "part create rigid_body name_and_position &\n"
-        "\n"
-        "\n"
+        "     &\n"
+        "     &\n"
         "  part_name = .model.PART_1\n"
     )
     stmts = parse(text)
-    assert len(stmts) == 1
-    assert stmts[0].line_start == 0
-    assert stmts[0].line_end == 3
-    assert "part_name" in [a.name for a in stmts[0].arguments]
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    assert real[0].line_start == 0
+    assert real[0].line_end == 3
+    assert "part_name" in [a.name for a in real[0].arguments]
 
 
 def test_continuation_blank_and_comment_lines_absorbed():
-    """Blank lines and comment-only lines mixed inside a continuation are all absorbed."""
+    """'&'-only spacer lines and comment-only lines mixed inside a continuation are all absorbed."""
     text = (
         "part create rigid_body name_and_position &\n"
-        "\n"
+        "     &\n"
         "! This comment is inside the continuation\n"
         "  part_name = .model.PART_1\n"
     )
@@ -464,3 +599,145 @@ def test_continuation_blank_line_between_two_statements():
     assert len(real_stmts) == 2
     assert real_stmts[0].line_start == 0
     assert real_stmts[1].line_start == 2
+
+
+def test_continuation_whitespace_only_line_breaks_group():
+    """A blank or whitespace-only line (no '&') inside a continuation terminates it.
+
+    Real Adams .cmd files use blank lines (or lines with only spaces) to
+    separate commands. Once no '&' is present, the continuation ends.
+    """
+    text = (
+        "animation create animation_name = .a1 &\n"
+        "   analysis_name = .sim1  &\n"
+        "   \n"                           # whitespace-only line — breaks the group
+        "animation create animation_name = .a2 &\n"
+        "   analysis_name = .sim2\n"
+    )
+    stmts = parse(text)
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 2, (
+        f"Expected 2 statements, got {len(real)}: "
+        + ", ".join(repr(s.command_key) for s in real)
+    )
+    # First statement must end before the whitespace-only line
+    assert real[0].line_end <= 2, f"First stmt absorbed too many lines: line_end={real[0].line_end}"
+    # Second statement must start at line 3 (0-indexed)
+    assert real[1].line_start == 3, f"Second stmt starts at wrong line: {real[1].line_start}"
+
+
+def test_continuation_truly_blank_line_breaks_group():
+    """A truly empty line (no characters) inside a continuation also terminates it.
+
+    This matches the real Adams .cmd file pattern where a completely empty
+    line between continuation-using commands separates them.
+    """
+    text = (
+        "animation play animation_name = .a1 &\n"
+        "   analysis_name = .sim1  &\n"
+        "\n"                              # truly empty line — breaks the group
+        "animation modify animation_name = .a1 &\n"
+        "   frame_number = 100\n"
+    )
+    stmts = parse(text)
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 2, (
+        f"Expected 2 statements, got {len(real)}: "
+        + ", ".join(repr(s.command_key) for s in real)
+    )
+    assert real[1].line_start == 3, f"Second stmt starts at wrong line: {real[1].line_start}"
+
+
+# ---------------------------------------------------------------------------
+# Embedded quoted components in hierarchical names (e.g. .MODEL."Part 1")
+# ---------------------------------------------------------------------------
+
+def test_consume_embedded_quoted_in_hierarchical_name():
+    """A bare-word value like .MODEL."Part 1" must be consumed in full.
+
+    The quoted component "Part 1" contains a space, which must NOT stop the
+    bare-word scanner — it should consume through the closing quote.
+    """
+    text = 'part_name = .SPLIT_TOOL."Part 1"'
+    # position of value start (after '= ')
+    val_start = text.index('.SPLIT_TOOL')
+    end = _consume_argument_value(text, val_start)
+    value = text[val_start:end]
+    assert value == '.SPLIT_TOOL."Part 1"', f"Got: {value!r}"
+
+
+def test_consume_embedded_quoted_with_suffix():
+    """Quoted component followed by more path tokens: .MODEL."Part 1".cm"""
+    text = 'marker_name = .SPLIT_TOOL."Part 1".cm'
+    val_start = text.index('.SPLIT_TOOL')
+    end = _consume_argument_value(text, val_start)
+    value = text[val_start:end]
+    assert value == '.SPLIT_TOOL."Part 1".cm', f"Got: {value!r}"
+
+
+def test_parse_embedded_quoted_part_name_argument():
+    """Full parse: part_name = .SPLIT_TOOL."Part 1" must produce correct argument value."""
+    text = 'part create rigid_body name_and_position part_name = .SPLIT_TOOL."Part 1"\n'
+    stmts = parse(text)
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1, f"Expected 1 statement, got {len(real)}"
+    args = {a.name: a.value for a in real[0].arguments}
+    assert "part_name" in args, f"part_name missing from args: {list(args)}"
+    assert args["part_name"] == '.SPLIT_TOOL."Part 1"', f"Got: {args['part_name']!r}"
+
+
+def test_parse_embedded_quoted_no_spurious_unknown_command():
+    """Embedded quoted name must NOT produce extra spurious statement tokens.
+
+    Previously the parser would stop bare-word scanning at the space inside
+    "Part 1", leaving '1"' as residue that became a bogus second statement.
+    """
+    text = 'part create rigid_body name_and_position part_name = .SPLIT_TOOL."Part 1"\n'
+    stmts = parse(text)
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    # Must be exactly ONE statement — no residue parsed as a second command
+    assert len(real) == 1, (
+        f"Expected 1 statement but got {len(real)}: "
+        + ", ".join(repr(s.command_key) for s in real)
+    )
+
+
+# ---------------------------------------------------------------------------
+# Escaped quotes inside commands= array (E003 false-positive regression)
+# ---------------------------------------------------------------------------
+
+def test_no_duplicate_args_from_escaped_quotes_in_commands_array():
+    """macro create commands= with escaped quotes must not produce E003 duplicates.
+
+    Adams CMD files use \\\" (backslash + double-quote) to embed a literal
+    double-quote inside a double-quoted string.  A string like:
+
+        "if cond=(DB_EXISTS(\\"name\\"))"
+
+    contains \\\" sequences.  Without proper escape handling, the quote parser
+    terminates early at the first \\\" and the remainder (e.g. name\\\")))  is
+    scanned as free text -- which then produces spurious arg=value matches and
+    ultimately E003 (duplicate argument) false positives.
+    """
+    text = (
+        'macro create macro=M1 &\n'
+        '  commands= &\n'
+        '"if cond=(DB_EXISTS(\\"name\\"))",  &\n'
+        '"variable set variable=.M.V real=(1.0)",  &\n'
+        '"if cond=(DB_EXISTS(\\"name2\\"))",  &\n'
+        '"variable set variable=.M.V2 real=(2.0)"\n'
+    )
+    stmts = parse(text)
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1, f"Expected 1 statement, got {len(real)}"
+
+    stmt = real[0]
+    arg_names = [a.name for a in stmt.arguments]
+
+    # Only 'macro' and 'commands' should appear -- no leaked args from inside strings
+    assert 'macro' in arg_names
+    assert 'commands' in arg_names
+    for leaked in ('cond', 'variable', 'real'):
+        assert leaked not in arg_names, (
+            f"Arg '{leaked}' leaked from inside quoted string content"
+        )
