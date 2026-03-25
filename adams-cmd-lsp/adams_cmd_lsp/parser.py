@@ -113,14 +113,18 @@ def _group_continuation_lines(
     Returns a list of tuples:
         (line_start, line_end, joined_text, line_offsets)
 
-    line_offsets is a list of (char_pos, phys_line, col) triples —
+    line_offsets is a list of (char_pos, phys_line, col) triples --
     for every character position in joined_text, which physical line
     and column it came from.  This enables precise diagnostic positions.
 
-    Comment-only lines inside a continuation group are absorbed (they
-    contribute zero characters but do not break the group).
+    Blank lines and comment-only lines inside a continuation group are
+    absorbed silently (they contribute zero characters but do not break
+    the group).  This matches real Adams parser behavior: once a trailing
+    '&' starts a continuation, Adams keeps reading -- blank lines AND
+    comment-only lines are ignored -- until a non-blank, non-comment line
+    that does NOT end with '&' terminates the group.
     Note: a '&' appearing after '!' in a comment line is NOT a
-    continuation marker — it is part of the comment.
+    continuation marker -- it is part of the comment.
     """
     groups = []
     i = 0
@@ -136,8 +140,11 @@ def _group_continuation_lines(
         while i < n:
             raw = lines[i]
 
-            # Comment-only lines inside a continuation group are absorbed silently
-            if in_continuation and _is_comment_only(raw):
+            # Blank lines and comment-only lines inside a continuation group are
+            # absorbed silently -- this matches real Adams parser behavior where
+            # a trailing '&' keeps consuming lines until a non-blank, non-comment
+            # line that does NOT end with '&' terminates the group.
+            if in_continuation and (not raw.strip() or _is_comment_only(raw)):
                 i += 1
                 continue
 

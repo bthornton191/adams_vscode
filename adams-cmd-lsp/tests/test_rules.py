@@ -567,3 +567,73 @@ def test_i202_no_false_positive_model_name_referenced_with_leading_dot():
     diags = _lint(text, rules=[rule_unknown_command, rule_type_mismatch])
     i202_diags = [d for d in diags if d.code == "I202" and ".model" in d.message]
     assert len(i202_diags) == 0
+
+
+# ---------------------------------------------------------------------------
+# W103 — dangling continuation '&' merging commands / at EOF
+# ---------------------------------------------------------------------------
+
+def test_w103_merged_commands_fires():
+    """Two commands merged by a dangling '&' must produce W103, not E001.
+
+    When a line ends with '&' but the NEXT line starts a new command instead
+    of continuing the arguments, Adams sees the two command keywords run
+    together as a single unknown key.  The linter must detect this split and
+    emit W103 rather than E001.
+    """
+    from adams_cmd_lsp.rules import rule_unknown_command
+    # Trailing '&' on first command causes merger into one statement with
+    # a key that looks like two concatenated commands.
+    text = (
+        "model create model_name = .model1 &\n"
+        "model create model_name = .model2\n"
+    )
+    diags = _lint(text, rules=[rule_unknown_command])
+    codes = [d.code for d in diags]
+    assert "W103" in codes, f"Expected W103 but got: {diags}"
+    assert "E001" not in codes, f"E001 must not fire when W103 fires: {diags}"
+
+
+def test_w103_merged_commands_message_identifies_both():
+    """W103 message must name both merged commands."""
+    from adams_cmd_lsp.rules import rule_unknown_command
+    text = (
+        "model create model_name = .model1 &\n"
+        "model create model_name = .model2\n"
+    )
+    diags = _lint(text, rules=[rule_unknown_command])
+    w103 = [d for d in diags if d.code == "W103"]
+    assert len(w103) == 1
+    msg = w103[0].message.lower()
+    assert "model create" in msg or "merged" in msg
+
+
+def test_w103_no_false_positive_on_valid_continuation():
+    """A valid multi-line command with '&' must NOT trigger W103."""
+    from adams_cmd_lsp.rules import rule_unknown_command
+    text = (
+        "part create rigid_body name_and_position &\n"
+        "  part_name = .model.PART_1\n"
+    )
+    diags = _lint(text, rules=[rule_unknown_command])
+    codes = [d.code for d in diags]
+    assert "W103" not in codes, f"W103 must not fire for valid continuation: {diags}"
+    assert "E001" not in codes, f"E001 must not fire for valid continuation: {diags}"
+
+
+def test_w103_eof_dangling_continuation():
+    """A trailing '&' at end-of-file must produce W103."""
+    from adams_cmd_lsp.linter import lint_text
+    text = "model create model_name = .model1 &\n"
+    diags = lint_text(text)
+    codes = [d.code for d in diags]
+    assert "W103" in codes, f"Expected W103 for dangling & at EOF but got: {diags}"
+
+
+def test_w103_eof_no_false_positive_without_trailing_amp():
+    """A file that ends without '&' must NOT trigger the EOF W103."""
+    from adams_cmd_lsp.linter import lint_text
+    text = "model create model_name = .model1\n"
+    diags = lint_text(text)
+    codes = [d.code for d in diags]
+    assert "W103" not in codes, f"W103 must not fire without trailing & at EOF: {diags}"
