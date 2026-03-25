@@ -399,3 +399,68 @@ def test_parse_logical_and_before_not_operator_no_false_continuation():
     assert stmts[0].line_start == 0
     assert stmts[0].line_end == 0   # must NOT absorb the next line
     assert stmts[1].line_start == 1
+
+
+def test_continuation_blank_line_absorbed():
+    """A blank line inside a continuation group must NOT break the group.
+
+    Real Adams behavior: trailing '&' keeps consuming lines regardless of
+    blank lines -- only a non-blank, non-comment line without '&' terminates
+    the continuation.
+    """
+    text = (
+        "part create rigid_body name_and_position &\n"
+        "\n"
+        "  part_name = .model.PART_1\n"
+    )
+    stmts = parse(text)
+    # All three physical lines must form ONE logical statement
+    assert len(stmts) == 1
+    assert stmts[0].line_start == 0
+    assert stmts[0].line_end == 2
+    assert "part_name" in [a.name for a in stmts[0].arguments]
+
+
+def test_continuation_multiple_blank_lines_absorbed():
+    """Multiple consecutive blank lines inside a continuation group are all absorbed."""
+    text = (
+        "part create rigid_body name_and_position &\n"
+        "\n"
+        "\n"
+        "  part_name = .model.PART_1\n"
+    )
+    stmts = parse(text)
+    assert len(stmts) == 1
+    assert stmts[0].line_start == 0
+    assert stmts[0].line_end == 3
+    assert "part_name" in [a.name for a in stmts[0].arguments]
+
+
+def test_continuation_blank_and_comment_lines_absorbed():
+    """Blank lines and comment-only lines mixed inside a continuation are all absorbed."""
+    text = (
+        "part create rigid_body name_and_position &\n"
+        "\n"
+        "! This comment is inside the continuation\n"
+        "  part_name = .model.PART_1\n"
+    )
+    stmts = parse(text)
+    assert len(stmts) == 1
+    assert stmts[0].line_start == 0
+    assert stmts[0].line_end == 3
+    assert "part_name" in [a.name for a in stmts[0].arguments]
+
+
+def test_continuation_blank_line_between_two_statements():
+    """A blank line that is NOT inside a continuation must still separate statements."""
+    text = (
+        "model create model_name = .model1\n"
+        "\n"
+        "model create model_name = .model2\n"
+    )
+    stmts = parse(text)
+    # Two independent statements -- the blank line should not merge them
+    real_stmts = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real_stmts) == 2
+    assert real_stmts[0].line_start == 0
+    assert real_stmts[1].line_start == 2

@@ -24,11 +24,15 @@ def _canonical_key(stmt):
 # ---------------------------------------------------------------------------
 
 def rule_unknown_command(statements, schema, symbols):
-    """E001 — Unknown command.
+    """E001 — Unknown command.  W103 — Commands merged by dangling '&'.
 
     Attempts abbreviation resolution via the command tree.
     On success, sets stmt.resolved_command_key as a side-effect so that
     downstream rules can use the canonical key without re-resolving.
+
+    When a command key fails to resolve AND the key appears to be two valid
+    commands concatenated (a symptom of a trailing '&' merging two lines),
+    W103 is emitted instead of E001.
     """
     diagnostics = []
     for stmt in statements:
@@ -54,6 +58,14 @@ def rule_unknown_command(statements, schema, symbols):
             stmt.resolved_command_key = resolved_key
             continue
 
+        # Before emitting E001, check whether this looks like two commands
+        # merged by a dangling '&'.  Try every split point in the token list:
+        # if both halves independently resolve to valid commands, emit W103.
+        w103_diag = _check_merged_commands(stmt, tokens, schema)
+        if w103_diag:
+            diagnostics.append(w103_diag)
+            continue
+
         # Report the problematic token position
         col = sum(len(t) + 1 for t in tokens[:error_index]) if error_index else 0
         bad_token = tokens[error_index] if error_index is not None and error_index < len(tokens) else stmt.command_key
@@ -68,6 +80,34 @@ def rule_unknown_command(statements, schema, symbols):
         ))
 
     return diagnostics
+
+
+def _check_merged_commands(stmt, tokens, schema):
+    """Return a W103 Diagnostic if *tokens* appears to be two commands merged
+    by a dangling '&', or None otherwise.
+
+    Tries every split point (1..N-1) in the token list.  If both halves
+    independently resolve to known commands, the statement is flagged.
+    """
+    for split in range(1, len(tokens)):
+        left_tokens = tokens[:split]
+        right_tokens = tokens[split:]
+        left_key, left_err = schema.resolve_command_key(left_tokens)
+        right_key, right_err = schema.resolve_command_key(right_tokens)
+        if left_key and right_key:
+            return Diagnostic(
+                line=stmt.line_start,
+                column=0,
+                end_line=stmt.line_end,
+                end_column=0,
+                code="W103",
+                message=(
+                    f"Commands appear merged by trailing '&': "
+                    f"'{left_key}' and '{right_key}'"
+                ),
+                severity=Severity.WARNING,
+            )
+    return None
 
 
 def rule_invalid_argument(statements, schema, symbols):

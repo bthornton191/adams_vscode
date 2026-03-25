@@ -352,3 +352,29 @@ end
 
 ! CLEAN: '!!' inside a single-quoted string — not a comment, no E101
 variable set variable_name=msg string_value=(eval(str_print('HELLO WORLD!!')))
+
+! =============================================================================
+! W103 — DANGLING CONTINUATION '&' CASES
+! A trailing '&' at the end of a complete command, or at end-of-file,
+! causes Adams to silently merge the next command into the same statement.
+! The linter reports W103 to catch these errors before running in Adams.
+! =============================================================================
+
+! CLEAN: normal multi-line continuation — '&' followed by the continuation of
+!        the SAME command.  No W103, no E001.
+part create rigid_body name_and_position &
+  part_name = .demo_model.PART_W103_CLEAN &
+  location = 0.0, 0.0, 0.0 &
+  orientation = 0.0, 0.0, 0.0
+
+! BROKEN: trailing '&' at the end of a complete command causes the NEXT
+!         command to merge into it.  Adams sees one long unknown command.
+!         W103 is emitted; E001 is suppressed.
+model create model_name = .demo_model_a &
+model create model_name = .demo_model_b
+
+! BROKEN: trailing '&' at end of file — the continuation is never resolved.
+!         Adams would silently ignore this, but it almost certainly signals
+!         an accidental extra '&' or a missing continuation line.
+!         W103 is emitted.
+model create model_name = .demo_model_eof &
