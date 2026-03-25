@@ -406,3 +406,164 @@ def test_e101_no_false_positive_logical_and_before_not_operator():
     line = 'if condition=((eval("$x" == "yes") && !DB_EXISTS(".bp")))'
     diags = _lint(line, rule_fn=rule_unbalanced_parens)
     assert "E101" not in _codes(diags)
+
+
+# ---------------------------------------------------------------------------
+# E006 — false positive: joint commands with both i_marker_name and j_marker_name
+# ---------------------------------------------------------------------------
+
+def test_e006_no_false_positive_joint_fixed_i_and_j_marker():
+    """constraint create joint fixed with i_marker_name AND j_marker_name must NOT fire E006.
+
+    These two args belong to different exclusive groups (i-side vs j-side).
+    Previously the schema had a single 4-member group that incorrectly flagged
+    this valid combination as a mutual exclusion conflict.
+    """
+    diags = _lint(
+        "constraint create joint fixed &\n"
+        "  joint_name = .model.JOINT_1 &\n"
+        "  i_marker_name = .model.PART_1.MAR_1 &\n"
+        "  j_marker_name = .model.PART_2.MAR_2",
+        rules=[rule_unknown_command, rule_exclusive_conflict],
+    )
+    assert "E006" not in _codes(diags)
+
+
+def test_e006_no_false_positive_joint_translational_i_and_j_marker():
+    """constraint create joint translational with i_marker_name AND j_marker_name must NOT fire E006."""
+    diags = _lint(
+        "constraint create joint translational &\n"
+        "  joint_name = .model.JOINT_1 &\n"
+        "  i_marker_name = .model.PART_1.MAR_1 &\n"
+        "  j_marker_name = .model.PART_2.MAR_2",
+        rules=[rule_unknown_command, rule_exclusive_conflict],
+    )
+    assert "E006" not in _codes(diags)
+
+
+def test_e006_no_false_positive_joint_revolute_i_and_j_marker():
+    """constraint create joint revolute with i_marker_name AND j_marker_name must NOT fire E006."""
+    diags = _lint(
+        "constraint create joint revolute &\n"
+        "  joint_name = .model.JOINT_1 &\n"
+        "  i_marker_name = .model.PART_1.MAR_1 &\n"
+        "  j_marker_name = .model.PART_2.MAR_2",
+        rules=[rule_unknown_command, rule_exclusive_conflict],
+    )
+    assert "E006" not in _codes(diags)
+
+
+def test_e006_still_fires_for_i_marker_and_i_part_conflict():
+    """Providing both i_marker_name AND i_part_name on the same joint MUST fire E006.
+
+    These two args are mutually exclusive (two ways to specify the I-side body).
+    """
+    diags = _lint(
+        "constraint create joint fixed &\n"
+        "  joint_name = .model.JOINT_1 &\n"
+        "  i_marker_name = .model.PART_1.MAR_1 &\n"
+        "  i_part_name = .model.PART_1 &\n"
+        "  j_marker_name = .model.PART_2.MAR_2",
+        rules=[rule_unknown_command, rule_exclusive_conflict],
+    )
+    assert "E006" in _codes(diags)
+
+
+def test_e006_still_fires_for_j_marker_and_j_part_conflict():
+    """Providing both j_marker_name AND j_part_name on the same joint MUST fire E006."""
+    diags = _lint(
+        "constraint create joint revolute &\n"
+        "  joint_name = .model.JOINT_1 &\n"
+        "  i_marker_name = .model.PART_1.MAR_1 &\n"
+        "  j_marker_name = .model.PART_2.MAR_2 &\n"
+        "  j_part_name = .model.PART_2",
+        rules=[rule_unknown_command, rule_exclusive_conflict],
+    )
+    assert "E006" in _codes(diags)
+
+
+# ---------------------------------------------------------------------------
+# E005 — false positive: force create direct single_component_force with function=
+# ---------------------------------------------------------------------------
+
+def test_e005_no_false_positive_force_with_function_and_markers():
+    """force create direct single_component_force with function= and i/j_marker_name must NOT fire E005.
+
+    function= and user_function= are mutually exclusive (choose one form).
+    i_marker_name and i_part_name are mutually exclusive (choose one form for I-side).
+    j_marker_name and j_part_name are mutually exclusive (choose one form for J-side).
+    Previously none of these had exclusive groups, so the linter fired E005 for
+    user_function, i_part_name, and j_part_name even when valid alternatives were given.
+    """
+    diags = _lint(
+        'force create direct single_component_force &\n'
+        '  single_component_force_name = .model.SForce_1 &\n'
+        '  adams_id = 1 &\n'
+        '  i_marker_name = .model.Part_1.MAR_1 &\n'
+        '  j_marker_name = .model.Part_2.MAR_2 &\n'
+        '  action_only = off &\n'
+        '  function = "0.0"',
+        rules=[rule_unknown_command, rule_missing_required],
+    )
+    assert "E005" not in _codes(diags)
+
+
+def test_e005_no_false_positive_differential_equation_with_function():
+    """part create equation differential_equation with function= must NOT fire E005 for user_function."""
+    diags = _lint(
+        "part create equation differential_equation &\n"
+        "  differential_equation_name = .model.DIFF_1 &\n"
+        "  initial_condition = 0.0 &\n"
+        '  function = "0.0"',
+        rules=[rule_unknown_command, rule_missing_required],
+    )
+    e005_msgs = [d.message for d in diags if d.code == "E005"]
+    assert not any("user_function" in m for m in e005_msgs)
+
+
+def test_e005_no_false_positive_motion_generator_with_function():
+    """constraint create motion_generator with function= must NOT fire E005 for user_function."""
+    diags = _lint(
+        "constraint create motion_generator &\n"
+        "  motion_name = .model.MOT_1 &\n"
+        "  i_marker_name = .model.PART_1.MAR_1 &\n"
+        "  j_marker_name = .model.GROUND.MAR_G &\n"
+        '  function = "0.0"',
+        rules=[rule_unknown_command, rule_missing_required],
+    )
+    e005_msgs = [d.message for d in diags if d.code == "E005"]
+    assert not any("user_function" in m for m in e005_msgs)
+
+
+def test_e005_no_false_positive_variable_with_function():
+    """data_element create variable with function= must NOT fire E005 for user_function."""
+    diags = _lint(
+        "data_element create variable &\n"
+        "  variable_name = .model.VAR_1 &\n"
+        '  function = "0.0"',
+        rules=[rule_unknown_command, rule_missing_required],
+    )
+    e005_msgs = [d.message for d in diags if d.code == "E005"]
+    assert not any("user_function" in m for m in e005_msgs)
+
+
+# ---------------------------------------------------------------------------
+# I202 — false positive: model_name without leading dot resolved as .model
+# ---------------------------------------------------------------------------
+
+def test_i202_no_false_positive_model_name_referenced_with_leading_dot():
+    """Model created without leading dot, referenced with leading dot, must NOT fire I202.
+
+    'model create model_name = model' stores 'model' in the symbol table.
+    'simulation single_run transient model_name = .model' looks up '.model'.
+    In Adams, 'model' and '.model' are the same path. The symbol table must
+    normalize both to '.model' so the lookup succeeds.
+    """
+    from adams_cmd_lsp.rules import rule_type_mismatch
+    text = (
+        "model create model_name = model\n"
+        "simulation single_run transient model_name = .model"
+    )
+    diags = _lint(text, rules=[rule_unknown_command, rule_type_mismatch])
+    i202_diags = [d for d in diags if d.code == "I202" and ".model" in d.message]
+    assert len(i202_diags) == 0
