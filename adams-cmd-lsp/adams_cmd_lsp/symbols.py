@@ -12,19 +12,31 @@ class Symbol:
 
 class SymbolTable:
     def __init__(self):
-        self.symbols = {}  # lower-cased name → Symbol
+        self.symbols = {}  # lower-cased normalised name → Symbol
+
+    @staticmethod
+    def _normalize(name: str) -> str:
+        """Normalise an Adams database path to always start with a leading dot.
+
+        In Adams, 'model' and '.model' refer to the same object — the leading
+        dot is just the root separator that Adams adds automatically. Normalising
+        both forms to '.name' means that a model created without a leading dot
+        can always be found by a reference that uses one, and vice-versa.
+        """
+        return name if name.startswith('.') else '.' + name
 
     def register(self, name, object_type, line):
         """Register a newly created object."""
-        self.symbols[name.lower()] = Symbol(name, object_type, line)
+        normalized = self._normalize(name)
+        self.symbols[normalized.lower()] = Symbol(normalized, object_type, line)
 
     def lookup(self, name):
         """Return the Symbol for name, or None if not registered."""
-        return self.symbols.get(name.lower())
+        return self.symbols.get(self._normalize(name).lower())
 
     def has(self, name):
         """Return True if name has been registered."""
-        return name.lower() in self.symbols
+        return self._normalize(name).lower() in self.symbols
 
 
 def build_symbol_table(statements, schema):

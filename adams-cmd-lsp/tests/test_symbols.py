@@ -111,3 +111,48 @@ def test_build_symbol_table_set_does_not_create():
     table = build_symbol_table(stmts, schema)
     # variable_name arg is MDBWD_VVAR (existing), not new_object type
     assert not table.has(".model.v1")
+
+
+# ---------------------------------------------------------------------------
+# Symbol table normalization — leading dot
+# ---------------------------------------------------------------------------
+
+def test_symbol_table_normalize_leading_dot_on_register():
+    """Registering a name without a leading dot must be findable WITH a leading dot.
+
+    In Adams, 'model' and '.model' refer to the same database path. The symbol
+    table must normalize both forms to '.name' on register and lookup.
+    """
+    table = SymbolTable()
+    table.register("model", "MECHANISM", 0)
+    assert table.has(".model"), "Symbol registered as 'model' must be found as '.model'"
+    assert table.has("model"), "Symbol registered as 'model' must still be found as 'model'"
+
+
+def test_symbol_table_normalize_leading_dot_on_lookup():
+    """Looking up a name without a leading dot must find an entry registered WITH a leading dot."""
+    table = SymbolTable()
+    table.register(".model", "MECHANISM", 0)
+    assert table.has("model"), "Symbol registered as '.model' must be found as 'model'"
+    assert table.has(".model"), "Symbol registered as '.model' must still be found as '.model'"
+
+
+def test_symbol_table_normalize_lookup_returns_symbol():
+    """lookup() with and without leading dot both return the same Symbol."""
+    table = SymbolTable()
+    table.register("model", "MECHANISM", 5)
+    sym_with = table.lookup(".model")
+    sym_without = table.lookup("model")
+    assert sym_with is not None
+    assert sym_without is not None
+    assert sym_with.line == 5
+    assert sym_without.line == 5
+
+
+def test_build_symbol_table_model_name_normalized():
+    """Full integration: 'model create model_name = model' → table.has('.model') is True."""
+    schema = Schema.load()
+    stmts = parse("model create model_name = model")
+    table = build_symbol_table(stmts, schema)
+    assert table.has(".model"), "Model 'model' (no dot) must be findable as '.model'"
+    assert table.has("model"), "Model 'model' must still be findable as 'model'"

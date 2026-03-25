@@ -2088,7 +2088,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "function",
+            "user_function"
+          ]
+        }
+      ]
     },
     "part create equation transfer_function": {
       "args": {
@@ -10396,10 +10404,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -10585,10 +10598,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -10774,10 +10792,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -10925,10 +10948,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -11020,10 +11048,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -11115,10 +11148,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -11210,10 +11248,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -11311,10 +11354,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -11412,10 +11460,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -11507,10 +11560,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -11602,10 +11660,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -11697,10 +11760,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -12911,7 +12979,15 @@
           "min_prefix": 12
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "function",
+            "user_function"
+          ]
+        }
+      ]
     },
     "constraint create general_constraint": {
       "args": {
@@ -13971,10 +14047,15 @@
         {
           "group": 1,
           "members": [
-            "i_part_name",
-            "j_part_name",
             "i_marker_name",
-            "j_marker_name"
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
           ]
         }
       ]
@@ -15228,7 +15309,29 @@
           "min_prefix": 3
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "function",
+            "user_function"
+          ]
+        },
+        {
+          "group": 2,
+          "members": [
+            "i_marker_name",
+            "i_part_name"
+          ]
+        },
+        {
+          "group": 3,
+          "members": [
+            "j_marker_name",
+            "j_part_name"
+          ]
+        }
+      ]
     },
     "force create direct force_vector": {
       "args": {
@@ -18712,7 +18815,15 @@
           "min_prefix": 1
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "function",
+            "user_function"
+          ]
+        }
+      ]
     },
     "data_element create array x_state_array": {
       "args": {
@@ -26219,7 +26330,15 @@
           "min_prefix": 9
         }
       },
-      "exclusive_groups": []
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "function",
+            "user_function"
+          ]
+        }
+      ]
     },
     "executive_control modify sensor": {
       "args": {

@@ -7,7 +7,13 @@ Usage:
         --language-src "../hexagon/Adams/source/aview/src/cmd_language/language.src" \
         --arg-options "resources/adams_view_commands/argument_options.json" \
         --output "adams-cmd-lsp/adams_cmd_lsp/data/command_schema.json" \
-        --validate "resources/adams_view_commands/structured.json"
+        --validate "resources/adams_view_commands/structured.json" \
+        --patches "scripts/schema_patches.json"
+
+The --patches file (scripts/schema_patches.json) is committed to the repo and
+contains manual corrections that override incorrect or missing data from the
+Adams source files. It is applied as the final step before writing output, so
+re-running the generator always produces the correct result.
 
 IMPORTANT: Review command_schema.json before committing.
 Do not commit proprietary data from commands.exp or language.src.
@@ -558,6 +564,15 @@ Do not commit proprietary data from commands.exp or language.src.
         help="Path to structured.json for cross-validation",
     )
     parser.add_argument(
+        "--patches", metavar="PATH",
+        help=(
+            "Path to a JSON patches file (e.g. scripts/schema_patches.json). "
+            "Applied as the final step before writing output. "
+            "Each entry under 'commands' REPLACES the corresponding key(s) "
+            "in the generated command entry without touching other keys."
+        ),
+    )
+    parser.add_argument(
         "--quiet", action="store_true",
         help="Suppress validation warnings",
     )
@@ -630,7 +645,23 @@ Do not commit proprietary data from commands.exp or language.src.
         print(f"  Validation: {missing_cmds} missing commands, {missing_args} missing args.")
 
     # ------------------------------------------------------------------
-    # Step 7: Write output
+    # Step 7: Apply manual patches (schema_patches.json)
+    # ------------------------------------------------------------------
+    if args.patches:
+        print(f"Applying patches from {args.patches} ...")
+        patches = json.loads(Path(args.patches).read_text(encoding="utf-8"))
+        patched = 0
+        for cmd_key, overrides in patches.get("commands", {}).items():
+            if cmd_key in commands:
+                for field, value in overrides.items():
+                    commands[cmd_key][field] = value
+                patched += 1
+            else:
+                print(f"  WARNING: patch target '{cmd_key}' not found in generated schema")
+        print(f"  Applied patches to {patched} commands.")
+
+    # ------------------------------------------------------------------
+    # Step 8: Write output
     # ------------------------------------------------------------------
     schema = {
         "commands": commands,

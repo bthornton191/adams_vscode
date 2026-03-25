@@ -1,0 +1,128 @@
+{
+  "_comment": [
+    "Manual patches applied on top of the generated command_schema.json.",
+    "Use 'python scripts/generate_command_schema.py ... --patches scripts/schema_patches.json'",
+    "to regenerate with these fixes preserved.",
+    "",
+    "Each entry under 'commands' REPLACES the corresponding key in the generated command.",
+    "Only the listed keys are overwritten; all other generated data is preserved.",
+    "",
+    "Why these patches exist:",
+    "  - Joint i/j marker groups: language.src incorrectly groups i_marker_name,",
+    "    i_part_name, j_marker_name, j_part_name into a single 4-member exclusive group.",
+    "    The correct Adams semantics are TWO independent groups: {i_marker_name, i_part_name}",
+    "    (choose how to specify the I-body) and {j_marker_name, j_part_name} (J-body).",
+    "    Using both i_marker_name AND j_marker_name is the normal, valid usage.",
+    "  - Force/function groups: language.src omits the {function, user_function} exclusive",
+    "    group entirely for force and data element commands. Both are marked required=True in",
+    "    commands.exp, so without the group the linter fires E005 for the unused alternative.",
+    "    Similarly, force create direct single_component_force needs i/j marker vs part groups."
+  ],
+  "commands": {
+    "constraint create joint rigid": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint translational": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint revolute": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint cylindrical": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint universal": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint spherical": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint planar": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint rackpin": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint screw": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint convel": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint fixed": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint hooke": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint modify joint general": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "force create direct single_component_force": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]},
+        {"group": 2, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 3, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "part create equation differential_equation": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]}
+      ]
+    },
+    "constraint create motion_generator": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]}
+      ]
+    },
+    "data_element create variable": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]}
+      ]
+    },
+    "executive_control create sensor": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]}
+      ]
+    }
+  }
+}
