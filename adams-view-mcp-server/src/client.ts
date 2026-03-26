@@ -169,20 +169,25 @@ export async function evaluateExp(exp: string): Promise<AdamsValue | AdamsValue[
 
   socket.setNoDelay(true);
 
-  // Track whether we have sent "OK" so cleanup knows whether to send it.
-  // Adams' command server requires the client to always acknowledge the
-  // description line with "OK" before sending data. If we destroy the socket
-  // without sending OK (e.g. on timeout), Adams' server gets stuck waiting and
-  // subsequent connections fail. Sending OK before closing unblocks it.
+  // Track whether Adams sent us a description (round-trip 1 complete).
+  // We must send "OK" to acknowledge the description — but ONLY if Adams
+  // actually sent one. Sending a spurious "OK" when Adams sent nothing
+  // (e.g. invalid expression → silence → timeout) corrupts the command
+  // server state and breaks subsequent connections.
+  let descriptionReceived = false;
   let sentOK = false;
 
-  /** Gracefully close the socket, sending OK first if we haven't yet. */
+  /**
+   * Gracefully close the socket.
+   * Sends "OK" first only if Adams sent us a description and we haven't
+   * acknowledged it yet — completing the protocol so Adams can reset.
+   * Uses FIN (socket.end) rather than RST (socket.destroy) so Adams gets
+   * a clean close signal.
+   */
   function closeSocket() {
-    if (!sentOK) {
+    if (descriptionReceived && !sentOK) {
       try { socket.write("OK"); sentOK = true; } catch { /* ignore */ }
     }
-    // Graceful half-close (FIN) rather than hard reset (RST).
-    // Adams' command server handles FIN cleanly and resets for the next client.
     socket.end();
     // Safety net: force-destroy after 2 s if Adams doesn't close its end.
     const t = setTimeout(() => { try { socket.destroy(); } catch { /* ignore */ } }, 2000);
@@ -226,6 +231,8 @@ export async function evaluateExp(exp: string): Promise<AdamsValue | AdamsValue[
       `The expression may be invalid — check the Adams View message window for details.`
     );
 
+    // Adams sent a description — we are now obligated to send "OK"
+    descriptionReceived = true;
     const trimmedDesc = desc.trim();
 
     // Per Adams docs: for an invalid expression Adams sends "SERVER_ERROR" as
@@ -306,12 +313,19 @@ export async function evaluateExp(exp: string): Promise<AdamsValue | AdamsValue[
 /**
  * Check whether Adams View is running and its session is ready.
  * Returns true if the TCP port is reachable and `db_exists('.mdi')` returns 1.
+ * Retries once after a short delay to handle transient connection resets.
  */
 export async function checkConnection(): Promise<boolean> {
-  try {
-    const result = await evaluateExp("db_exists('.mdi')");
-    return result === 1 || result === true;
-  } catch {
-    return false;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await evaluateExp("db_exists('.mdi')");
+      if (result === 1 || result === true) return true;
+    } catch {
+      // Not ready yet
+    }
+    if (attempt === 0) {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
   }
+  return false;
 }

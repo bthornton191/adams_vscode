@@ -212,16 +212,37 @@ export async function setupAdams(): Promise<void> {
 
   // The port may be bound by a stuck/broken Adams session that failed
   // checkConnection() above. If so, kill it before launching a fresh one.
+  // Only kill if Adams (aview.exe) is actually the process holding the port —
+  // TIME_WAIT sockets from a recently closed connection also show as bound but
+  // don't need killing (the OS will release them shortly).
   const port = getPort();
   const portBound = await isPortBound(port);
   if (portBound) {
-    console.log(
-      `[e2e] Port ${port} is in use but Adams is not responding — ` +
-      `killing existing Adams process before launching fresh.`
-    );
-    killAdamsInDir(adamsWorkDir);
-    // Give the OS a moment to release the port
-    await new Promise((r) => setTimeout(r, 2000));
+    const adamsHoldsPort = process.platform === "win32"
+      ? (() => {
+          try {
+            const out = execSync(
+              `for /f "tokens=5" %a in ('netstat -ano ^| findstr :${port}') do @tasklist /fi "PID eq %a" /fo csv /nh 2>nul | findstr /i aview`,
+              { encoding: "utf8", shell: "cmd.exe" }
+            );
+            return out.trim().length > 0;
+          } catch { return false; }
+        })()
+      : false;
+
+    if (adamsHoldsPort) {
+      console.log(
+        `[e2e] Adams is holding port ${port} but not responding — ` +
+        `killing before launching fresh.`
+      );
+      killAdamsInDir(adamsWorkDir);
+      await new Promise((r) => setTimeout(r, 2000));
+    } else {
+      console.log(
+        `[e2e] Port ${port} appears busy but Adams is not the owner ` +
+        `(may be TIME_WAIT) — proceeding with launch.`
+      );
+    }
   }
 
   const mdi = await findMdi();
