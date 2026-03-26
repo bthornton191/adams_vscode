@@ -23,3 +23,10 @@ run-tests.js
 test_output.txt
 adams-cmd-lsp/**
 bundled/libs/**/__pycache__/**
+# MCP server: include only the bundled dist output
+adams-view-mcp-server/src/**
+adams-view-mcp-server/tests/**
+adams-view-mcp-server/node_modules/**
+adams-view-mcp-server/tsconfig.json
+!adams-view-mcp-server/dist/**
+!adams-view-mcp-server/package.json

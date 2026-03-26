@@ -1,0 +1,176 @@
+/**
+ * tools/cmd.ts — Mutating tools that send commands to Adams View:
+ *   adams_run_cmd, adams_run_python, adams_load_file
+ */
+
+import * as fs from "fs/promises";
+import * as os from "os";
+import * as path from "path";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { z } from "zod";
+import { executeCmd } from "../client.js";
+
+function errorResult(message: string) {
+  return {
+    content: [{ type: "text" as const, text: message }],
+    isError: true,
+  };
+}
+
+function successResult(message: string) {
+  return {
+    content: [{ type: "text" as const, text: message }],
+  };
+}
+
+export function registerCmdTools(server: McpServer): void {
+  // ── adams_run_cmd ────────────────────────────────────────────────────────
+  server.registerTool(
+    "adams_run_cmd",
+    {
+      title: "Run Adams View Command",
+      description: `Sends arbitrary Adams CMD text to Adams View and returns success or error.
+
+Use this to run any Adams View command. For multi-line scripts, use
+adams_run_python instead. For loading .cmd or .py files from disk, use
+adams_load_file.
+
+Args:
+  - cmd (string): Adams View command text to execute, e.g.
+    'model create model_name=my_model'
+
+Returns:
+  Success message string, or an error with the raw Adams response.`,
+      inputSchema: z
+        .object({
+          cmd: z.string().min(1).describe("Adams View command text to execute"),
+        })
+        .strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ cmd }) => {
+      try {
+        await executeCmd(cmd);
+        return successResult(`Command executed successfully.`);
+      } catch (e: unknown) {
+        return errorResult(`Error running command: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  );
+
+  // ── adams_run_python ─────────────────────────────────────────────────────
+  server.registerTool(
+    "adams_run_python",
+    {
+      title: "Run Python in Adams View",
+      description: `Executes a Python snippet inside Adams View.
+
+Writes the code to a temporary .py file, sends 'file python read' to Adams
+View, then deletes the temp file.
+
+Note: Python print() output is NOT returned directly — it goes to the Adams
+View session log. Use adams_read_session_log after execution to retrieve it.
+
+Args:
+  - code (string): Python code to execute inside Adams View
+
+Returns:
+  Success message, or an error. Use adams_read_session_log to get print() output.`,
+      inputSchema: z
+        .object({
+          code: z.string().min(1).describe("Python code to execute inside Adams View"),
+        })
+        .strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ code }) => {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "adams-mcp-"));
+      const tmpFile = path.join(tmpDir, "script.py");
+      try {
+        await fs.writeFile(tmpFile, code, "utf8");
+        // Adams View on Windows uses backslashes; normalize to forward slashes
+        // for the command argument since Adams View accepts both.
+        const filePath = tmpFile.replace(/\\/g, "/");
+        await executeCmd(`file python read file_name="${filePath}"`);
+        return successResult(
+          `Python script executed successfully. Use adams_read_session_log to retrieve print() output.`
+        );
+      } catch (e: unknown) {
+        return errorResult(`Error running Python: ${e instanceof Error ? e.message : String(e)}`);
+      } finally {
+        await fs.unlink(tmpFile).catch(() => undefined);
+        await fs.rmdir(tmpDir).catch(() => undefined);
+      }
+    }
+  );
+
+  // ── adams_load_file ──────────────────────────────────────────────────────
+  server.registerTool(
+    "adams_load_file",
+    {
+      title: "Load File into Adams View",
+      description: `Loads a .cmd or .py file from disk into Adams View.
+
+File type is inferred from the extension:
+  - .cmd → file command read file_name="<path>"
+  - .py  → file python read file_name="<path>"
+
+Args:
+  - file_path (string): Absolute path to the .cmd or .py file to load
+
+Returns:
+  Success message, or an error describing what went wrong.`,
+      inputSchema: z
+        .object({
+          file_path: z
+            .string()
+            .min(1)
+            .describe("Absolute path to the .cmd or .py file to load"),
+        })
+        .strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ file_path }) => {
+      try {
+        await fs.access(file_path);
+      } catch {
+        return errorResult(`File not found: ${file_path}`);
+      }
+
+      const ext = path.extname(file_path).toLowerCase();
+      if (ext !== ".cmd" && ext !== ".py") {
+        return errorResult(
+          `Unsupported file extension "${ext}". Only .cmd and .py files are supported.`
+        );
+      }
+
+      const normalised = file_path.replace(/\\/g, "/");
+      const adamsCmd =
+        ext === ".cmd"
+          ? `file command read file_name="${normalised}"`
+          : `file python read file_name="${normalised}"`;
+
+      try {
+        await executeCmd(adamsCmd);
+        return successResult(`File loaded successfully: ${file_path}`);
+      } catch (e: unknown) {
+        return errorResult(`Error loading file: ${e instanceof Error ? e.message : String(e)}`);
+      }
+    }
+  );
+}
