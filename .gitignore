@@ -24,3 +24,6 @@ test_output.txt
 test/.vscode/settings.json
 .vscode/settings.json
 /bundled/libs/
+**/adamsctl_*.bat
+/adams-view-mcp-server/dist/
+/adams-view-mcp-server/node_modules/
