@@ -755,5 +755,5 @@ No structural changes to the MCP server itself are needed.
 - [x] Verified `dist/index.js` contains no `require("vscode")` references
 - [x] Updated `.vscodeignore` to bundle `dist/`
 
-### Phase 8 — Evaluations (separate task)
-- [ ] Write evaluation XML per `mcp-builder` evaluation guide
+### Phase 8 — Evaluations ✅
+- [x] Write evaluation XML per `mcp-builder` evaluation guide (`evaluation.xml`)

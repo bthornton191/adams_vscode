@@ -3,9 +3,13 @@
  * expressions or check connectivity.
  */
 
+import * as crypto from "crypto";
+import * as fs from "fs/promises";
+import * as os from "os";
+import * as path from "path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { checkConnection, evaluateExp } from "../client.js";
+import { checkConnection, evaluateExp, executeCmd } from "../client.js";
 import { CHARACTER_LIMIT } from "../constants.js";
 
 function truncate(text: string): string {
@@ -104,8 +108,7 @@ Returns:
       title: "Get Adams View Model Names",
       description: `Returns the names of all models currently loaded in the Adams View session.
 
-Evaluates UNIQUE_NAME_IN_HIERARCHY('.model') which returns a comma-separated
-list of model names.
+Uses the Adams Python API (Adams.Models) to retrieve model names.
 
 Returns:
   { "model_names": string[] }
@@ -120,22 +123,40 @@ Returns an empty array when no models are loaded.`,
       },
     },
     async () => {
+      const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "adams-mcp-"));
+      const scriptFile = path.join(tmpDir, "script.py");
+      const outputFile = path.join(tmpDir, `out-${crypto.randomUUID()}.txt`);
+      const outputFileAdams = outputFile.replace(/\\/g, "/");
+
+      const script = [
+        `import Adams, sys as _mcp_sys, io as _mcp_io, json as _mcp_json`,
+        `_mcp_buf = _mcp_io.StringIO()`,
+        `_mcp_old = _mcp_sys.stdout`,
+        `_mcp_sys.stdout = _mcp_buf`,
+        `try:`,
+        `    names = [m.full_name for m in Adams.Models.values()]`,
+        `    print(_mcp_json.dumps(names))`,
+        `finally:`,
+        `    _mcp_sys.stdout = _mcp_old`,
+        `    with open(${JSON.stringify(outputFileAdams)}, "w", encoding="utf-8") as _f:`,
+        `        _f.write(_mcp_buf.getvalue())`,
+      ].join("\n");
+
       try {
-        const raw = await evaluateExp("UNIQUE_NAME_IN_HIERARCHY('.model')");
-        // raw is a string (single model) or an array of strings (multiple models)
-        let names: string[];
-        if (Array.isArray(raw)) {
-          names = raw.map(String);
-        } else {
-          const s = String(raw).trim();
-          names = s === "" ? [] : [s];
-        }
-        const result = { model_names: names };
+        await fs.writeFile(scriptFile, script, "utf8");
+        await executeCmd(`file python read file_name="${scriptFile.replace(/\\/g, "/")}"`);
+
+        const raw = (await fs.readFile(outputFile, "utf8")).trim();
+        const names: string[] = raw ? JSON.parse(raw) : [];
         return {
-          content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
+          content: [{ type: "text" as const, text: JSON.stringify({ model_names: names }, null, 2) }],
         };
       } catch (e: unknown) {
         return errorResult(`Error getting model names: ${e instanceof Error ? e.message : String(e)}`);
+      } finally {
+        await fs.unlink(scriptFile).catch(() => undefined);
+        await fs.unlink(outputFile).catch(() => undefined);
+        await fs.rmdir(tmpDir).catch(() => undefined);
       }
     }
   );

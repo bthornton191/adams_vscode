@@ -253,6 +253,10 @@ Errors:
         ? ["ru-s", acfFilename]
         : ["-c", "ru-s", acfFilename, "exit"];
 
+      // On Windows, .bat files must be run via cmd.exe to avoid EINVAL/hang
+      const spawnCmd = isWindows ? "cmd.exe" : mdiPath;
+      const spawnArgs = isWindows ? ["/c", mdiPath, ...args] : args;
+
       // Validate executable exists
       try {
         await fs.access(mdiPath);
@@ -265,10 +269,11 @@ Errors:
       // Spawn detached solver
       let pid: number | undefined;
       try {
-        const solver = spawn(mdiPath, args, {
+        const solver = spawn(spawnCmd, spawnArgs, {
           cwd: workingDir,
           detached: true,
           stdio: "ignore",
+          windowsHide: true,
         });
         solver.unref();
         pid = solver.pid;

@@ -3,6 +3,7 @@
  *   adams_run_cmd, adams_run_python, adams_load_file
  */
 
+import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
@@ -68,19 +69,18 @@ Returns:
     "adams_run_python",
     {
       title: "Run Python in Adams View",
-      description: `Executes a Python snippet inside Adams View.
+      description: `Executes a Python snippet inside Adams View and returns any print() output.
 
-Writes the code to a temporary .py file, sends 'file python read' to Adams
-View, then deletes the temp file.
-
-Note: Python print() output is NOT returned directly — it goes to the Adams
-View session log. Use adams_read_session_log after execution to retrieve it.
+Wraps the user code in a sys.stdout capture so that print() output is written
+to a temporary file and returned directly in the tool result. Adams-level
+errors (e.g. exceptions raised inside Adams View) are also captured and
+returned as errors.
 
 Args:
   - code (string): Python code to execute inside Adams View
 
 Returns:
-  Success message, or an error. Use adams_read_session_log to get print() output.`,
+  Any text written to stdout (print() calls), or an error message on failure.`,
       inputSchema: z
         .object({
           code: z.string().min(1).describe("Python code to execute inside Adams View"),
@@ -95,20 +95,53 @@ Returns:
     },
     async ({ code }) => {
       const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "adams-mcp-"));
-      const tmpFile = path.join(tmpDir, "script.py");
+      const scriptFile = path.join(tmpDir, "script.py");
+      const outputFile = path.join(tmpDir, `out-${crypto.randomUUID()}.txt`);
+      // Adams View accepts forward slashes on Windows
+      const outputFileAdams = outputFile.replace(/\\/g, "/");
+
+      // Wrap user code: redirect sys.stdout to a temp file so print() output
+      // is captured and returned directly in the tool result.
+      const wrapped = [
+        `import sys as _mcp_sys, io as _mcp_io`,
+        `_mcp_buf = _mcp_io.StringIO()`,
+        `_mcp_old_stdout = _mcp_sys.stdout`,
+        `_mcp_sys.stdout = _mcp_buf`,
+        `try:`,
+        // Indent user code by 4 spaces so it runs inside the try block
+        ...code.split("\n").map((line) => `    ${line}`),
+        `finally:`,
+        `    _mcp_sys.stdout = _mcp_old_stdout`,
+        `    with open(${JSON.stringify(outputFileAdams)}, "w", encoding="utf-8") as _mcp_f:`,
+        `        _mcp_f.write(_mcp_buf.getvalue())`,
+      ].join("\n");
+
       try {
-        await fs.writeFile(tmpFile, code, "utf8");
-        // Adams View on Windows uses backslashes; normalize to forward slashes
-        // for the command argument since Adams View accepts both.
-        const filePath = tmpFile.replace(/\\/g, "/");
-        await executeCmd(`file python read file_name="${filePath}"`);
-        return successResult(
-          `Python script executed successfully. Use adams_read_session_log to retrieve print() output.`
-        );
+        await fs.writeFile(scriptFile, wrapped, "utf8");
+        const scriptPath = scriptFile.replace(/\\/g, "/");
+        await executeCmd(`file python read file_name="${scriptPath}"`);
+
+        // Read captured stdout
+        let output = "";
+        try {
+          output = await fs.readFile(outputFile, "utf8");
+        } catch {
+          // Output file not written — script may have errored before the finally block
+        }
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: output.length > 0 ? output : "(no output)",
+            },
+          ],
+        };
       } catch (e: unknown) {
         return errorResult(`Error running Python: ${e instanceof Error ? e.message : String(e)}`);
       } finally {
-        await fs.unlink(tmpFile).catch(() => undefined);
+        await fs.unlink(scriptFile).catch(() => undefined);
+        await fs.unlink(outputFile).catch(() => undefined);
         await fs.rmdir(tmpDir).catch(() => undefined);
       }
     }

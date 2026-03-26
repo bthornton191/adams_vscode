@@ -71,4 +71,64 @@ be lost.`,
       }
     }
   );
+
+  // ── adams_export_model_cmd ───────────────────────────────────────────────
+  server.registerTool(
+    "adams_export_model_cmd",
+    {
+      title: "Export Adams View Model as CMD File",
+      description: `Exports the named model to a .cmd file on disk.
+
+Uses 'file command write entity_name=.<model_name> file_name=<file_name>' to
+write the full model definition as an Adams CMD script. The resulting file can
+be loaded back into Adams View with adams_load_file or shared with others.
+
+Args:
+  - model_name (string): Model name, e.g. 'my_model' or '.my_model'
+  - file_name (string): Absolute path for the output .cmd file,
+    e.g. 'C:/models/my_model.cmd'
+
+Returns:
+  Success message with the file path written, or an error.`,
+      inputSchema: z
+        .object({
+          model_name: z
+            .string()
+            .min(1)
+            .describe("Model name, e.g. 'my_model' or '.my_model'"),
+          file_name: z
+            .string()
+            .min(1)
+            .describe("Absolute path for the output .cmd file, e.g. 'C:/models/my_model.cmd'"),
+        })
+        .strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: false,
+      },
+    },
+    async ({ model_name, file_name }) => {
+      const dotName = normaliseModelName(model_name);
+      const filePath = file_name.replace(/\\/g, "/");
+      try {
+        await executeCmd(
+          `file command write entity_name=${dotName} file_name="${filePath}"`
+        );
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: `Model ${dotName} exported to: ${filePath}`,
+            },
+          ],
+        };
+      } catch (e: unknown) {
+        return errorResult(
+          `Error exporting model ${dotName}: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+    }
+  );
 }

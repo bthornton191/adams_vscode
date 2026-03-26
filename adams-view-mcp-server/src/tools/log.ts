@@ -1,17 +1,16 @@
 /**
  * tools/log.ts — Session log tool: adams_read_session_log
  *
- * Uses the undocumented Adams View function gui_utl_log_fil_fil() to extract
- * and optionally filter the session log to a temp file, then reads it.
+ * Finds the Adams View session log by querying the working directory,
+ * then reads the most recently modified .log file from disk.
+ * Supports optional filtering by message type and string content.
  */
 
-import * as crypto from "crypto";
 import * as fs from "fs/promises";
-import * as os from "os";
 import * as path from "path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { evaluateExp, executeCmd } from "../client.js";
+import { evaluateExp } from "../client.js";
 import { CHARACTER_LIMIT } from "../constants.js";
 
 function errorResult(message: string) {
@@ -22,42 +21,101 @@ function errorResult(message: string) {
 }
 
 /**
- * Compute the flags bitmask for gui_utl_log_fil_fil from boolean inputs.
- *
- * Bit layout:
- *   1  = enable type-level filtering
- *   2  = show infos
- *   4  = show warnings
- *   8  = show errors
- *   16 = show fatals
- *   32 = suppress duplicates
- *   64 = enable string filtering
+ * Adams log lines begin with a type prefix.
+ * Examples:
+ *   "-------- Information: ..."
+ *   "-------- Warning: ..."
+ *   "-------- Error: ..."
+ *   "-------- Fatal Error: ..."
+ * Lines without a recognised prefix belong to the preceding message.
  */
-function buildFlags(opts: {
-  filter_by_type: boolean;
-  show_infos: boolean;
-  show_warnings: boolean;
-  show_errors: boolean;
-  show_fatals: boolean;
-  suppress_duplicates: boolean;
-  filter_string: string;
-}): number {
-  let flags = 0;
-  if (opts.filter_by_type) flags |= 1;
-  if (opts.show_infos) flags |= 2;
-  if (opts.show_warnings) flags |= 4;
-  if (opts.show_errors) flags |= 8;
-  if (opts.show_fatals) flags |= 16;
-  if (opts.suppress_duplicates) flags |= 32;
-  if (opts.filter_string !== "") flags |= 64;
-  return flags;
+function getLineType(line: string): "info" | "warning" | "error" | "fatal" | null {
+  const trimmed = line.trimStart();
+  if (/^-+\s*Information:/i.test(trimmed)) return "info";
+  if (/^-+\s*Warning:/i.test(trimmed)) return "warning";
+  if (/^-+\s*Fatal Error:/i.test(trimmed)) return "fatal";
+  if (/^-+\s*Error:/i.test(trimmed)) return "error";
+  return null;
 }
 
-const LOG_STATUS_MESSAGES: Record<number, string> = {
-  1: "No log file is open in the current Adams View session.",
-  2: "Could not write temporary log file. Check file system permissions.",
-  3: "A log file line exceeds the internal Adams length limit.",
-};
+/**
+ * Apply optional filtering to the raw log text.
+ * Operates line-by-line; continuation lines inherit the previous message type.
+ */
+function filterLog(
+  raw: string,
+  opts: {
+    filter_by_type: boolean;
+    show_infos: boolean;
+    show_warnings: boolean;
+    show_errors: boolean;
+    show_fatals: boolean;
+    suppress_duplicates: boolean;
+    filter_string: string;
+    tail_lines: number;
+  }
+): string {
+  const lines = raw.split(/\r?\n/);
+  const seen = new Set<string>();
+  const out: string[] = [];
+  let currentType: ReturnType<typeof getLineType> = null;
+
+  for (const line of lines) {
+    const lineType = getLineType(line);
+    if (lineType !== null) currentType = lineType;
+
+    // Type filtering
+    if (opts.filter_by_type) {
+      if (currentType === "info" && !opts.show_infos) continue;
+      if (currentType === "warning" && !opts.show_warnings) continue;
+      if (currentType === "error" && !opts.show_errors) continue;
+      if (currentType === "fatal" && !opts.show_fatals) continue;
+    }
+
+    // String filtering
+    if (opts.filter_string !== "" && !line.includes(opts.filter_string)) continue;
+
+    // Duplicate suppression
+    if (opts.suppress_duplicates) {
+      if (seen.has(line)) continue;
+      seen.add(line);
+    }
+
+    out.push(line);
+  }
+
+  if (opts.tail_lines > 0) {
+    return out.slice(-opts.tail_lines).join("\n");
+  }
+  return out.join("\n");
+}
+
+/**
+ * Find the most recently modified .log file in the given directory.
+ * Returns null if none found.
+ */
+async function findLatestLogFile(dir: string): Promise<string | null> {
+  let entries;
+  try {
+    entries = await fs.readdir(dir, { withFileTypes: true });
+  } catch {
+    return null;
+  }
+
+  const logFiles = entries
+    .filter((e) => e.isFile() && e.name.toLowerCase().endsWith(".log"))
+    .map((e) => path.join(dir, e.name));
+
+  if (logFiles.length === 0) return null;
+  if (logFiles.length === 1) return logFiles[0]!;
+
+  // Return the most recently modified
+  const stats = await Promise.all(
+    logFiles.map(async (f) => ({ file: f, mtime: (await fs.stat(f)).mtimeMs }))
+  );
+  stats.sort((a, b) => b.mtime - a.mtime);
+  return stats[0]!.file;
+}
 
 export function registerLogTools(server: McpServer): void {
   // ── adams_read_session_log ───────────────────────────────────────────────
@@ -89,6 +147,8 @@ Args:
   - suppress_duplicates (boolean, default false): Remove duplicate log lines.
   - filter_string (string, default ""): Only show lines containing this string.
     Empty string means no string filter.
+  - tail_lines (integer, default 0): If greater than 0, return only the last N lines
+    of the log (applied after all other filters). 0 means return all lines.
 
 Returns:
   The log file content as a string (truncated to ${CHARACTER_LIMIT} characters if large).`,
@@ -126,6 +186,14 @@ Returns:
             .describe(
               "Only show lines containing this string. Empty string means no string filter."
             ),
+          tail_lines: z
+            .number()
+            .int()
+            .min(0)
+            .default(0)
+            .describe(
+              "If greater than 0, return only the last N lines (applied after all other filters). 0 means return all lines."
+            ),
         })
         .strict(),
       annotations: {
@@ -136,47 +204,52 @@ Returns:
       },
     },
     async (params) => {
-      const tmpFile = path.join(os.tmpdir(), `adams-mcp-log-${crypto.randomUUID()}.txt`);
-      // Normalise path for Adams View (forward slashes, escape any backslashes)
-      const tmpFileAdams = tmpFile.replace(/\\/g, "/");
-
+      // Step 1: Get Adams View's current working directory
+      let workingDir: string;
       try {
-        const flags = buildFlags(params);
-        const escapedFilter = params.filter_string.replace(/"/g, '\\"');
-
-        // Store the return code in a temporary Adams variable
-        const varName = ".mcp_log_stat";
-        await executeCmd(
-          `variable set variable_name=${varName} &\n` +
-          `  integer_value=(eval(gui_utl_log_fil_fil("${tmpFileAdams}", "${escapedFilter}", ${flags})))`
-        );
-
-        const statusRaw = await evaluateExp(varName);
-        const status = typeof statusRaw === "number" ? statusRaw : parseInt(String(statusRaw), 10);
-
-        // Clean up the Adams variable (best effort)
-        await executeCmd(`variable delete variable_name=${varName}`).catch(() => undefined);
-
-        if (status !== 0) {
-          const msg = LOG_STATUS_MESSAGES[status] ?? `gui_utl_log_fil_fil returned status ${status}.`;
-          return errorResult(msg);
-        }
-
-        const content = await fs.readFile(tmpFile, "utf8");
-        const trimmed = content.length > CHARACTER_LIMIT
-          ? content.slice(0, CHARACTER_LIMIT) + `\n[Log truncated at ${CHARACTER_LIMIT} characters]`
-          : content;
-
-        return {
-          content: [{ type: "text" as const, text: trimmed }],
-        };
+        const raw = await evaluateExp("getcwd()");
+        workingDir = String(raw).trim().replace(/\\/g, "/");
       } catch (e: unknown) {
         return errorResult(
-          `Error reading session log: ${e instanceof Error ? e.message : String(e)}`
+          `Error reading session log: Could not query Adams View working directory.\n` +
+          `${e instanceof Error ? e.message : String(e)}`
         );
-      } finally {
-        await fs.unlink(tmpFile).catch(() => undefined);
       }
+
+      // Step 2: Find the most recently modified .log file in that directory
+      const logFile = await findLatestLogFile(workingDir);
+      if (!logFile) {
+        return errorResult(
+          `No .log file found in Adams View working directory: ${workingDir}\n` +
+          `Adams View writes session logs to its working directory. ` +
+          `Verify the working directory with adams_get_working_directory.`
+        );
+      }
+
+      // Step 3: Read and filter the log
+      let raw: string;
+      try {
+        raw = await fs.readFile(logFile, "utf8");
+      } catch (e: unknown) {
+        return errorResult(
+          `Error reading log file ${logFile}: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      const filtered = filterLog(raw, params);
+      const trimmed =
+        filtered.length > CHARACTER_LIMIT
+          ? filtered.slice(0, CHARACTER_LIMIT) + `\n[Log truncated at ${CHARACTER_LIMIT} characters]`
+          : filtered;
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: `Log file: ${logFile}\n\n${trimmed}`,
+          },
+        ],
+      };
     }
   );
 }
