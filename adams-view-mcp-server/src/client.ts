@@ -1,15 +1,19 @@
 /**
  * client.ts — Promise-based TCP client for Adams View command server.
  *
- * Re-implements the wire protocol from src/aview.ts.js with:
- *   - No vscode dependency
- *   - Proper response buffering
- *   - 10-second timeout on all operations
- *   - Promise-based API (no callbacks)
+ * Uses the "cmd" protocol for commands and Python-based evaluation for
+ * expressions. The raw TCP "query" protocol is avoided because Adams
+ * versions before 2025.2 hang indefinitely for invalid expressions.
+ * Instead, evaluateExp() runs Adams.evaluate_exp() via a Python script
+ * and reads the result from a temp file.
  */
 
+import * as crypto from "crypto";
+import * as fs from "fs/promises";
 import * as net from "net";
-import { DEFAULT_PORT, TIMEOUT_MS, QUERY_DESC_TIMEOUT_MS } from "./constants.js";
+import * as os from "os";
+import * as path from "path";
+import { DEFAULT_PORT, TIMEOUT_MS } from "./constants.js";
 
 export type AdamsValue = string | number | boolean;
 
@@ -155,177 +159,117 @@ export async function executeCmd(cmd: string): Promise<void> {
 
 /**
  * Evaluate an Adams View expression and return its typed value.
- * Uses the two-round-trip query protocol.
+ *
+ * Runs Adams.evaluate_exp() via a Python script to avoid the known bug in
+ * Adams versions before 2025.2 where the TCP "query" protocol hangs
+ * indefinitely for invalid expressions.
  */
 export async function evaluateExp(exp: string): Promise<AdamsValue | AdamsValue[]> {
-  const port = getPort();
-  const socket = await withTimeout(
-    connect(port),
-    TIMEOUT_MS,
-    connectionErrorMessage(port)
-  ).catch((e: Error) => {
-    throw new Error(connectionErrorMessage(port) + (e.message ? `\n(${e.message})` : ""));
-  });
+  const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "adams-mcp-eval-"));
+  const scriptFile = path.join(tmpDir, "eval.py");
+  const outputFile = path.join(tmpDir, `out-${crypto.randomUUID()}.txt`);
+  const outputFileAdams = outputFile.replace(/\\/g, "/");
 
-  socket.setNoDelay(true);
+  // Safely embed the expression as a JSON-encoded Python string literal.
+  const expJson = JSON.stringify(exp);
 
-  // Track whether Adams sent us a description (round-trip 1 complete).
-  // We must send "OK" to acknowledge the description — but ONLY if Adams
-  // actually sent one. Sending a spurious "OK" when Adams sent nothing
-  // (e.g. invalid expression → silence → timeout) corrupts the command
-  // server state and breaks subsequent connections.
-  let descriptionReceived = false;
-  let sentOK = false;
-
-  /**
-   * Gracefully close the socket.
-   * Sends "OK" first only if Adams sent us a description and we haven't
-   * acknowledged it yet — completing the protocol so Adams can reset.
-   * Uses FIN (socket.end) rather than RST (socket.destroy) so Adams gets
-   * a clean close signal.
-   */
-  function closeSocket() {
-    if (descriptionReceived && !sentOK) {
-      try { socket.write("OK"); sentOK = true; } catch { /* ignore */ }
-    }
-    socket.end();
-    // Safety net: force-destroy after 2 s if Adams doesn't close its end.
-    const t = setTimeout(() => { try { socket.destroy(); } catch { /* ignore */ } }, 2000);
-    if (t.unref) t.unref();
-  }
+  const script = [
+    `import Adams, sys as _mcp_sys, io as _mcp_io, json as _mcp_json`,
+    `_mcp_buf = _mcp_io.StringIO()`,
+    `_mcp_old = _mcp_sys.stdout`,
+    `_mcp_sys.stdout = _mcp_buf`,
+    `try:`,
+    `    _mcp_result = Adams.evaluate_exp(${expJson})`,
+    `    print(_mcp_json.dumps({"v": _mcp_result}))`,
+    `except Exception as _mcp_e:`,
+    `    print(_mcp_json.dumps({"e": str(_mcp_e)}))`,
+    `finally:`,
+    `    _mcp_sys.stdout = _mcp_old`,
+    `    with open(${JSON.stringify(outputFileAdams)}, "w", encoding="utf-8") as _mcp_f:`,
+    `        _mcp_f.write(_mcp_buf.getvalue())`,
+  ].join("\n");
 
   try {
-    // Round-trip 1: send query, receive description line.
-    // Adams sends the description in a single packet (no trailing newline in
-    // the protocol), so we resolve as soon as any data arrives.
-    socket.write(`query ${exp}`);
-
-    const desc = await withTimeout(
-      new Promise<string>((resolve, reject) => {
-        let buf = "";
-        function onData(chunk: Buffer) {
-          buf += chunk.toString();
-          if (buf.trim().length > 0) {
-            socket.removeListener("data", onData);
-            socket.removeListener("end", onEnd);
-            resolve(buf);
-          }
-        }
-        function onEnd() {
-          socket.removeListener("data", onData);
-          if (buf.trim().length > 0) {
-            resolve(buf);
-          } else {
-            reject(new Error(
-              `Adams View closed the connection without responding to query "${exp}". ` +
-              `The expression may be invalid or Adams may not be ready.`
-            ));
-          }
-        }
-        socket.on("data", onData);
-        socket.once("end", onEnd);
-        socket.once("error", reject);
-      }),
-      QUERY_DESC_TIMEOUT_MS,
-      `Adams View did not respond to query "${exp}". ` +
-      `The expression may be invalid — check the Adams View message window for details.`
+    await fs.writeFile(scriptFile, script, "utf8");
+    await executeCmd(
+      `file python read file_name="${scriptFile.replace(/\\/g, "/")}"`
     );
 
-    // Adams sent a description — we are now obligated to send "OK"
-    descriptionReceived = true;
-    const trimmedDesc = desc.trim();
-
-    // Per Adams docs: for an invalid expression Adams sends "SERVER_ERROR" as
-    // the description. The client MUST still send "OK", then Adams sends a
-    // generic error string as the data payload. We read that string and throw.
-    if (trimmedDesc.startsWith("SERVER_ERROR")) {
-      socket.write("OK");
-      sentOK = true;
-      const errData = await withTimeout(
-        new Promise<string>((resolve, reject) => {
-          let buf = "";
-          function onData(chunk: Buffer) {
-            buf += chunk.toString();
-            if (buf.trim().length > 0) {
-              socket.removeListener("data", onData);
-              resolve(buf);
-            }
-          }
-          socket.on("data", onData);
-          socket.once("end", () => resolve(buf));
-          socket.once("error", reject);
-        }),
-        TIMEOUT_MS,
-        `Timed out waiting for Adams View error details for "${exp}".`
-      );
-      closeSocket();
+    let raw: string;
+    try {
+      raw = (await fs.readFile(outputFile, "utf8")).trim();
+    } catch {
       throw new Error(
-        `Adams View could not evaluate "${exp}": ${errData.trim() || "unknown error"}. ` +
+        `Adams View did not produce output for expression "${exp}". ` +
         `Check the Adams View message window for details.`
       );
     }
 
-    // If Adams returned a command-level error (e.g. "cmd: 1") instead of
-    // entering the query protocol, surface it immediately.
-    if (trimmedDesc.startsWith("cmd:")) {
-      closeSocket();
-      const code = trimmedDesc.split(/[ :]+/)[1] ?? "?";
+    if (!raw) {
       throw new Error(
-        `Adams View rejected the expression "${exp}" (Adams error code ${code}). ` +
+        `Adams View returned empty output for expression "${exp}". ` +
         `Check the Adams View message window for details.`
       );
     }
 
-    const [type, count] = parseDescription(desc);
+    const parsed = JSON.parse(raw);
 
-    // Round-trip 2: send OK, receive data line.
-    // Use a data-handler (not receiveAll) so we don't hang if Adams sends the
-    // data but doesn't close the socket.
-    socket.write("OK");
-    sentOK = true;
+    if (parsed.e !== undefined) {
+      throw new Error(
+        `Adams View could not evaluate "${exp}": ${parsed.e}. ` +
+        `Check the Adams View message window for details.`
+      );
+    }
 
-    const dataLine = await withTimeout(
-      new Promise<string>((resolve, reject) => {
-        let buf = "";
-        function onData(chunk: Buffer) {
-          buf += chunk.toString();
-          if (buf.trim().length > 0) {
-            socket.removeListener("data", onData);
-            resolve(buf);
-          }
-        }
-        socket.on("data", onData);
-        socket.once("end", () => resolve(buf));
-        socket.once("error", reject);
-      }),
-      TIMEOUT_MS,
-      `Timed out waiting for Adams View query data for "${exp}".`
-    );
-    socket.destroy();
-
-    return parseData(dataLine, type, count);
+    return coerceValue(parsed.v);
   } catch (e) {
-    closeSocket();
+    if (e instanceof SyntaxError) {
+      throw new Error(
+        `Adams View returned invalid output for expression "${exp}". ` +
+        `Check the Adams View message window for details.`
+      );
+    }
     throw e;
+  } finally {
+    await fs.unlink(scriptFile).catch(() => undefined);
+    await fs.unlink(outputFile).catch(() => undefined);
+    await fs.rmdir(tmpDir).catch(() => undefined);
   }
 }
 
 /**
+ * Coerce a value returned by Adams.evaluate_exp() (via JSON) into the
+ * AdamsValue types expected by callers. JSON preserves ints, floats,
+ * strings, booleans, and arrays natively. The only extra coercion needed
+ * is Adams' boolean-like strings ("on"/"off"/"yes"/"no").
+ */
+function coerceValue(v: unknown): AdamsValue | AdamsValue[] {
+  if (Array.isArray(v)) {
+    return v.map((item) => coerceSingle(item));
+  }
+  return coerceSingle(v);
+}
+
+function coerceSingle(v: unknown): AdamsValue {
+  if (typeof v === "number" || typeof v === "boolean") return v;
+  if (typeof v === "string") {
+    const lower = v.toLowerCase();
+    if (lower === "on" || lower === "yes") return true;
+    if (lower === "off" || lower === "no") return false;
+    return v;
+  }
+  return String(v);
+}
+
+/**
  * Check whether Adams View is running and its session is ready.
- * Returns true if the TCP port is reachable and `db_exists('.mdi')` returns 1.
- * Retries once after a short delay to handle transient connection resets.
+ * Returns true if Adams can execute a command and db_exists('.mdi') returns 1.
  */
 export async function checkConnection(): Promise<boolean> {
-  for (let attempt = 0; attempt < 2; attempt++) {
-    try {
-      const result = await evaluateExp("db_exists('.mdi')");
-      if (result === 1 || result === true) return true;
-    } catch {
-      // Not ready yet
-    }
-    if (attempt === 0) {
-      await new Promise((r) => setTimeout(r, 1000));
-    }
+  try {
+    const result = await evaluateExp("db_exists('.mdi')");
+    return result === 1 || result === true;
+  } catch {
+    return false;
   }
-  return false;
 }
