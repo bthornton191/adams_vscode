@@ -9,7 +9,7 @@
  */
 
 import * as net from "net";
-import { DEFAULT_PORT, TIMEOUT_MS } from "./constants.js";
+import { DEFAULT_PORT, TIMEOUT_MS, QUERY_DESC_TIMEOUT_MS } from "./constants.js";
 
 export type AdamsValue = string | number | boolean;
 
@@ -41,17 +41,32 @@ export function parseDescription(response: string): [string, number] {
  * Coerces values according to type: int→number, float→number,
  * str "on/off/yes/no"→boolean, str otherwise→string.
  * Multiple values (count > 1) are returned as an array.
+ *
+ * Adams wraps array responses in parentheses and string elements in single
+ * quotes, e.g. `('.item1', '.item2')` or `(19, 20, 17)`. These are stripped.
  */
 export function parseData(
   response: string,
   type: string,
   count: number
 ): AdamsValue | AdamsValue[] {
-  const raw = response.trim();
+  // Strip outer parentheses (Adams wraps arrays in parens in text mode)
+  let raw = response.trim();
+  if (raw.startsWith("(") && raw.endsWith(")")) {
+    raw = raw.slice(1, -1).trim();
+  }
+
   const items: string[] = count > 1 ? raw.split(/,\s*/) : [raw];
 
   function coerce(s: string): AdamsValue {
-    const v = s.trim();
+    let v = s.trim();
+    // Strip surrounding single or double quotes (Adams wraps string elements)
+    if (
+      (v.startsWith("'") && v.endsWith("'")) ||
+      (v.startsWith('"') && v.endsWith('"'))
+    ) {
+      v = v.slice(1, -1);
+    }
     if (type === "int") return parseInt(v, 10);
     if (type === "float") return parseFloat(v);
     // str type: boolean-like strings
@@ -154,8 +169,30 @@ export async function evaluateExp(exp: string): Promise<AdamsValue | AdamsValue[
 
   socket.setNoDelay(true);
 
+  // Track whether we have sent "OK" so cleanup knows whether to send it.
+  // Adams' command server requires the client to always acknowledge the
+  // description line with "OK" before sending data. If we destroy the socket
+  // without sending OK (e.g. on timeout), Adams' server gets stuck waiting and
+  // subsequent connections fail. Sending OK before closing unblocks it.
+  let sentOK = false;
+
+  /** Gracefully close the socket, sending OK first if we haven't yet. */
+  function closeSocket() {
+    if (!sentOK) {
+      try { socket.write("OK"); sentOK = true; } catch { /* ignore */ }
+    }
+    // Graceful half-close (FIN) rather than hard reset (RST).
+    // Adams' command server handles FIN cleanly and resets for the next client.
+    socket.end();
+    // Safety net: force-destroy after 2 s if Adams doesn't close its end.
+    const t = setTimeout(() => { try { socket.destroy(); } catch { /* ignore */ } }, 2000);
+    if (t.unref) t.unref();
+  }
+
   try {
-    // Round-trip 1: send query, receive description line
+    // Round-trip 1: send query, receive description line.
+    // Adams sends the description in a single packet (no trailing newline in
+    // the protocol), so we resolve as soon as any data arrives.
     socket.write(`query ${exp}`);
 
     const desc = await withTimeout(
@@ -163,35 +200,105 @@ export async function evaluateExp(exp: string): Promise<AdamsValue | AdamsValue[
         let buf = "";
         function onData(chunk: Buffer) {
           buf += chunk.toString();
-          // Adams sends description line then waits for "OK"
-          // The line ends with a newline or the socket remains open
-          if (buf.includes("\n") || buf.trim().length > 0) {
+          if (buf.trim().length > 0) {
+            socket.removeListener("data", onData);
+            socket.removeListener("end", onEnd);
+            resolve(buf);
+          }
+        }
+        function onEnd() {
+          socket.removeListener("data", onData);
+          if (buf.trim().length > 0) {
+            resolve(buf);
+          } else {
+            reject(new Error(
+              `Adams View closed the connection without responding to query "${exp}". ` +
+              `The expression may be invalid or Adams may not be ready.`
+            ));
+          }
+        }
+        socket.on("data", onData);
+        socket.once("end", onEnd);
+        socket.once("error", reject);
+      }),
+      QUERY_DESC_TIMEOUT_MS,
+      `Adams View did not respond to query "${exp}". ` +
+      `The expression may be invalid — check the Adams View message window for details.`
+    );
+
+    const trimmedDesc = desc.trim();
+
+    // Per Adams docs: for an invalid expression Adams sends "SERVER_ERROR" as
+    // the description. The client MUST still send "OK", then Adams sends a
+    // generic error string as the data payload. We read that string and throw.
+    if (trimmedDesc.startsWith("SERVER_ERROR")) {
+      socket.write("OK");
+      sentOK = true;
+      const errData = await withTimeout(
+        new Promise<string>((resolve, reject) => {
+          let buf = "";
+          function onData(chunk: Buffer) {
+            buf += chunk.toString();
+            if (buf.trim().length > 0) {
+              socket.removeListener("data", onData);
+              resolve(buf);
+            }
+          }
+          socket.on("data", onData);
+          socket.once("end", () => resolve(buf));
+          socket.once("error", reject);
+        }),
+        TIMEOUT_MS,
+        `Timed out waiting for Adams View error details for "${exp}".`
+      );
+      closeSocket();
+      throw new Error(
+        `Adams View could not evaluate "${exp}": ${errData.trim() || "unknown error"}. ` +
+        `Check the Adams View message window for details.`
+      );
+    }
+
+    // If Adams returned a command-level error (e.g. "cmd: 1") instead of
+    // entering the query protocol, surface it immediately.
+    if (trimmedDesc.startsWith("cmd:")) {
+      closeSocket();
+      const code = trimmedDesc.split(/[ :]+/)[1] ?? "?";
+      throw new Error(
+        `Adams View rejected the expression "${exp}" (Adams error code ${code}). ` +
+        `Check the Adams View message window for details.`
+      );
+    }
+
+    const [type, count] = parseDescription(desc);
+
+    // Round-trip 2: send OK, receive data line.
+    // Use a data-handler (not receiveAll) so we don't hang if Adams sends the
+    // data but doesn't close the socket.
+    socket.write("OK");
+    sentOK = true;
+
+    const dataLine = await withTimeout(
+      new Promise<string>((resolve, reject) => {
+        let buf = "";
+        function onData(chunk: Buffer) {
+          buf += chunk.toString();
+          if (buf.trim().length > 0) {
             socket.removeListener("data", onData);
             resolve(buf);
           }
         }
         socket.on("data", onData);
+        socket.once("end", () => resolve(buf));
         socket.once("error", reject);
       }),
       TIMEOUT_MS,
-      `Timed out waiting for Adams View query description.`
-    );
-
-    const [type, count] = parseDescription(desc);
-
-    // Round-trip 2: send OK, receive data line
-    socket.write("OK");
-
-    const dataLine = await withTimeout(
-      receiveAll(socket),
-      TIMEOUT_MS,
-      `Timed out waiting for Adams View query data.`
+      `Timed out waiting for Adams View query data for "${exp}".`
     );
     socket.destroy();
 
     return parseData(dataLine, type, count);
   } catch (e) {
-    socket.destroy();
+    closeSocket();
     throw e;
   }
 }

@@ -75,6 +75,29 @@ describe("parseData", () => {
   it("returns array of strings for count > 1 str type", () => {
     expect(parseData(".model_a, .model_b", "str", 2)).toEqual([".model_a", ".model_b"]);
   });
+
+  // Adams text-mode array format: parenthesized, string elements quoted
+  it("strips outer parens from array response", () => {
+    expect(parseData("(1, 2, 3)", "int", 3)).toEqual([1, 2, 3]);
+  });
+
+  it("strips outer parens and quotes from string array (Adams db_children format)", () => {
+    expect(
+      parseData(
+        "('.suspension.ground', '.suspension.Lower_Arm', '.suspension.Upper_Arm')",
+        "str",
+        3
+      )
+    ).toEqual([".suspension.ground", ".suspension.Lower_Arm", ".suspension.Upper_Arm"]);
+  });
+
+  it("strips outer parens from int array (Adams object ID format)", () => {
+    expect(parseData("(19, 20, 17)", "int", 3)).toEqual([19, 20, 17]);
+  });
+
+  it("strips single quotes from scalar string", () => {
+    expect(parseData("'suspension'", "str", 1)).toBe("suspension");
+  });
 });
 
 // ── getPort ──────────────────────────────────────────────────────────────────
@@ -214,6 +237,107 @@ describe("evaluateExp", () => {
 
     const result = await evaluateExp("UNIQUE_NAME_IN_HIERARCHY('.model')");
     expect(result).toEqual([".model_a", ".model_b"]);
+  });
+
+  it("handles Adams parenthesized string array (db_children format)", async () => {
+    mock = await startStatefulMockServer((socket: net.Socket) => {
+      let step = 0;
+      socket.on("data", (chunk: Buffer) => {
+        const msg = chunk.toString().trim();
+        if (step === 0) {
+          socket.write("query: str: 4: 0");
+          step = 1;
+        } else if (step === 1 && msg === "OK") {
+          socket.write("('.suspension.ground', '.suspension.Lower_Arm', '.suspension.Upper_Arm', '.suspension.Spindle_Wheel')");
+          socket.end();
+        }
+      });
+    });
+    process.env["ADAMS_LISTENER_PORT"] = String(mock.port);
+
+    const result = await evaluateExp("db_children(suspension, 'part')");
+    expect(result).toEqual([
+      ".suspension.ground",
+      ".suspension.Lower_Arm",
+      ".suspension.Upper_Arm",
+      ".suspension.Spindle_Wheel",
+    ]);
+  });
+
+  it("handles Adams parenthesized int array (object ID format)", async () => {
+    mock = await startStatefulMockServer((socket: net.Socket) => {
+      let step = 0;
+      socket.on("data", (chunk: Buffer) => {
+        const msg = chunk.toString().trim();
+        if (step === 0) {
+          socket.write("query: int: 3: 12");
+          step = 1;
+        } else if (step === 1 && msg === "OK") {
+          socket.write("(19, 20, 17)");
+          socket.end();
+        }
+      });
+    });
+    process.env["ADAMS_LISTENER_PORT"] = String(mock.port);
+
+    const result = await evaluateExp("{strut_lower.id, strut_upper.id, steering_rack.id}");
+    expect(result).toEqual([19, 20, 17]);
+  });
+
+  it("throws a useful error on SERVER_ERROR and completes the protocol", async () => {
+    // Track that Adams received "OK" after sending SERVER_ERROR — this ensures
+    // the command server is not left in a stuck state.
+    let receivedOkAfterError = false;
+    let errorDataSent = false;
+
+    mock = await startStatefulMockServer((socket: net.Socket) => {
+      let step = 0;
+      socket.on("data", (chunk: Buffer) => {
+        const msg = chunk.toString().trim();
+        if (step === 0) {
+          // Adams sends SERVER_ERROR for invalid expression
+          socket.write("SERVER_ERROR");
+          step = 1;
+        } else if (step === 1 && msg === "OK") {
+          receivedOkAfterError = true;
+          // Adams sends a generic error string as the data payload
+          socket.write("Cannot evaluate expression: jibberish");
+          errorDataSent = true;
+          socket.end();
+        }
+      });
+    });
+    process.env["ADAMS_LISTENER_PORT"] = String(mock.port);
+
+    await expect(evaluateExp("jibberish")).rejects.toThrow(/Cannot evaluate expression: jibberish/);
+    expect(receivedOkAfterError).toBe(true);
+    expect(errorDataSent).toBe(true);
+  });
+
+  it("can make a successful query after a SERVER_ERROR on the same server", async () => {
+    // Simulates the real-world scenario: one invalid query, then a valid one —
+    // each on its own connection. The server should handle both correctly.
+    let callCount = 0;
+    mock = await startStatefulMockServer((socket: net.Socket) => {
+      callCount++;
+      const isFirstCall = callCount === 1;
+      let step = 0;
+      socket.on("data", (chunk: Buffer) => {
+        const msg = chunk.toString().trim();
+        if (step === 0) {
+          socket.write(isFirstCall ? "SERVER_ERROR" : "query: int: 1");
+          step = 1;
+        } else if (step === 1 && msg === "OK") {
+          socket.write(isFirstCall ? "Error: bad expression" : "1");
+          socket.end();
+        }
+      });
+    });
+    process.env["ADAMS_LISTENER_PORT"] = String(mock.port);
+
+    await expect(evaluateExp("bad_expr")).rejects.toThrow();
+    const result = await evaluateExp("db_exists('.mdi')");
+    expect(result).toBe(1);
   });
 });
 
