@@ -27,3 +27,4 @@ test/.vscode/settings.json
 **/adamsctl_*.bat
 /adams-view-mcp-server/dist/
 /adams-view-mcp-server/node_modules/
+adams-view-mcp-server/tests/e2e_working_directory/mylog.log
