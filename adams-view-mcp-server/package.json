@@ -2,11 +2,10 @@
   "name": "adams-view-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for MSC Adams View — exposes Adams View operations to AI agent harnesses",
-  "type": "module",
   "main": "dist/index.js",
   "bin": { "adams-view-mcp-server": "dist/index.js" },
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --banner:js=\"#!/usr/bin/env node\"",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.js",
     "typecheck": "tsc --noEmit",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",

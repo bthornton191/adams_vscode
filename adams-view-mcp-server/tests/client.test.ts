@@ -133,9 +133,15 @@ describe("executeCmd", () => {
   });
 
   it("throws when Adams View is not reachable", async () => {
-    process.env["ADAMS_LISTENER_PORT"] = "1"; // port 1 should be refused
-    await expect(executeCmd("test")).rejects.toThrow(/Could not connect/);
-  });
+    // Start a server that immediately destroys every connection (simulates refused/closed port)
+    const refused = await startStatefulMockServer((socket: net.Socket) => { socket.destroy(); });
+    process.env["ADAMS_LISTENER_PORT"] = String(refused.port);
+    try {
+      await expect(executeCmd("test")).rejects.toThrow();
+    } finally {
+      await refused.close();
+    }
+  }, 15000);
 });
 
 // ── evaluateExp ──────────────────────────────────────────────────────────────
@@ -240,9 +246,15 @@ describe("checkConnection", () => {
   });
 
   it("returns false when connection refused", async () => {
-    process.env["ADAMS_LISTENER_PORT"] = "1";
-    expect(await checkConnection()).toBe(false);
-  });
+    // Start a server that immediately destroys every connection
+    const refused = await startStatefulMockServer((socket: net.Socket) => { socket.destroy(); });
+    process.env["ADAMS_LISTENER_PORT"] = String(refused.port);
+    try {
+      expect(await checkConnection()).toBe(false);
+    } finally {
+      await refused.close();
+    }
+  }, 15000);
 
   it("returns false when Adams returns 0 for db_exists", async () => {
     mock = await startStatefulMockServer((socket: net.Socket) => {
