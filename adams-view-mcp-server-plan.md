@@ -556,11 +556,10 @@ not for producing output files.
   "name": "adams-view-mcp-server",
   "version": "0.1.0",
   "description": "MCP server for MSC Adams View — exposes Adams View operations to AI agent harnesses",
-  "type": "module",
   "main": "dist/index.js",
   "bin": { "adams-view-mcp-server": "dist/index.js" },
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=esm --outfile=dist/index.js --banner:js=\"#!/usr/bin/env node\"",
+    "build": "esbuild src/index.ts --bundle --platform=node --target=node18 --format=cjs --outfile=dist/index.js",
     "typecheck": "tsc --noEmit",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
@@ -583,8 +582,14 @@ not for producing output files.
 }
 ```
 
-Note: no `axios` — all I/O goes through Node's built-in `net` module (TCP to
-Adams View directly). No HTTP calls.
+Notes:
+- No `"type": "module"` — the bundle format is **CJS**. ESM + a shebang caused
+  `SyntaxError: Invalid or unexpected token` because esbuild's `--banner:js`
+  inserted the shebang inside the module wrapper. CJS avoids this; esbuild
+  preserves the `#!/usr/bin/env node` shebang from `src/index.ts` line 1.
+- No `--banner:js` flag in the build script — the shebang in source is sufficient.
+- No `axios` — all I/O goes through Node's built-in `net` module (TCP to
+  Adams View directly). No HTTP calls.
 
 ---
 
@@ -699,56 +704,56 @@ No structural changes to the MCP server itself are needed.
 
 ## Implementation Checklist
 
-### Phase 1 — Scaffold
-- [ ] Create `adams-view-mcp-server/` directory
-- [ ] Write `package.json` (with esbuild, vitest)
-- [ ] Write `tsconfig.json` (`noEmit: true`, excludes `tests/`)
-- [ ] Add `"build-mcp"` script to root `package.json`
-- [ ] Add `adams-view-mcp-server/dist/` and `adams-view-mcp-server/node_modules/` to `.gitignore`
+### Phase 1 — Scaffold ✅
+- [x] Create `adams-view-mcp-server/` directory
+- [x] Write `package.json` (with esbuild, vitest; CJS format, no `"type":"module"`)
+- [x] Write `tsconfig.json` (`noEmit: true`, excludes `tests/`)
+- [x] Add `"build-mcp"` script to root `package.json`
+- [x] Add `adams-view-mcp-server/dist/` and `adams-view-mcp-server/node_modules/` to `.gitignore`
 
-### Phase 2 — Core infrastructure
-- [ ] Implement `src/constants.ts` (`DEFAULT_PORT`, `CHARACTER_LIMIT`, `TIMEOUT_MS`)
-- [ ] Implement `src/client.ts` (`executeCmd`, `evaluateExp`, `checkConnection`, `getPort`, `parseDescription`, `parseData`)
-- [ ] Write `src/index.ts` skeleton (McpServer init + stdio transport)
+### Phase 2 — Core infrastructure ✅
+- [x] Implement `src/constants.ts` (`DEFAULT_PORT`, `CHARACTER_LIMIT`, `TIMEOUT_MS`)
+- [x] Implement `src/client.ts` (`executeCmd`, `evaluateExp`, `checkConnection`, `getPort`, `parseDescription`, `parseData`)
+- [x] Write `src/index.ts` skeleton (McpServer init + stdio transport)
 
-### Phase 3 — Core tools (8 tools)
-- [ ] Implement `src/tools/query.ts`
+### Phase 3 — Core tools (8 tools) ✅
+- [x] Implement `src/tools/query.ts`
   - `adams_check_connection`
   - `adams_get_working_directory`
   - `adams_get_model_names`
   - `adams_evaluate_expression`
-- [ ] Implement `src/tools/cmd.ts`
+- [x] Implement `src/tools/cmd.ts`
   - `adams_run_cmd`
   - `adams_run_python` (temp file pattern, `os.tmpdir()`)
   - `adams_load_file`
-- [ ] Implement `src/tools/model.ts`
+- [x] Implement `src/tools/model.ts`
   - `adams_delete_model`
-- [ ] Wire all tools into `src/index.ts`
+- [x] Wire all tools into `src/index.ts`
 
-### Phase 4 — Session log tool
-- [ ] Implement `src/tools/log.ts`
+### Phase 4 — Session log tool ✅
+- [x] Implement `src/tools/log.ts`
   - `adams_read_session_log` (`gui_utl_log_fil_fil` wrapper, flag bitmask, Node temp file)
-- [ ] Wire into `src/index.ts`
+- [x] Wire into `src/index.ts`
 
-### Phase 5 — Simulation tools
-- [ ] Implement `src/tools/simulation.ts`
+### Phase 5 — Simulation tools ✅
+- [x] Implement `src/tools/simulation.ts`
   - `adams_create_simulation_script` (`solver_commands` array → Adams CMD array syntax, `.adm` export, `.acf` write)
   - `adams_submit_simulation` (`GETENV("TOPDIR")` resolution, platform-aware `mdi` path and args, detached spawn)
-- [ ] Wire into `src/index.ts`
+- [x] Wire into `src/index.ts`
 
-### Phase 6 — Unit tests
-- [ ] Create `tests/helpers.ts` — mock Adams TCP server using `net.createServer()`
-- [ ] Create `tests/client.test.ts` — test `executeCmd`, `evaluateExp`, `checkConnection`, `parseDescription`, `parseData`
-- [ ] Create `tests/tools.test.ts` — test tool handlers with mocked client functions
-- [ ] `npm test` passes
+### Phase 6 — Unit tests ✅
+- [x] Create `tests/helpers.ts` — mock Adams TCP server using `net.createServer()`
+- [x] Create `tests/client.test.ts` — test `executeCmd`, `evaluateExp`, `checkConnection`, `parseDescription`, `parseData`
+- [x] Create `tests/tools.test.ts` — test tool handlers with mocked client functions
+- [x] `npm test` passes — **35/35 tests passing**
 
-### Phase 7 — Build & verify
-- [ ] `npm install` in `adams-view-mcp-server/`
-- [ ] `npm run typecheck` passes without errors
-- [ ] `npm run build` produces `dist/index.js` (single file, all deps bundled)
-- [ ] `node dist/index.js` starts without crashing (no Adams required)
-- [ ] Verify `dist/index.js` contains no `require("vscode")` references
-- [ ] Update `.vscodeignore` to bundle `dist/`
+### Phase 7 — Build & verify ✅
+- [x] `npm install` in `adams-view-mcp-server/`
+- [x] `npm run typecheck` passes without errors
+- [x] `npm run build` produces `dist/index.js` (~734 KB single file, all deps bundled)
+- [x] `node dist/index.js` starts without crashing (no Adams required)
+- [x] Verified `dist/index.js` contains no `require("vscode")` references
+- [x] Updated `.vscodeignore` to bundle `dist/`
 
 ### Phase 8 — Evaluations (separate task)
 - [ ] Write evaluation XML per `mcp-builder` evaluation guide
