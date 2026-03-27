@@ -37,7 +37,7 @@
                     ]
                 }
             },
-            "dependsOn": ["Bundle LSP Dependencies"],
+            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
             "problemMatcher": []
         },
         {
@@ -56,7 +56,7 @@
                     ]
                 }
             },
-            "dependsOn": ["Bundle LSP Dependencies"],
+            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
             "problemMatcher": []
         },
         {
@@ -75,7 +75,24 @@
                     ]
                 }
             },
-            "dependsOn": ["Bundle LSP Dependencies"],
+            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+            "problemMatcher": []
+        },
+        {
+            "type": "shell",
+            "label": "Build MCP Server",
+            "command": "npm run build",
+            "group": {
+                "kind": "build",
+                "isDefault": false
+            },
+            "options": {
+                "cwd": "${workspaceFolder}/adams-view-mcp-server",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/c"]
+                }
+            },
             "problemMatcher": []
         },
         {
@@ -110,7 +127,7 @@
                     ]
                 }
             },
-            "dependsOn": ["Bundle LSP Dependencies"],
+            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
             "problemMatcher": []
         },
 		{
