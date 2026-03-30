@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.7.3 (March 30th 2026)](#173-march-30th-2026)
   - [1.7.0 (March 30th 2026)](#170-march-30th-2026)
   - [1.5.1 (March 20th 2026)](#151-march-20th-2026)
   - [1.5.0 (March 19th 2026)](#150-march-19th-2026)
@@ -36,6 +37,19 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.7.3 (March 30th 2026)
+
+- **Fixed** CMD linter E001 "unknown command" hint suggesting `scanWorkspaceMacros` was not
+  shown when macro scanning is disabled. The server always created an internal `MacroRegistry`
+  instance, which suppressed the hint; the linter now receives `null` when scanning is off.
+- **Added** logging to the Adams CMD LSP output panel listing all macro files discovered
+  during workspace scan on startup.
+- **Added** `wait_for_completion` parameter to the `adams_load_file` MCP tool. When set to
+  `false`, the command is sent to Adams View and the tool returns immediately without waiting
+  for execution to finish. Use `adams_check_connection` to poll until Adams View is ready
+  again. Useful for scripts that run long simulations.
+- **Improved** default Adams View command timeout from 10 seconds to 30 seconds.
 
 ## 1.7.0 (March 30th 2026)
 
