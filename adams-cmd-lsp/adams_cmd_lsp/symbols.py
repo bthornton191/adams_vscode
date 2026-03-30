@@ -54,9 +54,11 @@ class Symbol:
 
 
 class SymbolTable:
-    def __init__(self):
+    def __init__(self, macro_registry=None, show_macro_hint=True):
         self.symbols = {}          # lower-cased normalised name → Symbol
-        self.dynamic_prefixes = [] # lower-cased normalised prefixes from eval expressions
+        self.dynamic_prefixes = []  # lower-cased normalised prefixes from eval expressions
+        self.macro_registry = macro_registry  # MacroRegistry | None
+        self.show_macro_hint = show_macro_hint  # bool — include hint in E001 message
 
     @staticmethod
     def _normalize(name: str) -> str:
@@ -127,17 +129,19 @@ def _populate_builtins(table):
         table.register(name, obj_type, -1)
 
 
-def build_symbol_table(statements, schema):
+def build_symbol_table(statements, schema, macro_registry=None, show_macro_hint=True):
     """Walk parsed statements top-to-bottom and collect created objects.
 
     Args:
         statements: list of Statement objects from parser.py
         schema: Schema object
+        macro_registry: optional MacroRegistry for workspace-wide macro lookup
+        show_macro_hint: if True, E001 messages include a hint about scanWorkspaceMacros
 
     Returns:
         SymbolTable populated with all objects created in the file
     """
-    table = SymbolTable()
+    table = SymbolTable(macro_registry=macro_registry, show_macro_hint=show_macro_hint)
     _populate_builtins(table)
 
     for stmt in statements:

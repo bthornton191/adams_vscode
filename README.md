@@ -19,10 +19,12 @@
     - [Run File in Adams View (This *works for both CMD and Python files*)](#run-file-in-adams-view-this-works-for-both-cmd-and-python-files)
   - [Open Adams View From Explorer](#open-adams-view-from-explorer)
   - [Snippets](#snippets)
+  - [CMD Linter](#cmd-linter)
 - [Extension Settings](#extension-settings)
   - [Customizing Syntax Colors](#customizing-syntax-colors)
   - [Run In Adams: Substitute Params](#run-in-adams-substitute-params)
   - [Run In Adams: Substitute $\_self](#run-in-adams-substitute-_self)
+  - [CMD Linter Settings](#cmd-linter-settings)
 - [Requirements](#requirements)
 - [Known Issues](#known-issues)
   - [Attaching the Debugger to Adams View does not work in version 2023](#attaching-the-debugger-to-adams-view-does-not-work-in-version-2023)
@@ -101,6 +103,15 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 ## Snippets
 - Adams View Command Language Snippets
 - Adams View Python Interface Snippets
+
+## CMD Linter
+The extension includes a Language Server Protocol (LSP)-based linter for Adams View CMD files.
+It flags unknown commands, invalid arguments, and other syntax errors as you type.
+
+### Macro Scanning
+Enable `msc-adams.linter.scanWorkspaceMacros` to let the linter discover user-defined macro files
+(`.mac` by default) in the workspace. Once scanned, user-defined macros are recognised as valid
+commands and their declared parameters are validated when the macro is called.
   
 # Extension Settings
 
@@ -113,6 +124,18 @@ This extension contributes the following settings:
   * `msc-adams.runInAdams.substituteParams`: Substitute macro parameters with their default values.
   * `msc-adams.runInAdams.autoLoadAdamspyStubs`: Automatically add adamspy stub files to the Python intellisense path.
   * `msc-adams.runInAdams.autoLoadAdamsSitePackages`: Automatically add Adams site-packages to the Python intellisense path.
+
+## CMD Linter Settings
+
+  * `msc-adams.linter.scanWorkspaceMacros`: When enabled, the CMD linter scans the workspace for
+    macro files and uses them to suppress false "unknown command" errors for user-defined macros.
+    Disabled by default.
+  * `msc-adams.linter.macroPaths`: Glob patterns used to discover macro files when
+    `scanWorkspaceMacros` is enabled. Defaults to `["**/*.mac"]`.
+  * `msc-adams.linter.macroIgnorePaths`: Glob patterns for files or folders to exclude from macro
+    scanning. Defaults to `[]`.
+  * `msc-adams.linter.showMacroHint`: When a user-defined macro call triggers an E001 error, show
+    a hint suggesting that `scanWorkspaceMacros` can be enabled. Defaults to `true`.
 
 ## Customizing Syntax Colors
 

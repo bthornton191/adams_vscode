@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.7.0 (March 30th 2026)](#170-march-30th-2026)
   - [1.5.1 (March 20th 2026)](#151-march-20th-2026)
   - [1.5.0 (March 19th 2026)](#150-march-19th-2026)
   - [1.4.0 (March 18th 2026)](#140-march-18th-2026)
@@ -35,6 +36,19 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.7.0 (March 30th 2026)
+
+- **Added** workspace macro scanning: the CMD linter now discovers user-defined macro files in the
+  workspace and suppresses false "unknown command" errors for those macros.
+- **Added** four new linter settings:
+  - `msc-adams.linter.scanWorkspaceMacros` — enable workspace-wide macro file scanning
+  - `msc-adams.linter.macroPaths` — glob patterns for macro file discovery (default: `["**/*.mac"]`)
+  - `msc-adams.linter.macroIgnorePaths` — glob patterns to exclude from scanning
+  - `msc-adams.linter.showMacroHint` — show a hint in E001 messages suggesting macro scanning
+- **Added** user-defined macro argument validation (rule E002) — flags arguments passed to a macro
+  that are not declared in its parameter list.
+- **Fixed** LSP server crash when workspace macro scanning fails during initialization.
 
 ## 1.5.1 (March 20th 2026)
 

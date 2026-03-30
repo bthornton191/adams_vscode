@@ -1,23 +1,23 @@
 """Tests for adams_cmd_lsp.cli module (CLI linter)."""
 
+from adams_cmd_lsp.diagnostics import Diagnostic, Severity
+from adams_cmd_lsp.cli import _output_text, _output_json, _output_gcc, main
+import pytest
+from unittest.mock import patch
+from pathlib import Path
 import sys
 import os
 import io
 import json
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from pathlib import Path
-from unittest.mock import patch
-import pytest
-
-from adams_cmd_lsp.cli import _output_text, _output_json, _output_gcc, main
-from adams_cmd_lsp.diagnostics import Diagnostic, Severity
 
 FIXTURES = Path(__file__).parent.parent.parent / "test" / "files"
 
 # ---------------------------------------------------------------------------
 # Helper: build a minimal Diagnostic list
 # ---------------------------------------------------------------------------
+
 
 def _diags():
     return [
@@ -196,3 +196,194 @@ def test_main_fixture_test_measures_final(tmp_path):
             with patch("sys.stdout", captured):
                 main()
     assert exc.value.code == 0, f"Unexpected errors:\n{captured.getvalue()}"
+
+
+# ---------------------------------------------------------------------------
+# --macro-paths integration
+# ---------------------------------------------------------------------------
+
+def test_macro_paths_suppresses_e001(tmp_path):
+    """--macro-paths glob should prevent E001 for commands defined in macro files."""
+    macro_dir = tmp_path / "macros"
+    macro_dir.mkdir()
+    (macro_dir / "tool.mac").write_text(
+        "!USER_ENTERED_COMMAND cdm tool\n!$model:t=model\n",
+        encoding="utf-8",
+    )
+    cmd_file = tmp_path / "caller.cmd"
+    cmd_file.write_text("cdm tool model=.m\n", encoding="utf-8")
+
+    captured = io.StringIO()
+    with patch("sys.argv", [
+        "adams-cmd-lint",
+        "--severity", "error",
+        str(cmd_file),
+        "--macro-base-dir", str(tmp_path),
+        "--macro-paths", "**/*.mac",
+    ]):
+        with pytest.raises(SystemExit) as exc:
+            with patch("sys.stdout", captured):
+                main()
+    assert exc.value.code == 0, (
+        f"E001 should be suppressed via --macro-paths, got:\n{captured.getvalue()}"
+    )
+
+
+def test_macro_paths_arg_validation_fires(tmp_path):
+    """--macro-paths should cause E002 for arguments not in the macro's parameter list."""
+    macro_dir = tmp_path / "macros"
+    macro_dir.mkdir()
+    (macro_dir / "tool.mac").write_text(
+        "!USER_ENTERED_COMMAND cdm tool\n!$model:t=model\n",
+        encoding="utf-8",
+    )
+    cmd_file = tmp_path / "caller.cmd"
+    cmd_file.write_text("cdm tool model=.m bad_arg=123\n", encoding="utf-8")
+
+    captured = io.StringIO()
+    with patch("sys.argv", [
+        "adams-cmd-lint",
+        "--severity", "error",
+        str(cmd_file),
+        "--macro-base-dir", str(tmp_path),
+        "--macro-paths", "**/*.mac",
+    ]):
+        with pytest.raises(SystemExit) as exc:
+            with patch("sys.stdout", captured):
+                main()
+    assert exc.value.code == 1, (
+        f"E002 should fire for unknown macro arg, got code {exc.value.code}:\n{captured.getvalue()}"
+    )
+    assert "bad_arg" in captured.getvalue()
+
+
+def test_macro_paths_nonexistent_base_dir_is_ignored(tmp_path):
+    """A nonexistent --macro-base-dir should not crash the CLI."""
+    cmd_file = tmp_path / "test.cmd"
+    cmd_file.write_text("model create model_name=.m\n", encoding="utf-8")
+
+    with patch("sys.argv", [
+        "adams-cmd-lint",
+        str(cmd_file),
+        "--macro-base-dir", str(tmp_path / "nonexistent"),
+        "--macro-paths", "**/*.mac",
+    ]):
+        with pytest.raises(SystemExit) as exc:
+            main()
+    assert exc.value.code == 0
+
+
+def test_macro_paths_no_base_dir_uses_cwd(tmp_path):
+    """Without --macro-base-dir, CWD is used as the base."""
+    import os
+    (tmp_path / "tool.mac").write_text(
+        "!USER_ENTERED_COMMAND my tool\n", encoding="utf-8"
+    )
+    cmd_file = tmp_path / "caller.cmd"
+    cmd_file.write_text("my tool\n", encoding="utf-8")
+
+    captured = io.StringIO()
+    orig_cwd = os.getcwd()
+    try:
+        os.chdir(str(tmp_path))
+        with patch("sys.argv", [
+            "adams-cmd-lint",
+            "--severity", "error",
+            str(cmd_file),
+            "--macro-paths", "**/*.mac",
+        ]):
+            with pytest.raises(SystemExit) as exc:
+                with patch("sys.stdout", captured):
+                    main()
+    finally:
+        os.chdir(orig_cwd)
+    assert exc.value.code == 0, (
+        f"E001 should be suppressed when CWD used as base:\n{captured.getvalue()}"
+    )
+
+
+def test_e001_message_contains_hint_when_no_macro_paths(tmp_path):
+    """E001 message should suggest scanWorkspaceMacros when no macro paths given."""
+    cmd_file = tmp_path / "test.cmd"
+    cmd_file.write_text("cdm unknown_tool\n", encoding="utf-8")
+
+    captured = io.StringIO()
+    with patch("sys.argv", [
+        "adams-cmd-lint",
+        "--severity", "error",
+        str(cmd_file),
+    ]):
+        with pytest.raises(SystemExit):
+            with patch("sys.stdout", captured):
+                main()
+    assert "scanWorkspaceMacros" in captured.getvalue()
+
+
+def test_macro_ignore_paths_excludes_matched(tmp_path):
+    """--macro-ignore-paths excludes macros in matched directories."""
+    generated = tmp_path / "generated"
+    generated.mkdir()
+    macros = tmp_path / "macros"
+    macros.mkdir()
+
+    # Two macros: one in generated/ (should be ignored), one in macros/ (should be found)
+    (generated / "auto.mac").write_text(
+        "!USER_ENTERED_COMMAND auto cmd\n", encoding="utf-8"
+    )
+    (macros / "manual.mac").write_text(
+        "!USER_ENTERED_COMMAND manual cmd\n", encoding="utf-8"
+    )
+
+    # Caller invokes "manual cmd" — should be OK (found)
+    # Caller also invokes "auto cmd" — should cause E001 because it was ignored
+    cmd_file = tmp_path / "caller.cmd"
+    cmd_file.write_text("manual cmd\nauto cmd\n", encoding="utf-8")
+
+    captured = io.StringIO()
+    with patch("sys.argv", [
+        "adams-cmd-lint",
+        "--severity", "error",
+        str(cmd_file),
+        "--macro-base-dir", str(tmp_path),
+        "--macro-paths", "**/*.mac",
+        "--macro-ignore-paths", "generated/**",
+    ]):
+        with pytest.raises(SystemExit) as exc:
+            with patch("sys.stdout", captured):
+                main()
+    output = captured.getvalue()
+    # "auto cmd" should still be unknown (was excluded)
+    assert exc.value.code == 1, (
+        f"E001 expected for excluded macro 'auto cmd', got code {exc.value.code}:\n{output}"
+    )
+    assert "auto cmd" in output or "E001" in output
+
+
+def test_macro_paths_multiple_patterns(tmp_path):
+    """--macro-paths with two patterns should discover macros matching either pattern."""
+    mac_dir = tmp_path / "macros"
+    mac_dir.mkdir()
+    (mac_dir / "standard.mac").write_text(
+        "!USER_ENTERED_COMMAND cdm standard\n", encoding="utf-8"
+    )
+    (mac_dir / "special.cmd").write_text(
+        "!USER_ENTERED_COMMAND cdm special\n", encoding="utf-8"
+    )
+
+    cmd_file = tmp_path / "caller.cmd"
+    cmd_file.write_text("cdm standard\ncdm special\n", encoding="utf-8")
+
+    captured = io.StringIO()
+    with patch("sys.argv", [
+        "adams-cmd-lint",
+        "--severity", "error",
+        str(cmd_file),
+        "--macro-base-dir", str(tmp_path),
+        "--macro-paths", "macros/*.mac", "macros/*.cmd",
+    ]):
+        with pytest.raises(SystemExit) as exc:
+            with patch("sys.stdout", captured):
+                main()
+    assert exc.value.code == 0, (
+        f"Both commands should be found via two patterns, got:\n{captured.getvalue()}"
+    )

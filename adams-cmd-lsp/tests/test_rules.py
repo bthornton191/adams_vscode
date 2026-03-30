@@ -1,12 +1,7 @@
 """Tests for adams_cmd_lsp.rules module."""
 
-import sys
-import os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from adams_cmd_lsp.schema import Schema
-from adams_cmd_lsp.parser import parse
-from adams_cmd_lsp.symbols import build_symbol_table
+from adams_cmd_lsp.macros import MacroDefinition, MacroParameter, MacroRegistry
+from adams_cmd_lsp.diagnostics import Severity
 from adams_cmd_lsp.rules import (
     rule_unknown_command,
     rule_invalid_argument,
@@ -19,9 +14,15 @@ from adams_cmd_lsp.rules import (
     rule_unclosed_quote,
     rule_control_flow_balance,
     rule_type_mismatch,
+    rule_macro_invalid_argument,
     _types_compatible,
 )
-from adams_cmd_lsp.diagnostics import Severity
+from adams_cmd_lsp.symbols import build_symbol_table
+from adams_cmd_lsp.parser import parse
+from adams_cmd_lsp.schema import Schema
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 
 SCHEMA = Schema.load()
@@ -31,6 +32,19 @@ def _lint(text, rule_fn=None, rules=None):
     """Parse text, build symbols, and run one or more rules."""
     stmts = parse(text)
     symbols = build_symbol_table(stmts, SCHEMA)
+    diagnostics = []
+    if rule_fn:
+        diagnostics = rule_fn(stmts, SCHEMA, symbols)
+    elif rules:
+        for r in rules:
+            diagnostics.extend(r(stmts, SCHEMA, symbols))
+    return diagnostics
+
+
+def _lint_with_registry(text, registry, rule_fn=None, rules=None):
+    """Parse text, build symbols with registry attached, and run rules."""
+    stmts = parse(text)
+    symbols = build_symbol_table(stmts, SCHEMA, macro_registry=registry)
     diagnostics = []
     if rule_fn:
         diagnostics = rule_fn(stmts, SCHEMA, symbols)
@@ -1949,6 +1963,147 @@ def test_e001_no_false_positive_mdi_modify_macro():
     assert len(e001) == 0, f"E001 must not fire for mdi modify_macro, got: {e001}"
 
 
+# ---------------------------------------------------------------------------
+# E001 — MacroRegistry suppression
+# ---------------------------------------------------------------------------
+
+def _make_registry(*commands):
+    """Build a MacroRegistry containing one MacroDefinition per command."""
+    reg = MacroRegistry()
+    for cmd in commands:
+        reg.register(MacroDefinition(command=cmd, parameters={}))
+    return reg
+
+
+def test_e001_suppressed_by_registry_single_word():
+    """A single-word command found in the registry must NOT fire E001."""
+    reg = _make_registry("mytool")
+    diags = _lint_with_registry(
+        "mytool arg1=val1\n",
+        reg,
+        rule_fn=rule_unknown_command,
+    )
+    e001 = [d for d in diags if d.code == "E001" and "mytool" in d.message]
+    assert len(e001) == 0, f"E001 must not fire for registry macro, got: {e001}"
+
+
+def test_e001_suppressed_by_registry_multi_word():
+    """A multi-word command (e.g. 'cdm wear') found in the registry must NOT fire E001."""
+    reg = _make_registry("cdm wear")
+    diags = _lint_with_registry(
+        "cdm wear model=.m\n",
+        reg,
+        rule_fn=rule_unknown_command,
+    )
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, f"E001 must not fire for 'cdm wear' in registry, got: {e001}"
+
+
+def test_e001_still_fires_when_not_in_registry():
+    """Commands absent from registry still fire E001."""
+    reg = _make_registry("cdm other")
+    diags = _lint_with_registry(
+        "unknown_cmd arg=val\n",
+        reg,
+        rule_fn=rule_unknown_command,
+    )
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) > 0, "E001 must still fire for commands not in registry"
+
+
+def test_e001_no_false_suppression_with_empty_registry():
+    """An empty registry must not suppress any E001 diagnostics."""
+    reg = MacroRegistry()
+    diags = _lint_with_registry(
+        "totally_unknown_cmd arg=val\n",
+        reg,
+        rule_fn=rule_unknown_command,
+    )
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) > 0, "E001 must fire with empty registry"
+
+
+def test_e001_message_includes_hint_when_no_registry():
+    """E001 message should suggest scanWorkspaceMacros when macro_registry is None."""
+    from adams_cmd_lsp.linter import lint_text
+    diags = lint_text("totally_unknown_cmd\n", macro_registry=None)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert e001, "E001 should fire"
+    assert "scanWorkspaceMacros" in e001[0].message
+
+
+def test_e001_message_no_hint_when_registry_active():
+    """E001 message must NOT include the hint when a registry is active (even empty)."""
+    from adams_cmd_lsp.linter import lint_text
+    reg = MacroRegistry()
+    diags = lint_text("totally_unknown_cmd\n", macro_registry=reg)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert e001, "E001 should still fire for unknown command"
+    assert "scanWorkspaceMacros" not in e001[0].message
+
+
+# ---------------------------------------------------------------------------
+# rule_macro_invalid_argument
+# ---------------------------------------------------------------------------
+
+def _make_macro_registry_with_params(command, param_names):
+    """Registry with a macro that has named parameters."""
+    params = {n: MacroParameter(name=n) for n in param_names}
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command=command, parameters=params))
+    return reg
+
+
+def test_macro_invalid_argument_no_error_for_known_arg():
+    """Known argument on a macro call must NOT fire E002."""
+    reg = _make_macro_registry_with_params("cdm tool", ["model", "iterations"])
+    diags = _lint_with_registry(
+        "cdm tool model=.m iterations=3\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    assert len(e002) == 0, f"E002 must not fire for known macro arg, got: {e002}"
+
+
+def test_macro_invalid_argument_fires_for_unknown_arg():
+    """Unknown argument on a macro call must fire E002."""
+    reg = _make_macro_registry_with_params("cdm tool", ["model"])
+    diags = _lint_with_registry(
+        "cdm tool model=.m typo_arg=3\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002" and "typo_arg" in d.message]
+    assert len(e002) > 0, f"E002 must fire for unknown macro arg, got: {diags}"
+
+
+def test_macro_invalid_argument_no_args_no_error():
+    """Macro call with no arguments must not fire E002."""
+    reg = _make_macro_registry_with_params("cdm tool", ["model"])
+    diags = _lint_with_registry(
+        "cdm tool\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    assert len(e002) == 0, f"E002 must not fire for macro call with no args, got: {e002}"
+
+
+def test_macro_invalid_argument_skipped_when_no_params_declared():
+    """Macro with zero declared parameters skips argument validation entirely."""
+    reg = _make_macro_registry_with_params("cdm tool", [])  # no declared params
+    diags = _lint_with_registry(
+        "cdm tool anything=123\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    assert len(e002) == 0, (
+        f"E002 must not fire for macro with no declared params, got: {e002}"
+    )
+
+
 def test_e001_no_false_positive_snapshot():
     """snapshot must NOT fire E001 (stub added to schema)."""
     text = "snapshot file=snap.png\n"
@@ -2281,7 +2436,7 @@ def test_w201_graph_as_specific_geometry_subtype():
     assert _types_compatible("Graph", "Gspdp"),     "Graph must be compatible with Gspdp (copy pattern)"
     assert _types_compatible("Graph", "Arc"),       "Graph must be compatible with Arc (copy pattern)"
     assert _types_compatible("Graph", "Extrusion"), "Graph must be compatible with Extrusion (copy pattern)"
-    assert _types_compatible("Graph", "Revolution"),"Graph must be compatible with Revolution (copy pattern)"
+    assert _types_compatible("Graph", "Revolution"), "Graph must be compatible with Revolution (copy pattern)"
     assert _types_compatible("Graph", "Gcurve"),    "Graph must be compatible with Gcurve (copy pattern)"
     assert _types_compatible("Graph", "Gwire"),     "Graph must be compatible with Gwire (copy pattern)"
     assert _types_compatible("Graph", "Torus"),     "Graph must be compatible with Torus (copy pattern)"
@@ -2436,3 +2591,79 @@ def test_e104_adams_control_flow_still_checked_after_python_section():
     assert len(e104) == 1, (
         f"E104 must fire for orphan Adams 'end' after Python section: {e104}"
     )
+
+
+# ---------------------------------------------------------------------------
+# showMacroHint gating
+# ---------------------------------------------------------------------------
+
+def test_e001_hint_suppressed_when_show_macro_hint_false():
+    """E001 message must NOT include the hint when show_macro_hint=False."""
+    from adams_cmd_lsp.linter import lint_text
+    diags = lint_text("totally_unknown_cmd\n", macro_registry=None, show_macro_hint=False)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert e001, "E001 should still fire"
+    assert "scanWorkspaceMacros" not in e001[0].message, (
+        "Hint must be suppressed when show_macro_hint=False"
+    )
+
+
+def test_e001_hint_shown_when_show_macro_hint_true():
+    """E001 message MUST include the hint when show_macro_hint=True and no registry."""
+    from adams_cmd_lsp.linter import lint_text
+    diags = lint_text("totally_unknown_cmd\n", macro_registry=None, show_macro_hint=True)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert e001, "E001 should fire"
+    assert "scanWorkspaceMacros" in e001[0].message, (
+        "Hint must appear when show_macro_hint=True and registry is None"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Case-insensitive argument matching on macro calls
+# ---------------------------------------------------------------------------
+
+def test_macro_invalid_argument_case_insensitive():
+    """Arguments with different case from declared param name must NOT fire E002."""
+    params = {"model": MacroParameter(name="model")}
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm tool", parameters=params))
+    diags = _lint_with_registry(
+        "cdm tool Model=.m\n",     # 'Model' vs declared 'model'
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    assert len(e002) == 0, f"E002 must not fire when arg name only differs in case, got: {e002}"
+
+
+# ---------------------------------------------------------------------------
+# Macro call + other lint rules interaction
+# ---------------------------------------------------------------------------
+
+def test_macro_call_still_triggers_e003_duplicate_arg():
+    """A macro call with a duplicate argument must still fire E003."""
+    params = {"model": MacroParameter(name="model")}
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm tool", parameters=params))
+    diags = _lint_with_registry(
+        "cdm tool model=.m model=.n\n",
+        reg,
+        rules=[rule_unknown_command, rule_duplicate_argument],
+    )
+    e003 = [d for d in diags if d.code == "E003"]
+    assert len(e003) > 0, f"E003 must still fire for duplicate arg on macro call, got: {diags}"
+
+
+def test_macro_call_still_triggers_e101_unbalanced_parens():
+    """A macro call with unbalanced parens must still fire E101."""
+    params = {"model": MacroParameter(name="model")}
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm tool", parameters=params))
+    diags = _lint_with_registry(
+        "cdm tool model=(unclosed\n",
+        reg,
+        rules=[rule_unknown_command, rule_unbalanced_parens],
+    )
+    e101 = [d for d in diags if d.code == "E101"]
+    assert len(e101) > 0, f"E101 must still fire for unbalanced parens on macro call, got: {diags}"
