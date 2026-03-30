@@ -264,7 +264,7 @@ def test_refresh_macro_file_no_command(tmp_path):
 # ---------------------------------------------------------------------------
 
 def test_validate_document_passes_macro_registry(monkeypatch):
-    """_validate_document must forward _macro_registry to lint_text."""
+    """_validate_document must forward _macro_registry to lint_text when scanning enabled."""
     from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
     received_registry = []
 
@@ -281,11 +281,45 @@ def test_validate_document_passes_macro_registry(monkeypatch):
     reg = MacroRegistry()
     reg.register(MacroDefinition(command="cdm tool", parameters={}))
     srv._macro_registry = reg
+    srv._scan_workspace_macros = True  # scanning must be enabled for registry to be forwarded
     srv._schema = Schema.load()
 
     srv._validate_document("file:///test.cmd", "cdm tool\n")
     assert len(received_registry) == 1
     assert received_registry[0] is reg
+
+
+def test_validate_document_passes_none_registry_when_scan_disabled(monkeypatch):
+    """_validate_document must pass macro_registry=None when scanning is disabled.
+
+    This ensures that E001 messages include the scanWorkspaceMacros hint
+    even though the server always maintains an internal MacroRegistry instance.
+    """
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    received_registry = []
+
+    def mock_lint_text(text, schema=None, min_severity=None, macro_registry=None, show_macro_hint=True):
+        received_registry.append(macro_registry)
+        return []
+
+    def mock_publish(params):
+        pass
+
+    monkeypatch.setattr(srv, "lint_text", mock_lint_text)
+    monkeypatch.setattr(srv.server, "text_document_publish_diagnostics", mock_publish)
+
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm tool", parameters={}))
+    srv._macro_registry = reg
+    srv._scan_workspace_macros = False  # scanning disabled
+    srv._schema = Schema.load()
+
+    srv._validate_document("file:///test.cmd", "cdm tool\n")
+    assert len(received_registry) == 1
+    assert received_registry[0] is None, (
+        "When scanning is disabled, lint_text must receive macro_registry=None "
+        "so that E001 hints are not suppressed"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -461,7 +495,10 @@ def _make_mock_server(workspace_path):
     from pathlib import Path
     folder = python_types.SimpleNamespace(uri=Path(workspace_path).as_uri())
     mock_workspace = python_types.SimpleNamespace(folders={"workspace": folder})
-    return python_types.SimpleNamespace(workspace=mock_workspace)
+    return python_types.SimpleNamespace(
+        workspace=mock_workspace,
+        window_log_message=lambda params: None,
+    )
 
 
 def test_on_initialized_stores_workspace_roots_when_scan_disabled(tmp_path, monkeypatch):
@@ -501,6 +538,32 @@ def test_on_initialized_scans_workspace_when_enabled(tmp_path, monkeypatch):
     assert srv._macro_registry.has_command("cdm init_scan"), (
         "on_initialized should scan and register macros when scan is enabled"
     )
+
+
+def test_on_initialized_logs_discovered_macros(tmp_path, monkeypatch):
+    """on_initialized must log the list of discovered macros to the output panel."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    (tmp_path / "tool.mac").write_text("!USER_ENTERED_COMMAND cdm log_test\n", encoding="utf-8")
+    (tmp_path / "other.mac").write_text("!USER_ENTERED_COMMAND cdm log_other\n", encoding="utf-8")
+
+    log_messages = []
+    mock_server = _make_mock_server(tmp_path)
+    mock_server.window_log_message = lambda params: log_messages.append(params.message)
+    monkeypatch.setattr(srv, "server", mock_server)
+
+    srv._macro_registry = MacroRegistry()
+    srv._scan_workspace_macros = True
+    srv._macro_patterns = ["**/*.mac"]
+    srv._macro_ignore_patterns = []
+    srv._workspace_roots = []
+
+    srv.on_initialized(types.InitializedParams())
+
+    combined = "\n".join(log_messages)
+    assert "cdm log_test" in combined, "Log should mention discovered macro commands"
+    assert "cdm log_other" in combined, "Log should mention all discovered macro commands"
+    assert "macro(s) discovered" in combined, "Log should include discovery count"
 
 
 def test_on_initialized_no_scan_when_disabled(tmp_path, monkeypatch):
