@@ -120,4 +120,5 @@ interface statusbar status = "Building link 3 of 6..."
 ## See also
 
 - [Model, Parts, and Markers](model-parts-markers.md)
+- [Macros — create, parameters, file-based](macros.md)
 - [Parametric chain example](../../assets/cmd_scripts/parametric_chain.cmd)

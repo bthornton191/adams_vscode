@@ -11,7 +11,7 @@ description: >
   angles, force measurements, TIME, and more), and when to choose each force type.
 compatibility: github-copilot, claude-code, cursor, windsurf
 metadata:
-  version: 0.0.14
+  version: 0.0.16
 ---
 
 # Adams CMD Model Builder
@@ -29,15 +29,19 @@ You are an expert MSC Adams View CMD scripter. You write correct, complete `.cmd
 7. **Use `EVAL(expr)` inside loops** to force immediate evaluation of a variable expression rather than storing a literal string.
 8. **Never specify `adams_id` manually** — Adams auto-assigns IDs. Adding them by hand is error-prone and unnecessary in CMD scripts.
 9. **`part create` only once per part** — Use `part create rigid_body name_and_position` to create the part, then `part modify rigid_body mass_properties` (not `part create`) to set mass/inertia. Calling `part create` a second time on the same part will error.
-10. **Always create a `.cm` marker explicitly and pass it as `center_of_mass_marker`**: Before calling `part modify rigid_body mass_properties`, create a `marker create` with `marker_name = .part.cm` at the center of mass location (in the part's local frame). Then pass `center_of_mass_marker = .part.cm` in the modify call. If the part's reference origin is placed at the CM (recommended), the `.cm` marker location is `0.0, 0.0, 0.0`. Do NOT rely on Adams to auto-create the CM marker — Adams 2023.2 requires the marker to be pre-created. Example:
+10. **Always create `.cm` first, then pass `center_of_mass_marker`** — Adams does NOT auto-create the `.cm` marker. You must explicitly create it before calling `part modify rigid_body mass_properties`, and you must pass it via `center_of_mass_marker`. Omitting it causes Adams to error with "no CM marker" at simulation time. Place the `.cm` marker at the part's actual centre of mass location. Example:
     ```cmd
     part create rigid_body name_and_position &
-        part_name   = .model.link &
-        location    = 50.0, 0.0, 0.0   ! part origin placed at CM
+        part_name = .model.link &
+        location  = 0.0, 0.0, 0.0
+
+    ! Create .cm marker BEFORE setting mass properties.
+    ! Place it at the actual centre of mass in global coordinates.
     marker create &
         marker_name = .model.link.cm &
-        location    = 0.0, 0.0, 0.0 &  ! (0,0,0) in local = part origin = CM
+        location    = 0.0, -100.0, 0.0 &
         orientation = 0.0D, 0.0D, 0.0D
+
     part modify rigid_body mass_properties &
         part_name             = .model.link &
         mass                  = 1.0 &
@@ -46,11 +50,37 @@ You are an expert MSC Adams View CMD scripter. You write correct, complete `.cmd
         izz                   = 100.0 &
         center_of_mass_marker = .model.link.cm
     ```
-11. **`part create point_mass` uses sub-commands, not inline parameters**: use `part create point_mass name_and_position & point_mass_name = ... & location = ...` to create, then create a `.cm` marker explicitly, then `part modify point_mass mass_properties & point_mass_name = ... & mass = ... & center_of_mass_marker = .model.part.cm`. Do NOT use `rigid_body` syntax for point masses.
+11. **`part create point_mass` uses sub-commands, not inline parameters**: use `part create point_mass name_and_position & point_mass_name = ... & location = ...` to create, then `part modify point_mass mass_properties & point_mass_name = ... & mass = ...` (a `.cm` marker and `center_of_mass_marker` are NOT needed for point masses). Do NOT use `rigid_body` syntax for point masses.
 12. **Do not use `constraint create joint fixed` with a point mass** — Adams only allows `spherical`, `atpoint`, `inline`, and `inplane` primitives on point masses. Use `constraint create joint spherical` to fully fix a point mass (spherical removes all 3 translational DOF; since point masses have no rotational DOF, this is fully constrained).
-13. **Spring-damper keyword: `translational_spring_damper`, not `spring_damper`**: the correct command is `force create element_like translational_spring_damper`. Free length is set via `displacement_at_preload` (not `length`).
+13. **Spring-damper keyword: `translational_spring_damper`, not `spring_damper`**: the correct command is `force create element_like translational_spring_damper`. Free length is set via `displacement_at_preload` (not `length`). The parameter `length` does not exist on this command — if you see `length = 200.0` in broken code, rename it to `displacement_at_preload = 200.0`.
 14. **Simulation command: `simulation single_run transient`** — the keyword `simulate transient` does not exist. Use `simulation single_run transient & type = auto_select & end_time = ... & number_of_steps = ... & model_name = ... & initial_static = no`.
 15. **Always add geometry to moving parts, using correct syntax** — Adams models without geometry are very difficult to inspect visually. Add at least one `geometry create shape` command to every moving rigid part or point mass. **Geometry syntax rules (Adams 2023.2):** `sphere` and `box` are not valid shape keywords — use `ellipsoid` (with equal x/y/z scale factors for a sphere-like shape) or `cylinder` instead. Do NOT include `part_name` or `adams_id` in geometry commands (the part is inferred from the object path). Do NOT use `side_count_for_perimeter` for cylinders. For `link` shape, use `i_marker`/`j_marker` (not `i_marker_name`/`j_marker_name`). See the geometry reference for complete examples.
+16. **Expression values must stay on a single line** — the `&` continuation character works for splitting *commands* across lines, and plain comma-separated parameter values can be split across lines with `&` (e.g., `location = 0.0, &` on one line then `0.0, 0.0` on the next). However, inline-evaluated expressions — text inside parentheses like `(eval(...))` — cannot span multiple lines. Adams parses these as a single token and will error if it encounters a line break mid-expression, even with `&`.
+
+    For arguments that *store* a function string (like `function = "..."`), you can pass multiple comma-separated quoted strings to break up long expressions — Adams concatenates them, and each appears on a new line in the GUI. This is the preferred way to keep long function expressions readable.
+
+    ```cmd
+    ! OK — plain comma-separated values can be split with &
+    marker create marker_name = .mod.part.mkr &
+        location = 0.0, &
+                   50.0, &
+                   100.0
+
+    ! OK — function string split into multiple comma-separated quoted strings
+    force create direct single_component_force &
+        single_component_force_name = .model.my_force &
+        function = "STEP(TIME, 0.0, 0.0, 1.0, 500.0)", &
+                   " + STEP(TIME, 1.0, 0.0, 2.0, 200.0)"
+
+    ! WRONG — eval expression broken across lines causes a parse error
+    marker create marker_name = .mod.part.mkr &
+        location = (eval(loc_global( &
+            {0,0,0}, .mod.part.cm)))
+
+    ! CORRECT — eval expression stays on one line
+    marker create marker_name = .mod.part.mkr &
+        location = (eval(loc_global({0,0,0}, .mod.part.cm)))
+    ```
 
 ---
 
@@ -86,17 +116,21 @@ part create rigid_body name_and_position &
     location = 0.0, 0.0, 100.0 &
     orientation = 0.0D, 0.0D, 0.0D
 
-! 6. Set mass/inertia properties
-!    Adams auto-creates .my_model.link.cm when mass is set.
-!    Do NOT pass center_of_mass_marker here — .cm doesn't exist yet and
-!    Adams will error. Only use center_of_mass_marker to redirect to a
-!    different, already-existing marker.
+! 6. Create .cm marker, then set mass/inertia properties (Rule 10).
+!    You must create .cm BEFORE calling part modify mass_properties.
+!    Place it at the actual centre of mass (here: part origin).
+marker create &
+    marker_name = .my_model.link.cm &
+    location    = 0.0, 0.0, 100.0 &
+    orientation = 0.0D, 0.0D, 0.0D
+
 part modify rigid_body mass_properties &
-    part_name = .my_model.link &
-    mass = 1.5 &
-    ixx = 1200.0 &
-    iyy = 1200.0 &
-    izz = 50.0
+    part_name             = .my_model.link &
+    mass                  = 1.5 &
+    ixx                   = 1200.0 &
+    iyy                   = 1200.0 &
+    izz                   = 50.0 &
+    center_of_mass_marker = .my_model.link.cm
 
 ! 7. Create other markers on the part (e.g., pin location)
 marker create &
@@ -203,6 +237,51 @@ Full scripting reference: [`references/commands/scripting.md`](references/comman
 
 ---
 
+## Macros Quick Reference
+
+Macros are `.mac` files loaded with `macro read` and executed by name.
+
+```cmd
+! Load a macro from disk
+macro read &
+    file_name    = "C:/macros/my_macro.mac" &
+    library_name = (.my_lib)
+
+! Execute it
+.my_lib.my_macro  arg1 = value1
+```
+
+```cmd
+! --- .mac file skeleton ---
+!USER_ENTERED_COMMAND  mylib my_macro
+!WRAP_IN_UNDO          yes
+!
+!$part_name:t=part:c=1
+!$scale:t=real:c=0:d=1.0:r=gt(0)
+!$label:t=string:c=0:d="Part"
+!
+!END_OF_PARAMETERS
+
+! Always create a $_self var first so wildcard delete is safe
+variable set variable_name = $_self._init  integer_value = 1
+
+! ... macro body ...
+
+variable delete variable = $_self.*
+```
+
+| Pattern | Key syntax |
+|---------|------------|
+| Temp variable namespace | `$_self.varname` — avoids collisions in macro-calls-macro |
+| Optional cleanup (wildcard) | `variable delete variable = $_self.*` |
+| Collision-free names | `UNIQUE_NAME(".model.spr_")` |
+| Find owning model | `DB_ANCESTOR(eval($part), "model")` |
+| Output parameter (return value) | Pass string containing target variable name; callee writes to it |
+
+Full macro reference: [`references/commands/macros.md`](references/commands/macros.md)
+
+---
+
 ## Key Reference Files
 
 | Topic | File |
@@ -212,10 +291,15 @@ Full scripting reference: [`references/commands/scripting.md`](references/comman
 | Constraints and joints | [`references/commands/constraints.md`](references/commands/constraints.md) |
 | Forces and force selection | [`references/commands/forces.md`](references/commands/forces.md) |
 | Geometry shapes | [`references/commands/geometry.md`](references/commands/geometry.md) |
-| Macros, variables, loops, conditionals | [`references/commands/scripting.md`](references/commands/scripting.md) |
+| Variables, loops, conditionals | [`references/commands/scripting.md`](references/commands/scripting.md) |
+| Macros — parameters, patterns, lifecycle | [`references/commands/macros.md`](references/commands/macros.md) |
+| File I/O — text open/write/close, command read | [`references/commands/file-io.md`](references/commands/file-io.md) |
 | Function expressions index | [`references/function-expressions/README.md`](references/function-expressions/README.md) |
 | Simple pendulum example | [`assets/cmd_scripts/simple_pendulum.cmd`](assets/cmd_scripts/simple_pendulum.cmd) |
 | Parametric chain example | [`assets/cmd_scripts/parametric_chain.cmd`](assets/cmd_scripts/parametric_chain.cmd) |
+| Example: icon-resize macro | [`assets/cmd_scripts/example_macro_resize_icons.mac`](assets/cmd_scripts/example_macro_resize_icons.mac) |
+| Example: batch spring-creation macro | [`assets/cmd_scripts/example_macro_batch_spring.mac`](assets/cmd_scripts/example_macro_batch_spring.mac) |
+| Example: export-results macro | [`assets/cmd_scripts/example_macro_export_results.mac`](assets/cmd_scripts/example_macro_export_results.mac) |
 
 ---
 

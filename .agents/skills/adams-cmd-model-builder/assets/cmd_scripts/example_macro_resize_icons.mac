@@ -1,0 +1,33 @@
+! ============================================================
+! Macro:  resize_icons
+! Purpose: Set a uniform icon scale factor on every part in
+!          the active model.  Run after building a model to
+!          make icons visible at the correct scale.
+!
+! Usage:
+!   Load:     macro read file_name="example_macro_resize_icons.mac"
+!   Execute:  resize_icons scale=0.05
+! ============================================================
+!
+!USER_ENTERED_COMMAND  resize_icons
+!HELP_STRING           Set icon scale for all parts in the active model
+!CREATE_PANEL          no
+!WRAP_IN_UNDO          yes
+!
+!$model_name:t=string:c=0:d=".model"
+!$scale:t=real:c=0:d=0.1
+!
+!END_OF_PARAMETERS
+! ============================================================
+
+! --- Store scale in a $_self variable so cleanup is always safe ---
+variable set variable_name = $_self.scale  real_value = $scale
+variable set variable_name = $_self.mdl    string_value = "$model_name"
+
+! Apply icon scale to the model
+defaults model &
+    model_name = (eval($_self.mdl)) &
+    icons_size = (eval($_self.scale))
+
+! Clean up
+variable delete variable = $_self.*

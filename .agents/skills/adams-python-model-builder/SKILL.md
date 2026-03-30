@@ -13,7 +13,7 @@ description: >
   script for Adams — even if they don't say "Python API" explicitly.
 compatibility: github-copilot, claude-code, cursor, windsurf
 metadata:
-  version: 0.0.14
+  version: 0.0.16
 ---
 
 # Adams Python Model Builder
