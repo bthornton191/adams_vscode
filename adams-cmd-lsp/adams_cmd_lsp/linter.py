@@ -10,7 +10,7 @@ from .diagnostics import Diagnostic, Severity
 _SEVERITY_ORDER = {"error": 0, "warning": 1, "info": 2}
 
 
-def lint_text(text, schema=None, min_severity=None):
+def lint_text(text, schema=None, min_severity=None, macro_registry=None, show_macro_hint=True):
     """Lint a CMD text string and return sorted diagnostics.
 
     Args:
@@ -18,13 +18,18 @@ def lint_text(text, schema=None, min_severity=None):
         schema: Schema object (loads bundled default if None)
         min_severity: minimum severity string to include: "error", "warning", "info"
                       (None means include all)
+        macro_registry: optional MacroRegistry for workspace-wide user macro lookup
+        show_macro_hint: if True, E001 messages include a hint about scanWorkspaceMacros
+                         when no macro registry is active
 
     Returns:
         list[Diagnostic] sorted by (line, column)
     """
     schema = schema or Schema.load()
     statements = parse(text)
-    symbols = build_symbol_table(statements, schema)
+    symbols = build_symbol_table(
+        statements, schema, macro_registry=macro_registry, show_macro_hint=show_macro_hint
+    )
 
     diagnostics = []
     for rule in ALL_RULES:

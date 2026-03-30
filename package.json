@@ -323,6 +323,28 @@
                          "enum": ["error", "warning", "info"],
                          "default": "info",
                          "description": "Minimum severity level for the Adams CMD linter to report. 'info' reports everything; 'error' reports only hard errors."
+                     },
+                     "msc-adams.linter.macroPaths": {
+                         "type": "array",
+                         "items": { "type": "string" },
+                         "default": ["**/*.mac"],
+                         "description": "Glob patterns for macro file discovery, resolved relative to each workspace folder (or --macro-base-dir for CLI). Example: ['**/*.mac', 'shared_macros/*']. Only used when 'msc-adams.linter.scanWorkspaceMacros' is true."
+                     },
+                     "msc-adams.linter.macroIgnorePaths": {
+                         "type": "array",
+                         "items": { "type": "string" },
+                         "default": [],
+                         "description": "Glob patterns (relative to each scanned directory) for macro files to exclude from scanning. Example: '**/generated/**'. Common directories like .git, node_modules, __pycache__ are excluded automatically."
+                     },
+                     "msc-adams.linter.scanWorkspaceMacros": {
+                         "type": "boolean",
+                         "default": false,
+                         "description": "Scan workspace folders for user-defined macro files to suppress false 'Unknown command' errors. Uses the 'msc-adams.linter.macroPaths' glob patterns. Disable for large repositories if scanning is slow."
+                     },
+                     "msc-adams.linter.showMacroHint": {
+                         "type": "boolean",
+                         "default": true,
+                         "description": "Append a hint about 'msc-adams.linter.scanWorkspaceMacros' to E001 'Unknown command' diagnostics when workspace macro scanning is not enabled. Set to false to silence the hint."
                      }
                  }
             }

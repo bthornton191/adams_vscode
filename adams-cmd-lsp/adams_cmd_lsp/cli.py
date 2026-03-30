@@ -2,12 +2,14 @@
 
 import argparse
 import json
+import os
 import sys
 from pathlib import Path
 
 from .linter import lint_text
 from .schema import Schema
 from .diagnostics import Severity
+from .macros import scan_macro_files, DEFAULT_MACRO_PATTERNS
 
 
 def _output_text(filepath, diagnostics, file=None):
@@ -87,6 +89,34 @@ def main():
         metavar="PATH",
         help="Path to command_schema.json (default: bundled)",
     )
+    parser.add_argument(
+        "--macro-paths",
+        nargs="+",
+        metavar="GLOB",
+        default=[],
+        help=(
+            "Glob patterns for macro file discovery, resolved relative to "
+            "--macro-base-dir (default: current directory). "
+            "Example: '**/*.mac' 'macros/*'. "
+            "If omitted, no macro scanning is performed."
+        ),
+    )
+    parser.add_argument(
+        "--macro-base-dir",
+        metavar="DIR",
+        default=None,
+        help=(
+            "Base directory for resolving relative --macro-paths globs "
+            "(default: current working directory)."
+        ),
+    )
+    parser.add_argument(
+        "--macro-ignore-paths",
+        nargs="+",
+        metavar="GLOB",
+        default=[],
+        help="Glob patterns (relative to base dir) to exclude from macro scanning.",
+    )
 
     args = parser.parse_args()
 
@@ -96,6 +126,15 @@ def main():
         print(f"Error loading schema: {exc}", file=sys.stderr)
         sys.exit(2)
 
+    macro_registry = None
+    if args.macro_paths:
+        base_dir = args.macro_base_dir or os.getcwd()
+        macro_registry = scan_macro_files(
+            [base_dir],
+            patterns=args.macro_paths,
+            ignore_patterns=args.macro_ignore_paths or None,
+        )
+
     exit_code = 0
     for filepath in args.files:
         path = Path(filepath)
@@ -104,7 +143,12 @@ def main():
             sys.exit(2)
 
         text = path.read_text(encoding="utf-8", errors="replace")
-        diagnostics = lint_text(text, schema=schema, min_severity=args.severity)
+        diagnostics = lint_text(
+            text,
+            schema=schema,
+            min_severity=args.severity,
+            macro_registry=macro_registry,
+        )
 
         if any(d.severity == Severity.ERROR for d in diagnostics):
             exit_code = 1

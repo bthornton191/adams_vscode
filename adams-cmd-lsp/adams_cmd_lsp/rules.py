@@ -8,6 +8,7 @@ Rules are collected in ALL_RULES at the bottom of this module.
 
 from .diagnostics import Diagnostic, Severity
 from .parser import Statement, _char_to_line_col
+from .macros import MacroDefinition
 
 
 # ---------------------------------------------------------------------------
@@ -83,16 +84,31 @@ def rule_unknown_command(statements, schema, symbols):
             if sym and sym.object_type.upper() == "MACRO":
                 continue
 
+        # Suppress E001 if the full command key matches a workspace-discovered
+        # macro from the MacroRegistry.  Stash the MacroDefinition on the
+        # statement so rule_macro_invalid_argument can validate arguments.
+        if symbols.macro_registry is not None:
+            macro_def = symbols.macro_registry.lookup_command(stmt.command_key)
+            if macro_def is not None:
+                stmt._macro_def = macro_def
+                continue
+
         # Report the problematic token position
         col = sum(len(t) + 1 for t in tokens[:error_index]) if error_index else 0
         bad_token = tokens[error_index] if error_index is not None and error_index < len(tokens) else stmt.command_key
+        message = f"Unknown command: '{stmt.command_key}'"
+        if symbols.macro_registry is None and symbols.show_macro_hint:
+            message += (
+                " If this is a user-defined macro, enable "
+                "'msc-adams.linter.scanWorkspaceMacros' to scan the workspace for macro definitions."
+            )
         diagnostics.append(Diagnostic(
             line=stmt.line_start,
             column=col,
             end_line=stmt.line_start,
             end_column=col + len(bad_token),
             code="E001",
-            message=f"Unknown command: '{stmt.command_key}'",
+            message=message,
             severity=Severity.ERROR,
         ))
 
@@ -835,19 +851,62 @@ def rule_type_mismatch(statements, schema, symbols):
 
 
 # ---------------------------------------------------------------------------
+# User macro argument validation
+# ---------------------------------------------------------------------------
+
+def rule_macro_invalid_argument(statements, schema, symbols):
+    """E002 (macro) — Argument not in the user-defined macro's parameter list.
+
+    Fires only when the statement was matched to a MacroDefinition from the
+    MacroRegistry (i.e. stmt._macro_def was set by rule_unknown_command).
+    Skips validation when the macro has no declared parameters — either
+    because the macro file could not be scanned or because the macro truly
+    accepts anything.
+    """
+    diagnostics = []
+    for stmt in statements:
+        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
+            continue
+
+        macro_def = getattr(stmt, "_macro_def", None)
+        if not isinstance(macro_def, MacroDefinition):
+            continue
+        if not macro_def.parameters:
+            # No declared parameters — skip validation to avoid false positives
+            continue
+
+        for arg in stmt.arguments:
+            if arg.name.lower() not in macro_def.parameters:
+                diagnostics.append(Diagnostic(
+                    line=arg.name_line,
+                    column=arg.name_column,
+                    end_line=arg.name_line,
+                    end_column=arg.name_column + len(arg.name),
+                    code="E002",
+                    message=(
+                        f"Invalid argument '{arg.name}' for macro '{macro_def.command}'"
+                    ),
+                    severity=Severity.ERROR,
+                ))
+
+    return diagnostics
+
+
+# ---------------------------------------------------------------------------
 # Rule registry
 # ---------------------------------------------------------------------------
 
 ALL_RULES = [
-    rule_unknown_command,       # E001 — sets resolved_command_key as side-effect
-    rule_invalid_argument,      # E002
-    rule_duplicate_argument,    # E003
-    rule_invalid_enum_value,    # E004
-    rule_missing_required,      # E005 / W005
-    rule_manual_adams_id,       # I006
-    rule_exclusive_conflict,    # E006
-    rule_unbalanced_parens,     # E101
-    rule_unclosed_quote,        # E102
-    rule_control_flow_balance,  # E104
-    rule_type_mismatch,         # W201 / I202
+    rule_unknown_command,           # E001 — sets resolved_command_key as side-effect
+    rule_invalid_argument,          # E002
+    rule_duplicate_argument,        # E003
+    rule_invalid_enum_value,        # E004
+    rule_missing_required,          # E005 / W005
+    rule_manual_adams_id,           # I006
+    rule_exclusive_conflict,        # E006
+    rule_unbalanced_parens,         # E101
+    rule_unclosed_quote,            # E102
+    rule_control_flow_balance,      # E104
+    rule_type_mismatch,             # W201 / I202
+    rule_macro_invalid_argument,    # E002 (macro) — must run after rule_unknown_command
 ]

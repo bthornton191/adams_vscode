@@ -37,9 +37,30 @@ function cmd_lsp_client(output_channel, reporter) {
         // Launch the bundled wrapper script — no user pip-install required.
         const server_script = path.join(context.extensionPath, "bundled", "tool", "lsp_server.py");
 
+        // Build CLI args from VS Code settings
+        const server_args = [server_script];
+
+        if (config.get("linter.scanWorkspaceMacros")) {
+            server_args.push("--scan-workspace-macros");
+        }
+
+        const macro_paths = config.get("linter.macroPaths");
+        if (Array.isArray(macro_paths) && macro_paths.length > 0) {
+            server_args.push("--macro-paths", ...macro_paths);
+        }
+
+        const macro_ignore_paths = config.get("linter.macroIgnorePaths");
+        if (Array.isArray(macro_ignore_paths) && macro_ignore_paths.length > 0) {
+            server_args.push("--macro-ignore-paths", ...macro_ignore_paths);
+        }
+
+        if (config.get("linter.showMacroHint") === false) {
+            server_args.push("--no-show-macro-hint");
+        }
+
         const server_options = {
             command: python_path,
-            args: [server_script],
+            args: server_args,
             transport: TransportKind.stdio,
         };
 
