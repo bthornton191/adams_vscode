@@ -127,8 +127,13 @@ function connectionErrorMessage(port: number): string {
 /**
  * Execute an Adams View command. Throws on error or unexpected response.
  * Adams View returns "cmd: 0" on success.
+ *
+ * @param cmd The command string to send.
+ * @param timeoutMs Response timeout in milliseconds (default: TIMEOUT_MS).
+ *                  Use a larger value for long-running commands.
  */
-export async function executeCmd(cmd: string): Promise<void> {
+export async function executeCmd(cmd: string, timeoutMs?: number): Promise<void> {
+  const ms = timeoutMs ?? TIMEOUT_MS;
   const port = getPort();
   const socket = await withTimeout(
     connect(port),
@@ -143,7 +148,7 @@ export async function executeCmd(cmd: string): Promise<void> {
 
   const response = await withTimeout(
     receiveAll(socket),
-    TIMEOUT_MS,
+    ms,
     `Timed out waiting for Adams View response to command.`
   );
   socket.destroy();
@@ -155,6 +160,37 @@ export async function executeCmd(cmd: string): Promise<void> {
       `Expected "cmd: 0" for success.`
     );
   }
+}
+
+/**
+ * Send an Adams View command without waiting for a response (fire-and-forget).
+ *
+ * Connects, writes the command, and closes the socket immediately without
+ * waiting for "cmd: 0". Adams View will still execute the command.
+ * Use this when a command may run for minutes or hours and blocking the
+ * caller is impractical.
+ *
+ * Callers receive no confirmation of success or failure. Use
+ * checkConnection() to poll until Adams View is responsive again, which
+ * indicates the command has finished.
+ */
+export async function sendCmd(cmd: string): Promise<void> {
+  const port = getPort();
+  const socket = await withTimeout(
+    connect(port),
+    TIMEOUT_MS,
+    connectionErrorMessage(port)
+  ).catch((e: Error) => {
+    throw new Error(connectionErrorMessage(port) + (e.message ? `\n(${e.message})` : ""));
+  });
+
+  socket.setNoDelay(true);
+  await new Promise<void>((resolve, reject) => {
+    socket.write(`cmd ${cmd}`, (err) => {
+      socket.destroy();
+      if (err) reject(err); else resolve();
+    });
+  });
 }
 
 /**

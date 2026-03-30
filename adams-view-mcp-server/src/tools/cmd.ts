@@ -9,7 +9,7 @@ import * as os from "os";
 import * as path from "path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { executeCmd } from "../client.js";
+import { executeCmd, sendCmd } from "../client.js";
 
 function errorResult(message: string) {
   return {
@@ -158,17 +158,36 @@ File type is inferred from the extension:
   - .cmd → file command read file_name="<path>"
   - .py  → file python read file_name="<path>"
 
+By default the tool waits for Adams View to finish executing the file and
+reports success or failure (wait_for_completion=true). For files that may
+take a long time to execute (e.g. scripts that run simulations), set
+wait_for_completion=false. The command is sent and the tool returns
+immediately. Call adams_check_connection repeatedly until it returns true
+to determine when Adams View has finished and is ready for new commands.
+
 Args:
   - file_path (string): Absolute path to the .cmd or .py file to load
+  - wait_for_completion (boolean, default true): When false, send the
+    command and return immediately without waiting for Adams View to finish.
 
 Returns:
-  Success message, or an error describing what went wrong.`,
+  Success message, or an error describing what went wrong.
+  When wait_for_completion=false, returns immediately with a status message
+  and instructions for polling completion via adams_check_connection.`,
       inputSchema: z
         .object({
           file_path: z
             .string()
             .min(1)
             .describe("Absolute path to the .cmd or .py file to load"),
+          wait_for_completion: z
+            .boolean()
+            .optional()
+            .describe(
+              "When false, send the command and return immediately without waiting for " +
+              "Adams View to finish. Poll completion with adams_check_connection. " +
+              "Defaults to true."
+            ),
         })
         .strict(),
       annotations: {
@@ -178,7 +197,7 @@ Returns:
         openWorldHint: false,
       },
     },
-    async ({ file_path }) => {
+    async ({ file_path, wait_for_completion }) => {
       try {
         await fs.access(file_path);
       } catch {
@@ -197,6 +216,20 @@ Returns:
         ext === ".cmd"
           ? `file command read file_name="${normalised}"`
           : `file python read file_name="${normalised}"`;
+
+      if (wait_for_completion === false) {
+        try {
+          await sendCmd(adamsCmd);
+          return successResult(
+            `Command sent to Adams View (not waiting for completion): ${file_path}\n` +
+            `Adams View is now executing the file. Call adams_check_connection ` +
+            `repeatedly — it will return true once Adams View is responsive again, ` +
+            `indicating the file has finished executing.`
+          );
+        } catch (e: unknown) {
+          return errorResult(`Error sending command: ${e instanceof Error ? e.message : String(e)}`);
+        }
+      }
 
       try {
         await executeCmd(adamsCmd);

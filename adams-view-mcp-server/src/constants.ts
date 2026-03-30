@@ -5,4 +5,4 @@ export const DEFAULT_PORT = 5002;
 export const CHARACTER_LIMIT = 25000;
 
 /** Timeout for Adams View TCP operations in milliseconds */
-export const TIMEOUT_MS = 10000;
+export const TIMEOUT_MS = 30_000;

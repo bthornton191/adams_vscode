@@ -99,16 +99,25 @@ export function makeQueryHandler(
 /**
  * Start a mock server with fine-grained per-connection control.
  * Calls connectionHandler for each new connection.
+ *
+ * All open sockets are force-closed when close() is called, so server.close()
+ * always resolves promptly even if a handler leaves a socket open.
  */
 export async function startStatefulMockServer(
   connectionHandler: (socket: net.Socket) => void
 ): Promise<{ port: number; close: () => Promise<void> }> {
-  const server = net.createServer(connectionHandler);
+  const openSockets = new Set<net.Socket>();
+  const server = net.createServer((socket) => {
+    openSockets.add(socket);
+    socket.once("close", () => openSockets.delete(socket));
+    connectionHandler(socket);
+  });
   await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
   const address = server.address() as net.AddressInfo;
   return {
     port: address.port,
     close() {
+      for (const s of openSockets) s.destroy();
       return new Promise<void>((resolve, reject) => {
         server.close((err) => (err ? reject(err) : resolve()));
       });

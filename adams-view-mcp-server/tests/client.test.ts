@@ -15,6 +15,7 @@ import {
   parseDescription,
   parseData,
   executeCmd,
+  sendCmd,
   evaluateExp,
   checkConnection,
   getPort,
@@ -168,6 +169,49 @@ describe("executeCmd", () => {
     } finally {
       await refused.close();
     }
+  }, 15000);
+  it("honours a custom timeoutMs shorter than the default", async () => {
+    // Override with a server that delays its response to exceed the custom timeout
+    if (mock) { await mock.close(); mock = undefined; }
+    mock = await startStatefulMockServer((socket: net.Socket) => {
+      socket.once("data", (_chunk: Buffer) => {
+        // Deliberately delay so it outlasts a 200ms custom timeout
+        setTimeout(() => { socket.write("cmd: 0"); socket.end(); }, 1000);
+      });
+    });
+    process.env["ADAMS_LISTENER_PORT"] = String(mock.port);
+    await expect(executeCmd("test", 200)).rejects.toThrow(/Timed out/);
+  }, 10000);
+});
+
+// ── sendCmd ───────────────────────────────────────────────────────────────────────
+
+describe("sendCmd", () => {
+  afterEach(() => {
+    delete process.env["ADAMS_LISTENER_PORT"];
+  });
+
+  it("resolves without waiting for a server response", async () => {
+    // Server accepts the connection but never responds.
+    // sendCmd must resolve anyway since it doesn't wait for 'cmd: 0'.
+    const localMock = await startStatefulMockServer((_socket: net.Socket) => {
+      // intentionally silent — never send a response
+    });
+    process.env["ADAMS_LISTENER_PORT"] = String(localMock.port);
+    try {
+      await expect(sendCmd("file command read file_name=\"/long_running.cmd\"")).resolves.toBeUndefined();
+    } finally {
+      await localMock.close();
+    }
+  });
+
+  it("throws when connection is refused", async () => {
+    // Get a free port, close the server, then try to connect — gets ECONNREFUSED.
+    const temp = await startStatefulMockServer((_socket: net.Socket) => {});
+    const port = temp.port;
+    await temp.close();
+    process.env["ADAMS_LISTENER_PORT"] = String(port);
+    await expect(sendCmd("test")).rejects.toThrow();
   }, 15000);
 });
 
