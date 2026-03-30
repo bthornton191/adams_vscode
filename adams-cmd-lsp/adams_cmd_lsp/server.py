@@ -60,7 +60,7 @@ def _validate_document(uri, text):
         diagnostics = lint_text(
             text,
             schema=_schema,
-            macro_registry=_macro_registry,
+            macro_registry=_macro_registry if _scan_workspace_macros else None,
             show_macro_hint=_macro_show_hint,
         )
     except Exception as exc:  # noqa: BLE001
@@ -272,5 +272,26 @@ def on_initialized(params: types.InitializedParams):
             types.LogMessageParams(
                 type=types.MessageType.Warning,
                 message=f"Adams macro scan failed: {exc}",
+            )
+        )
+        return
+    # Log all discovered macros to the VS Code output panel
+    count = len(_macro_registry)
+    if count == 0:
+        server.window_log_message(
+            types.LogMessageParams(
+                type=types.MessageType.Info,
+                message="Adams macro scan complete: no macro files found.",
+            )
+        )
+    else:
+        lines = [f"Adams macro scan complete: {count} macro(s) discovered."]
+        for cmd_key, macro_def in sorted(_macro_registry.items()):
+            src = macro_def.source_file or "<unknown>"
+            lines.append(f"  {cmd_key}  ({src})")
+        server.window_log_message(
+            types.LogMessageParams(
+                type=types.MessageType.Info,
+                message="\n".join(lines),
             )
         )
