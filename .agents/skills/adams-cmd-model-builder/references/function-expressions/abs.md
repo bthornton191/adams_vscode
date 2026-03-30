@@ -36,6 +36,18 @@ ABS(VZ(.MODEL.BODY.CM) - 100.0)
 | `MOD` | `MOD(x, y)` | Remainder of `x / y` (same sign as `x`) |
 | `INT` | `INT(x)` | Truncates to integer (rounds towards zero) |
 | `SIGN` | `SIGN(x, y)` | `ABS(x) * sign(y)`; copies sign of `y` onto magnitude of `x` |
+| `AINT` | `AINT(x)` | Truncates to integer nearest zero (same as `INT`) |
+| `ANINT` | `ANINT(x)` | Rounds to nearest integer (away from zero for .5) |
+| `NINT` | `NINT(x)` | Returns the whole number nearest to `x` |
+| `CEIL` | `CEIL(x)` | Smallest integer **greater than** `x` (ceiling) |
+| `FLOOR` | `FLOOR(x)` | Largest integer **less than** `x` (floor) |
+| `RTOI` | `RTOI(x)` | Converts real number to integer representation |
+| `SINH` | `SINH(x)` | Hyperbolic sine of `x` |
+| `COSH` | `COSH(x)` | Hyperbolic cosine of `x` |
+| `TANH` | `TANH(x)` | Hyperbolic tangent of `x`; useful as a smooth step function |
+| `DIM` | `DIM(x1, x2)` | Positive difference: `MAX(x1-x2, 0)` |
+| `MAG` | `MAG(x, y, z)` | Magnitude of a 3D vector: `SQRT(x²+y²+z²)` |
+| `RAND` | `RAND()` | Pseudo-random value on [0.0, 1.0] from uniform distribution |
 
 ## Examples
 

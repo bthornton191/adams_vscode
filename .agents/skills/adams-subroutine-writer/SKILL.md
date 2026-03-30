@@ -10,7 +10,7 @@ description: >
   DLL build commands, and Adams dataset file (.adm) ROUTINE= syntax.
 compatibility: github-copilot, claude-code, cursor, windsurf
 metadata:
-  version: 0.0.14
+  version: 0.0.16
 ---
 
 # Adams Subroutine Writer

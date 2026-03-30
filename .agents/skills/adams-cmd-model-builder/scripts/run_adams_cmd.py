@@ -186,13 +186,31 @@ def main():
 
     print("Adams View finished.")
 
-    # Copy log if requested
+    # Copy log if requested — retry a few times because aview.exe may still
+    # hold the file briefly after writing the finish marker.
     if args.log_output:
-        out_path = Path(args.log_output)
+        out_path = Path(args.log_output).resolve()
         out_path.parent.mkdir(parents=True, exist_ok=True)
         import shutil
-        shutil.copy2(log_path, out_path)
-        print(f"Log copied to: {out_path}")
+        if out_path == log_path.resolve():
+            # Same file — log is already in the right place, nothing to do
+            print(f"Log already at: {out_path}")
+        else:
+            for attempt in range(10):
+                try:
+                    shutil.copy2(log_path, out_path)
+                    print(f"Log copied to: {out_path}")
+                    break
+                except PermissionError:
+                    if attempt < 9:
+                        time.sleep(2)
+                    else:
+                        # Last resort: read content and write manually
+                        out_path.write_text(
+                            log_path.read_text(encoding="utf-8", errors="replace"),
+                            encoding="utf-8",
+                        )
+                        print(f"Log written to: {out_path} (fallback copy)")
 
     # Check for errors
     errors = check_log_errors(log_path)

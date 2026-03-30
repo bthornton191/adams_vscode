@@ -124,6 +124,11 @@ constraint create complex_joint coupler &
 
 Prescribes a position, velocity, or acceleration profile on a joint DOF.
 
+### Specifying the constrained DOF
+
+There are two ways to identify which DOF to drive:
+
+**Option 1 — via a joint** (most common):
 ```cmd
 constraint create motion_generator &
     motion_name      = .model.motion_1 &
@@ -133,7 +138,20 @@ constraint create motion_generator &
     function         = "STEP(TIME, 0, 0, 2, 180D)"
 ```
 
-- `type_of_freedom`: `rotational` or `translational`
+**Option 2 — via markers and an axis** (use when no joint exists, or to drive an arbitrary axis between two bodies):
+```cmd
+constraint create motion_generator &
+    motion_name      = .model.motion_1 &
+    i_marker_name    = .model.part_1.marker_i &
+    j_marker_name    = .model.ground.marker_j &
+    axis             = Z &
+    time_derivative  = displacement &
+    function         = "STEP(TIME, 0, 0, 2, 180D)"
+```
+
+- `joint_name` and the marker/axis pair are **mutually exclusive** — provide one or the other, never both.
+- `axis` values when using markers: `X`, `Y`, `Z`, `B1`, `B2`, `B3`
+- `type_of_freedom`: `rotational` or `translational` (used with `joint_name`; not required when specifying `axis` directly)
 - `time_derivative`: `displacement` (default), `velocity`, or `acceleration`. **Always specify this explicitly** — omitting it when your function defines velocity (e.g. a HAVSIN ramp of angular velocity) will cause Adams to treat the function as displacement.
 - `function`: any valid FUNCTION= expression
 - The motion **replaces** the joint DOF with the prescribed trajectory; the joint reaction force is computed by the solver.
