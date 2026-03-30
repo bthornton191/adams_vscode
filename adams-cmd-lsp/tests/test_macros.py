@@ -18,6 +18,8 @@ from adams_cmd_lsp.macros import (
     scan_macro_globs,
     scan_macro_files,
     scan_macro_paths,  # legacy alias — still tested for backward compat
+    resolve_macro_argument_name,
+    _compute_min_prefixes,
 )
 
 
@@ -757,3 +759,116 @@ def test_scan_macro_files_multi_root(tmp_path):
     reg = scan_macro_files([str(root1), str(root2)])
     assert reg.has_command("cdm tool_a"), "Macro from first root should be registered"
     assert reg.has_command("cdm tool_b"), "Macro from second root should be registered"
+
+
+# ---------------------------------------------------------------------------
+# _compute_min_prefixes
+# ---------------------------------------------------------------------------
+
+def test_compute_min_prefixes_single_name():
+    """A single name has min_prefix of 1."""
+    assert _compute_min_prefixes(["model_name"]) == {"model_name": 1}
+
+
+def test_compute_min_prefixes_disjoint_names():
+    """Names with different first letters each get min_prefix of 1."""
+    result = _compute_min_prefixes(["alpha", "beta", "gamma"])
+    assert result == {"alpha": 1, "beta": 1, "gamma": 1}
+
+
+def test_compute_min_prefixes_shared_prefix():
+    """Names sharing a common prefix require enough chars to be unambiguous."""
+    result = _compute_min_prefixes(["model", "mass"])
+    # 'm' is ambiguous; 'mo' uniquely identifies 'model'; 'ma' uniquely identifies 'mass'
+    assert result["model"] == 2
+    assert result["mass"] == 2
+
+
+def test_compute_min_prefixes_one_is_prefix_of_another():
+    """When one name is a prefix of another, the shorter gets its full length as min_prefix."""
+    result = _compute_min_prefixes(["model", "model_name"])
+    # "model" shares every prefix with "model_name" up to the full word,
+    # so it falls through to the else clause: min_prefix = len("model") = 5.
+    # "model_name" diverges at position 6 ("model_" is unique), so min_prefix = 6.
+    assert result["model"] == 5
+    assert result["model_name"] == 6
+
+
+def test_compute_min_prefixes_case_insensitive():
+    """Prefix computation is case-insensitive."""
+    result = _compute_min_prefixes(["Model", "Mass"])
+    # 'Mo' vs 'Ma' — still 2 each
+    assert result["Model"] == 2
+    assert result["Mass"] == 2
+
+
+# ---------------------------------------------------------------------------
+# resolve_macro_argument_name
+# ---------------------------------------------------------------------------
+
+def _make_macro_def(command, param_names):
+    """Build a MacroDefinition with simple parameters keyed by lower-case name."""
+    params = {n.lower(): MacroParameter(name=n.lower()) for n in param_names}
+    return MacroDefinition(command=command, parameters=params)
+
+
+def test_resolve_exact_match():
+    """Exact argument name (case-insensitive) resolves correctly."""
+    macro = _make_macro_def("cdm tool", ["model_name", "iterations"])
+    assert resolve_macro_argument_name(macro, "model_name") == "model_name"
+    assert resolve_macro_argument_name(macro, "MODEL_NAME") == "model_name"
+    assert resolve_macro_argument_name(macro, "Iterations") == "iterations"
+
+
+def test_resolve_exact_wins_over_prefix():
+    """When a param named 'mod' exists alongside 'model', 'mod' resolves exactly."""
+    macro = _make_macro_def("cdm tool", ["mod", "model"])
+    assert resolve_macro_argument_name(macro, "mod") == "mod"
+
+
+def test_resolve_unambiguous_prefix():
+    """An unambiguous prefix resolves to the matching parameter."""
+    macro = _make_macro_def("cdm tool", ["model_name", "iterations"])
+    assert resolve_macro_argument_name(macro, "mod") == "model_name"
+    assert resolve_macro_argument_name(macro, "iter") == "iterations"
+
+
+def test_resolve_ambiguous_prefix_returns_none():
+    """An ambiguous prefix returns None."""
+    macro = _make_macro_def("cdm tool", ["model", "mode"])
+    assert resolve_macro_argument_name(macro, "mod") is None
+    assert resolve_macro_argument_name(macro, "mo") is None
+
+
+def test_resolve_too_short_prefix_returns_none():
+    """A prefix shorter than min_prefix returns None."""
+    macro = _make_macro_def("cdm tool", ["model_name", "mass"])
+    # 'm' is below min_prefix for both
+    assert resolve_macro_argument_name(macro, "m") is None
+
+
+def test_resolve_unknown_name_returns_none():
+    """A completely unknown argument name returns None."""
+    macro = _make_macro_def("cdm tool", ["model_name"])
+    assert resolve_macro_argument_name(macro, "typo") is None
+
+
+def test_resolve_empty_params_returns_none():
+    """A macro with no declared parameters always returns None."""
+    macro = _make_macro_def("cdm tool", [])
+    assert resolve_macro_argument_name(macro, "anything") is None
+
+
+def test_resolve_single_param_any_prefix():
+    """With only one parameter, any non-empty prefix resolves."""
+    macro = _make_macro_def("cdm tool", ["model_name"])
+    assert resolve_macro_argument_name(macro, "m") == "model_name"
+    assert resolve_macro_argument_name(macro, "mod") == "model_name"
+    assert resolve_macro_argument_name(macro, "model_name") == "model_name"
+
+
+def test_resolve_case_insensitive_prefix():
+    """Prefix matching is case-insensitive."""
+    macro = _make_macro_def("cdm tool", ["model_name", "iterations"])
+    assert resolve_macro_argument_name(macro, "MOD") == "model_name"
+    assert resolve_macro_argument_name(macro, "ITER") == "iterations"

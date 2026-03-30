@@ -49,6 +49,73 @@ class MacroDefinition:
     line: int = 0                                   # 0-based line of !USER_ENTERED_COMMAND
 
 
+def _compute_min_prefixes(names):
+    """Return a dict mapping each name to its minimum unique prefix length.
+
+    The shortest prefix that unambiguously identifies a name among its siblings
+    is computed case-insensitively.  If a name is a prefix of another name the
+    full-length is required.
+
+    Args:
+        names: iterable of sibling parameter names
+
+    Returns:
+        dict[str, int] — name → minimum unique prefix length
+    """
+    lower_names = [n.lower() for n in names]
+    result = {}
+    for i, name in enumerate(lower_names):
+        for prefix_len in range(1, len(name) + 1):
+            prefix = name[:prefix_len]
+            conflicts = sum(
+                1 for j, other in enumerate(lower_names)
+                if j != i and other.startswith(prefix)
+            )
+            if conflicts == 0:
+                result[names[i]] = prefix_len
+                break
+        else:
+            result[names[i]] = len(name)
+    return result
+
+
+def resolve_macro_argument_name(macro_def: "MacroDefinition", arg_name: str) -> Optional[str]:
+    """Resolve a (possibly abbreviated) argument name against a macro's parameters.
+
+    Uses the same shortest-unique-prefix algorithm as Adams built-in commands:
+    a prefix is accepted only when it is unambiguous among all sibling
+    parameter names *and* at least as long as the minimum unique prefix for
+    the matching parameter.
+
+    Returns the canonical (lower-case) parameter name on success, or ``None``
+    when the name is unknown, ambiguous, or shorter than the minimum prefix.
+    """
+    params = macro_def.parameters          # keyed by lower-case param name
+    if not params:
+        return None
+
+    arg_lower = arg_name.lower()
+
+    # Exact match takes priority
+    if arg_lower in params:
+        return arg_lower
+
+    # Compute minimum prefix lengths on the fly from sibling names
+    min_prefixes = _compute_min_prefixes(list(params.keys()))
+
+    # Prefix match — must be unambiguous and at least min_prefix chars
+    matches = []
+    for name in params:
+        min_prefix = min_prefixes.get(name, len(name))
+        if len(arg_lower) >= min_prefix and name.startswith(arg_lower):
+            matches.append(name)
+
+    if len(matches) == 1:
+        return matches[0]
+
+    return None
+
+
 # ---------------------------------------------------------------------------
 # Parameter string parsing
 # ---------------------------------------------------------------------------

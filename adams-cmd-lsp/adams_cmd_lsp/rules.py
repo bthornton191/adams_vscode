@@ -8,7 +8,7 @@ Rules are collected in ALL_RULES at the bottom of this module.
 
 from .diagnostics import Diagnostic, Severity
 from .parser import Statement, _char_to_line_col
-from .macros import MacroDefinition
+from .macros import MacroDefinition, resolve_macro_argument_name
 
 
 # ---------------------------------------------------------------------------
@@ -876,7 +876,7 @@ def rule_macro_invalid_argument(statements, schema, symbols):
             continue
 
         for arg in stmt.arguments:
-            if arg.name.lower() not in macro_def.parameters:
+            if resolve_macro_argument_name(macro_def, arg.name) is None:
                 diagnostics.append(Diagnostic(
                     line=arg.name_line,
                     column=arg.name_column,

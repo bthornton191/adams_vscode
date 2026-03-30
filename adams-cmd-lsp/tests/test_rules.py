@@ -2667,3 +2667,92 @@ def test_macro_call_still_triggers_e101_unbalanced_parens():
     )
     e101 = [d for d in diags if d.code == "E101"]
     assert len(e101) > 0, f"E101 must still fire for unbalanced parens on macro call, got: {diags}"
+
+
+# ---------------------------------------------------------------------------
+# Abbreviated argument names on macro calls
+# ---------------------------------------------------------------------------
+
+def test_macro_invalid_argument_unambiguous_abbreviation_no_error():
+    """Unambiguous abbreviation of a macro parameter must NOT fire E002."""
+    reg = _make_macro_registry_with_params("cdm tool", ["model_name", "iterations"])
+    diags = _lint_with_registry(
+        "cdm tool mod=.m iter=3\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    assert len(e002) == 0, (
+        f"E002 must not fire for unambiguous abbreviated macro args, got: {e002}"
+    )
+
+
+def test_macro_invalid_argument_ambiguous_abbreviation_fires_error():
+    """Abbreviation that matches multiple macro parameters must fire E002."""
+    reg = _make_macro_registry_with_params("cdm tool", ["model", "mode"])
+    diags = _lint_with_registry(
+        "cdm tool mod=.m\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002" and "mod" in d.message]
+    assert len(e002) > 0, (
+        f"E002 must fire for ambiguous macro arg abbreviation, got: {diags}"
+    )
+
+
+def test_macro_invalid_argument_too_short_prefix_fires_error():
+    """Prefix shorter than min_prefix must fire E002."""
+    # "model_name" and "mass" both start with 'm', so min_prefix for both is > 1
+    reg = _make_macro_registry_with_params("cdm tool", ["model_name", "mass"])
+    diags = _lint_with_registry(
+        "cdm tool m=.m\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    assert len(e002) > 0, (
+        f"E002 must fire when prefix is shorter than min_prefix, got: {diags}"
+    )
+
+
+def test_macro_invalid_argument_single_param_single_char_abbreviation():
+    """When there is only one parameter any prefix >= 1 char is unambiguous."""
+    reg = _make_macro_registry_with_params("cdm tool", ["model_name"])
+    diags = _lint_with_registry(
+        "cdm tool m=.m\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    assert len(e002) == 0, (
+        f"E002 must not fire for a single-char prefix when there is only one param, got: {e002}"
+    )
+
+
+def test_macro_invalid_argument_mixed_valid_and_invalid():
+    """Only truly unknown args fire E002; abbreviated valid args must not."""
+    reg = _make_macro_registry_with_params("cdm tool", ["model_name", "iterations"])
+    diags = _lint_with_registry(
+        "cdm tool mod=.m typo=3\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    # 'mod' is a valid abbreviation for 'model_name', 'typo' is not valid
+    assert len(e002) == 1, f"Exactly one E002 expected (for 'typo'), got: {e002}"
+    assert "typo" in e002[0].message
+
+
+def test_macro_invalid_argument_continuation_line_abbreviation():
+    """Abbreviated macro arguments on continuation lines must NOT fire E002."""
+    reg = _make_macro_registry_with_params("cdm tool", ["model_name", "iterations"])
+    diags = _lint_with_registry(
+        "cdm tool &\n  mod=.m &\n  iter=3\n",
+        reg,
+        rules=[rule_unknown_command, rule_macro_invalid_argument],
+    )
+    e002 = [d for d in diags if d.code == "E002"]
+    assert len(e002) == 0, (
+        f"E002 must not fire for abbreviated args on continuation lines, got: {e002}"
+    )
