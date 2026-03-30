@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.7.4 (March 30th 2026)](#174-march-30th-2026)
   - [1.7.3 (March 30th 2026)](#173-march-30th-2026)
   - [1.7.0 (March 30th 2026)](#170-march-30th-2026)
   - [1.5.1 (March 20th 2026)](#151-march-20th-2026)
@@ -37,6 +38,13 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.7.4 (March 30th 2026)
+
+- **Fixed** CMD linter false-positive E002 ("Invalid argument") for abbreviated parameter
+  names on user-defined macro calls. Adams allows argument names to be shortened to their
+  shortest unambiguous prefix (e.g. `mod` for `model_name`); the linter now applies the
+  same prefix-matching logic it uses for built-in Adams commands.
 
 ## 1.7.3 (March 30th 2026)
 

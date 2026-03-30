@@ -21,6 +21,10 @@ run-tests.js
 .agents
 .claude
 test_output.txt
+AGENTS.md
+adams-cmd-lsp-plan.md
+adams-view-mcp-server-plan.md
+qa_lint_results.csv
 adams-cmd-lsp/**
 bundled/libs/**/__pycache__/**
 # MCP server: include only the bundled dist output
