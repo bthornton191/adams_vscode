@@ -11,6 +11,7 @@ doc/figures.pptx
 analytics.py
 stats.csv
 adams_vscode.vsix
+vsixfiles*.txt
 **/__pycache__
 stats.csv
 stats.html
@@ -26,7 +27,37 @@ adams-cmd-lsp-plan.md
 adams-view-mcp-server-plan.md
 qa_lint_results.csv
 adams-cmd-lsp/**
+
+# Bundled Python libs: exclude pip metadata and unneeded packages
 bundled/libs/**/__pycache__/**
+bundled/libs/**/*.dist-info/**
+bundled/libs/bin/**
+
+# pywin32 — Windows COM/API bindings, not needed by LSP or MCP server
+bundled/libs/win32/**
+bundled/libs/win32com/**
+bundled/libs/win32comext/**
+bundled/libs/pythonwin/**
+bundled/libs/pywin32_system32/**
+bundled/libs/isapi/**
+bundled/libs/adodbapi/**
+bundled/libs/pythoncom.py
+bundled/libs/PyWin32.chm
+bundled/libs/pywin32.pth
+bundled/libs/pywin32.version.txt
+
+# pygments — rich.traceback imports pygments.lexers at top level, but the
+# cascading ImportError is caught by FastMCP's configure_logging() try/except.
+# The MCP server falls back to plain logging. No functional impact.
+bundled/libs/pygments/lexers/**
+bundled/libs/pygments/formatters/**
+
+# node_modules: exclude unused build variants from telemetry SDK
+node_modules/@microsoft/**/bundle/**
+node_modules/@microsoft/**/dist-es5/**
+node_modules/@microsoft/**/types/**
+node_modules/@nevware21/**/bundle/**
+
 # MCP server: include only the bundled dist output
 adams-view-mcp-server/src/**
 adams-view-mcp-server/tests/**
