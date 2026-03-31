@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.9.1 (March 31st 2026)](#191-march-31st-2026)
   - [1.9.0 (March 31st 2026)](#190-march-31st-2026)
   - [1.8.0 (March 31st 2026)](#180-march-31st-2026)
   - [1.7.4 (March 30th 2026)](#174-march-30th-2026)
@@ -40,6 +41,15 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.9.1 (March 31st 2026)
+
+- **Fixed** MCP server crash on startup (`ModuleNotFoundError: pydantic_core._pydantic_core`)
+  caused by `mcp`/`pydantic_core` being bundled as compiled C extensions. `mcp[cli]` is now an
+  optional dependency and must be installed in the user's Python environment.
+- **Fixed** Ctrl+hover on multi-word macro commands (e.g. `cdm rn trim`) now underlines the
+  entire command key instead of only the word under the cursor.
+- **Fixed** Go-to-definition underline range was offset for indented macro invocations.
 
 ## 1.9.0 (March 31st 2026)
 
