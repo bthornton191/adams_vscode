@@ -518,6 +518,332 @@ def test_on_initialized_stores_workspace_roots_when_scan_disabled(tmp_path, monk
     assert Path(srv._workspace_roots[0]) == tmp_path
 
 
+# ---------------------------------------------------------------------------
+# _path_to_uri
+# ---------------------------------------------------------------------------
+
+def test_path_to_uri_posix():
+    """Posix paths produce a file:// URI with forward slashes."""
+    import platform
+    if platform.system() == "Windows":
+        pytest.skip("Posix path test skipped on Windows")
+    uri = srv._path_to_uri("/home/user/project/model.cmd")
+    assert uri == "file:///home/user/project/model.cmd"
+
+
+def test_path_to_uri_windows_style(monkeypatch):
+    """Windows-style paths produce a file:///C:/ URI."""
+    import os as _os
+    monkeypatch.setattr(_os, "name", "nt")
+    uri = srv._path_to_uri("C:/Users/ben/project/model.cmd")
+    assert uri.startswith("file:///C:")
+    assert "model.cmd" in uri
+
+
+def test_path_to_uri_with_spaces():
+    """Spaces in the path are percent-encoded."""
+    import platform
+    if platform.system() == "Windows":
+        pytest.skip("Posix path test skipped on Windows")
+    uri = srv._path_to_uri("/home/my user/project/model.cmd")
+    assert "%20" in uri
+
+
+def test_path_to_uri_roundtrip(tmp_path):
+    """_path_to_uri followed by _uri_to_path must recover the original path."""
+    path = str(tmp_path / "test.cmd")
+    uri = srv._path_to_uri(path)
+    recovered = srv._uri_to_path(uri)
+    # Normalise separators for comparison
+    from pathlib import Path
+    assert Path(recovered) == Path(path)
+
+
+# ---------------------------------------------------------------------------
+# _get_command_key_at_position
+# ---------------------------------------------------------------------------
+
+def test_get_command_key_at_position_builtin_returns_none():
+    """Built-in commands should never be identified as macros."""
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    text = "model create model_name=my_model\n"
+    result = srv._get_command_key_at_position(text, 0, "file:///test.cmd")
+    assert result is None
+
+
+def test_get_command_key_at_position_comment_returns_none():
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    text = "! this is a comment\n"
+    result = srv._get_command_key_at_position(text, 0, "file:///test.cmd")
+    assert result is None
+
+
+def test_get_command_key_at_position_blank_returns_none():
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    text = "\n"
+    result = srv._get_command_key_at_position(text, 0, "file:///test.cmd")
+    assert result is None
+
+
+def test_get_command_key_at_position_registry_macro(tmp_path):
+    """Cursor on a known macro invocation returns ('registry', key, macro_def)."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    mac_file = tmp_path / "wear.mac"
+    mac_file.write_text("!USER_ENTERED_COMMAND cdm wear\n", encoding="utf-8")
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={},
+        source_file=str(mac_file),
+        line=0,
+    ))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    text = "cdm wear part_name=p1\n"
+    result = srv._get_command_key_at_position(text, 0, "file:///test.cmd")
+    assert result is not None
+    origin, key, macro_def = result
+    assert origin == "registry"
+    assert key == "cdm wear"
+    assert macro_def.source_file == str(mac_file)
+
+
+def test_get_command_key_at_position_definition_site(tmp_path):
+    """Cursor on !USER_ENTERED_COMMAND line returns ('definition_site', ...)."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm wear", parameters={},
+                                 source_file="/wear.mac", line=0))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    text = "!USER_ENTERED_COMMAND cdm wear\n"
+    result = srv._get_command_key_at_position(text, 0, "file:///wear.mac")
+    assert result is not None
+    origin, key, _macro_def = result
+    assert origin == "definition_site"
+    assert key == "cdm wear"
+
+
+# ---------------------------------------------------------------------------
+# goto_definition
+# ---------------------------------------------------------------------------
+
+def _make_mock_doc(text, uri):
+    """Return a mock document object for monkeypatching server.workspace."""
+    import types as python_types
+    doc = python_types.SimpleNamespace(source=text, uri=uri)
+    workspace = python_types.SimpleNamespace(
+        get_text_document=lambda u: doc,
+        folders={},
+    )
+    mock_srv = python_types.SimpleNamespace(workspace=workspace)
+    return mock_srv
+
+
+def test_goto_definition_builtin_returns_none(monkeypatch):
+    """goto_definition returns None for built-in commands."""
+    uri = "file:///test.cmd"
+    text = "model create model_name=m\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.goto_definition(params)
+    assert result is None
+
+
+def test_goto_definition_registry_macro(tmp_path, monkeypatch):
+    """goto_definition returns a Location pointing to the .mac file."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    mac_file = tmp_path / "wear.mac"
+    mac_file.write_text("!USER_ENTERED_COMMAND cdm wear\n", encoding="utf-8")
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={},
+        source_file=str(mac_file),
+        line=0,
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm wear part_name=p1\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None
+    assert result.range.start.line == 0
+    assert "wear.mac" in result.uri
+
+
+def test_goto_definition_definition_site_returns_self(monkeypatch):
+    """goto_definition on a !USER_ENTERED_COMMAND line returns the cursor location."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    uri = "file:///wear.mac"
+    text = "!USER_ENTERED_COMMAND cdm wear\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None
+    assert result.uri == uri
+    assert result.range.start.line == 0
+
+
+def test_goto_definition_inline_macro(monkeypatch):
+    """goto_definition for an inline macro create returns its definition line."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    uri = "file:///setup.cmd"
+    text = (
+        "macro create macro_name=cdm_wear user_entered_command=\"cdm wear\"\n"
+        "model create model_name=m\n"
+        "cdm wear part_name=p1\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()  # empty — inline only
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=2, character=0),  # cursor on "cdm wear"
+    )
+    result = srv.goto_definition(params)
+    assert result is not None
+    assert result.range.start.line == 0  # points to macro create line
+
+
+# ---------------------------------------------------------------------------
+# find_references
+# ---------------------------------------------------------------------------
+
+def test_find_references_unknown_command_returns_empty(monkeypatch):
+    """find_references returns [] when cursor is on a built-in."""
+    from adams_cmd_lsp.references import MacroIndex
+    uri = "file:///test.cmd"
+    text = "model create model_name=m\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._macro_index = MacroIndex()
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+        context=types.ReferenceContext(include_declaration=False),
+    )
+    result = srv.find_references(params)
+    assert result == []
+
+
+def test_find_references_returns_indexed_locations(tmp_path, monkeypatch):
+    """find_references queries the persistent index and returns all locations."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    from adams_cmd_lsp.references import MacroIndex, MacroReference
+
+    mac_file = tmp_path / "wear.mac"
+    mac_file.write_text("!USER_ENTERED_COMMAND cdm wear\n", encoding="utf-8")
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm wear", parameters={},
+                                 source_file=str(mac_file), line=0))
+
+    idx = MacroIndex()
+    ref_a = MacroReference(command_key="cdm wear", line=2, column=0, end_column=8)
+    ref_b = MacroReference(command_key="cdm wear", line=5, column=0, end_column=8)
+    idx.update_file(str(tmp_path / "a.cmd"), [ref_a])
+    idx.update_file(str(tmp_path / "b.cmd"), [ref_b])
+
+    uri = "file:///wear.mac"
+    text = "!USER_ENTERED_COMMAND cdm wear\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    srv._macro_index = idx
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+        context=types.ReferenceContext(include_declaration=False),
+    )
+    result = srv.find_references(params)
+    assert len(result) == 2
+    lines = {loc.range.start.line for loc in result}
+    assert 2 in lines
+    assert 5 in lines
+
+
+def test_find_references_include_declaration(tmp_path, monkeypatch):
+    """include_declaration=True adds the definition site to the results."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    from adams_cmd_lsp.references import MacroIndex, MacroReference
+
+    mac_file = tmp_path / "wear.mac"
+    mac_file.write_text("!USER_ENTERED_COMMAND cdm wear\n", encoding="utf-8")
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm wear", parameters={},
+                                 source_file=str(mac_file), line=0))
+
+    idx = MacroIndex()
+    ref = MacroReference(command_key="cdm wear", line=1, column=0, end_column=8)
+    idx.update_file(str(tmp_path / "use.cmd"), [ref])
+
+    uri = "file:///wear.mac"
+    text = "!USER_ENTERED_COMMAND cdm wear\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    srv._macro_index = idx
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result = srv.find_references(params)
+    # Should include both the usage (line 1) and the declaration (line 0 in mac_file)
+    assert len(result) == 2
+    decl_locs = [loc for loc in result if "wear.mac" in loc.uri]
+    assert len(decl_locs) == 1
+    assert decl_locs[0].range.start.line == 0
+
+
+def test_find_references_no_references_in_index(tmp_path, monkeypatch):
+    """find_references returns empty list when no invocations are indexed."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    from adams_cmd_lsp.references import MacroIndex
+
+    mac_file = tmp_path / "wear.mac"
+    mac_file.write_text("!USER_ENTERED_COMMAND cdm wear\n", encoding="utf-8")
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm wear", parameters={},
+                                 source_file=str(mac_file), line=0))
+
+    uri = "file:///wear.mac"
+    text = "!USER_ENTERED_COMMAND cdm wear\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    srv._macro_index = MacroIndex()  # empty index
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+        context=types.ReferenceContext(include_declaration=False),
+    )
+    result = srv.find_references(params)
+    assert result == []
+
+
 def test_on_initialized_scans_workspace_when_enabled(tmp_path, monkeypatch):
     """on_initialized must scan for macros when _scan_workspace_macros=True."""
     from adams_cmd_lsp.macros import MacroRegistry
@@ -610,4 +936,105 @@ def test_validate_document_forwards_show_macro_hint(monkeypatch):
     srv._validate_document("file:///test.cmd", "model create\n")
     assert received_hints == [False], (
         f"show_macro_hint should be forwarded as False, got: {received_hints}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# on_initialized — _build_index_for_workspace call-count regression
+# ---------------------------------------------------------------------------
+
+def test_on_initialized_calls_build_index_exactly_once_scan_disabled(tmp_path, monkeypatch):
+    """_build_index_for_workspace must be called exactly once when scan is OFF."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    call_count = []
+
+    def fake_build(paths):
+        call_count.append(paths)
+
+    monkeypatch.setattr(srv, "server", _make_mock_server(tmp_path))
+    monkeypatch.setattr(srv, "_build_index_for_workspace", fake_build)
+    monkeypatch.setattr(srv, "_macro_registry", MacroRegistry())
+    monkeypatch.setattr(srv, "_scan_workspace_macros", False)
+    monkeypatch.setattr(srv, "_macro_patterns", ["**/*.mac"])
+    monkeypatch.setattr(srv, "_macro_ignore_patterns", [])
+    monkeypatch.setattr(srv, "_workspace_roots", [])
+
+    srv.on_initialized(types.InitializedParams())
+
+    assert len(call_count) == 1, (
+        f"_build_index_for_workspace should be called exactly once, got {len(call_count)}"
+    )
+    from pathlib import Path
+    assert [Path(p) for p in call_count[0]] == [tmp_path], (
+        f"_build_index_for_workspace should receive the workspace path, got {call_count[0]}"
+    )
+
+
+def test_on_initialized_calls_build_index_exactly_once_scan_enabled(tmp_path, monkeypatch):
+    """_build_index_for_workspace must be called exactly once when scan is ON."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    call_count = []
+
+    def fake_build(paths):
+        call_count.append(paths)
+
+    monkeypatch.setattr(srv, "server", _make_mock_server(tmp_path))
+    monkeypatch.setattr(srv, "_build_index_for_workspace", fake_build)
+    monkeypatch.setattr(srv, "_macro_registry", MacroRegistry())
+    monkeypatch.setattr(srv, "_scan_workspace_macros", True)
+    monkeypatch.setattr(srv, "_macro_patterns", ["**/*.mac"])
+    monkeypatch.setattr(srv, "_macro_ignore_patterns", [])
+    monkeypatch.setattr(srv, "_workspace_roots", [])
+
+    srv.on_initialized(types.InitializedParams())
+
+    assert len(call_count) == 1, (
+        f"_build_index_for_workspace should be called exactly once, got {len(call_count)}"
+    )
+    from pathlib import Path
+    assert [Path(p) for p in call_count[0]] == [tmp_path], (
+        f"_build_index_for_workspace should receive the workspace path, got {call_count[0]}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# main() — _macro_index reinitialization regression
+# ---------------------------------------------------------------------------
+
+def test_main_reinitializes_macro_index(monkeypatch):
+    """main() must replace _macro_index with a fresh MacroIndex, discarding stale data.
+
+    All module-level globals mutated by main() are restored through monkeypatch so that
+    this test does not leak state into subsequent tests.
+    """
+    import sys
+    from adams_cmd_lsp.references import MacroIndex, MacroReference
+    from adams_cmd_lsp.macros import MacroRegistry, DEFAULT_MACRO_PATTERNS
+
+    # Capture originals via monkeypatch so teardown restores them automatically
+    monkeypatch.setattr(srv, "_schema", srv._schema)
+    monkeypatch.setattr(srv, "_macro_registry", srv._macro_registry)
+    monkeypatch.setattr(srv, "_macro_index", MacroIndex())
+    monkeypatch.setattr(srv, "_macro_patterns", list(srv._macro_patterns))
+    monkeypatch.setattr(srv, "_macro_ignore_patterns", list(srv._macro_ignore_patterns))
+    monkeypatch.setattr(srv, "_scan_workspace_macros", srv._scan_workspace_macros)
+    monkeypatch.setattr(srv, "_macro_show_hint", srv._macro_show_hint)
+    monkeypatch.setattr(srv, "_workspace_roots", list(srv._workspace_roots))
+
+    # Populate the index with stale data
+    stale_ref = MacroReference(command_key="stale cmd", line=0, column=0, end_column=9)
+    srv._macro_index.update_file("/old/file.cmd", [stale_ref])
+    assert srv._macro_index.total_references() > 0, "Precondition: index has stale data"
+
+    # Stub out server startup and argparse argv so main() returns without blocking
+    monkeypatch.setattr(sys, "argv", ["adams-cmd-lsp"])
+    monkeypatch.setattr(srv.server, "start_io", lambda: None)
+
+    srv.main()
+
+    assert isinstance(srv._macro_index, MacroIndex), "_macro_index should be a MacroIndex"
+    assert srv._macro_index.total_references() == 0, (
+        "main() should reset _macro_index to an empty state"
     )
