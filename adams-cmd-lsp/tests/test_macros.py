@@ -682,6 +682,25 @@ def test_extract_skips_comments_blanks_and_control_flow():
     assert macros[0].command == "real cmd"
 
 
+def test_extract_macros_source_file_parameter():
+    """source_file parameter is propagated to MacroDefinition.source_file."""
+    text = 'macro create macro_name=my_tool user_entered_command="my cmd"\n'
+    stmts = _parse_stmts(text)
+    macros = extract_macros_from_statements(stmts, _SCHEMA,
+                                            source_file="/path/to/setup.cmd")
+    assert len(macros) == 1
+    assert macros[0].source_file == "/path/to/setup.cmd"
+
+
+def test_extract_macros_source_file_defaults_empty():
+    """When source_file is omitted, MacroDefinition.source_file is empty string."""
+    text = 'macro create macro_name=my_tool user_entered_command="my cmd"\n'
+    stmts = _parse_stmts(text)
+    macros = extract_macros_from_statements(stmts, _SCHEMA)
+    assert len(macros) == 1
+    assert macros[0].source_file == ""
+
+
 # ---------------------------------------------------------------------------
 # scan_macro_files — incremental re-parse on modified file
 # ---------------------------------------------------------------------------

@@ -10,6 +10,8 @@ Provides:
   - scan_macro_paths — legacy wrapper (directory list) kept for compat
   - extract_macros_from_statements — collect macros defined inline via
                                      'macro create' / 'macro read'
+  - DEFAULT_IGNORE_DIRS — public alias for _DEFAULT_IGNORE_DIRS (used by
+                          reference indexer and other modules)
 """
 
 import fnmatch
@@ -353,10 +355,13 @@ class MacroRegistry:
 # ---------------------------------------------------------------------------
 
 # Directories that are never interesting for macro scanning.
+# Also exported as DEFAULT_IGNORE_DIRS for use by other modules (e.g. the
+# reference indexer) that need the same skip-list without importing a private name.
 _DEFAULT_IGNORE_DIRS = {
     ".git", "node_modules", "__pycache__", ".venv", "venv",
     ".tox", "build", "dist", ".hg", ".svn",
 }
+DEFAULT_IGNORE_DIRS = _DEFAULT_IGNORE_DIRS  # public alias
 
 # Default glob patterns for macro file discovery (relative to a workspace root)
 DEFAULT_MACRO_PATTERNS = ["**/*.mac"]
@@ -473,7 +478,11 @@ def scan_macro_paths(
 # In-file macro extraction (from 'macro create' / 'macro read' statements)
 # ---------------------------------------------------------------------------
 
-def extract_macros_from_statements(statements, schema) -> List[MacroDefinition]:
+def extract_macros_from_statements(
+    statements,
+    schema,
+    source_file: str = "",
+) -> List[MacroDefinition]:
     """Walk *statements* and collect MacroDefinitions from macro create/read.
 
     Handles two cases:
@@ -482,6 +491,13 @@ def extract_macros_from_statements(statements, schema) -> List[MacroDefinition]:
 
     If ``user_entered_command`` is absent, the macro_name itself becomes the
     callable command (single-token, no spaces).
+
+    Args:
+        statements:  Parsed statements from parser.parse().
+        schema:      Schema object used to resolve abbreviated argument names.
+        source_file: Absolute path of the file being parsed.  When provided,
+                     MacroDefinition.source_file is populated so that
+                     go-to-definition can return a proper file URI.
     """
     results: List[MacroDefinition] = []
     _MACRO_CMDS = {"macro create", "macro read"}
@@ -514,7 +530,7 @@ def extract_macros_from_statements(statements, schema) -> List[MacroDefinition]:
         results.append(MacroDefinition(
             command=command.lower(),
             parameters={},          # inline macro create doesn't expose parameters
-            source_file="",
+            source_file=source_file,
             line=stmt.line_start,
         ))
 
