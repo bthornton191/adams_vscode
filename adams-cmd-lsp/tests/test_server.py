@@ -605,10 +605,11 @@ def test_get_command_key_at_position_registry_macro(tmp_path):
     text = "cdm wear part_name=p1\n"
     result = srv._get_command_key_at_position(text, 0, "file:///test.cmd")
     assert result is not None
-    origin, key, macro_def = result
+    origin, key, macro_def, origin_range = result
     assert origin == "registry"
     assert key == "cdm wear"
     assert macro_def.source_file == str(mac_file)
+    assert origin_range == (0, 0, len("cdm wear"))
 
 
 def test_get_command_key_at_position_definition_site(tmp_path):
@@ -622,9 +623,10 @@ def test_get_command_key_at_position_definition_site(tmp_path):
     text = "!USER_ENTERED_COMMAND cdm wear\n"
     result = srv._get_command_key_at_position(text, 0, "file:///wear.mac")
     assert result is not None
-    origin, key, _macro_def = result
+    origin, key, _macro_def, origin_range = result
     assert origin == "definition_site"
     assert key == "cdm wear"
+    assert origin_range == (0, len("!USER_ENTERED_COMMAND "), len("!USER_ENTERED_COMMAND cdm wear"))
 
 
 # ---------------------------------------------------------------------------
@@ -659,7 +661,7 @@ def test_goto_definition_builtin_returns_none(monkeypatch):
 
 
 def test_goto_definition_registry_macro(tmp_path, monkeypatch):
-    """goto_definition returns a Location pointing to the .mac file."""
+    """goto_definition returns a LocationLink pointing to the .mac file."""
     from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
     mac_file = tmp_path / "wear.mac"
     mac_file.write_text("!USER_ENTERED_COMMAND cdm wear\n", encoding="utf-8")
@@ -681,12 +683,17 @@ def test_goto_definition_registry_macro(tmp_path, monkeypatch):
     )
     result = srv.goto_definition(params)
     assert result is not None
-    assert result.range.start.line == 0
-    assert "wear.mac" in result.uri
+    assert len(result) == 1
+    link = result[0]
+    assert link.target_selection_range.start.line == 0
+    assert "wear.mac" in link.target_uri
+    # originSelectionRange should cover the full "cdm wear" command key
+    assert link.origin_selection_range.start.character == 0
+    assert link.origin_selection_range.end.character == len("cdm wear")
 
 
 def test_goto_definition_definition_site_returns_self(monkeypatch):
-    """goto_definition on a !USER_ENTERED_COMMAND line returns the cursor location."""
+    """goto_definition on a !USER_ENTERED_COMMAND line returns a LocationLink to itself."""
     from adams_cmd_lsp.macros import MacroRegistry
     uri = "file:///wear.mac"
     text = "!USER_ENTERED_COMMAND cdm wear\n"
@@ -699,12 +706,17 @@ def test_goto_definition_definition_site_returns_self(monkeypatch):
     )
     result = srv.goto_definition(params)
     assert result is not None
-    assert result.uri == uri
-    assert result.range.start.line == 0
+    assert len(result) == 1
+    link = result[0]
+    assert link.target_uri == uri
+    assert link.target_selection_range.start.line == 0
+    # originSelectionRange covers "cdm wear" after "!USER_ENTERED_COMMAND "
+    assert link.origin_selection_range.start.character == len("!USER_ENTERED_COMMAND ")
+    assert link.origin_selection_range.end.character == len("!USER_ENTERED_COMMAND cdm wear")
 
 
 def test_goto_definition_inline_macro(monkeypatch):
-    """goto_definition for an inline macro create returns its definition line."""
+    """goto_definition for an inline macro create returns a LocationLink to its definition line."""
     from adams_cmd_lsp.macros import MacroRegistry
     uri = "file:///setup.cmd"
     text = (
@@ -721,7 +733,37 @@ def test_goto_definition_inline_macro(monkeypatch):
     )
     result = srv.goto_definition(params)
     assert result is not None
-    assert result.range.start.line == 0  # points to macro create line
+    assert len(result) == 1
+    link = result[0]
+    assert link.target_selection_range.start.line == 0  # points to macro create line
+    # originSelectionRange should cover "cdm wear" on line 2
+    assert link.origin_selection_range.start.line == 2
+    assert link.origin_selection_range.start.character == 0
+    assert link.origin_selection_range.end.character == len("cdm wear")
+
+
+def test_goto_definition_indented_command(monkeypatch):
+    """origin_selection_range must account for leading whitespace."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear", parameters={}, source_file="/wear.mac", line=0,
+    ))
+    uri = "file:///test.cmd"
+    text = "    cdm wear part_name=p1\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=4),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None
+    assert len(result) == 1
+    link = result[0]
+    assert link.origin_selection_range.start.character == 4
+    assert link.origin_selection_range.end.character == 4 + len("cdm wear")
 
 
 # ---------------------------------------------------------------------------

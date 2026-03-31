@@ -177,13 +177,16 @@ def _index_document(uri: str, text: str) -> None:
 
 
 def _get_command_key_at_position(text: str, line: int, uri: str):
-    """Return (origin, command_key, macro_def_or_None) for the command at *line*.
+    """Return (origin, command_key, macro_def_or_None, origin_range) for the command at *line*.
 
     *origin* is one of:
     - ``"registry"``        — command matched a workspace macro in _macro_registry
     - ``"inline"``          — command matched an inline macro create/read in the file
     - ``"definition_site"`` — cursor is on a !USER_ENTERED_COMMAND line
     - ``None``              — not a macro invocation (built-in or unrecognised)
+
+    *origin_range* is a (line, col_start, col_end) tuple marking the command key
+    span in the source document.
 
     Returns None when no match is found.
     """
@@ -196,8 +199,10 @@ def _get_command_key_at_position(text: str, line: int, uri: str):
         m = _USER_ENTERED_COMMAND_RE.match(lines[line])
         if m:
             command_key = m.group(1).strip().lower()
+            col_start = m.start(1)
+            col_end = col_start + len(m.group(1).strip())
             macro_def = _macro_registry.lookup_command(command_key) if _macro_registry else None
-            return ("definition_site", command_key, macro_def)
+            return ("definition_site", command_key, macro_def, (line, col_start, col_end))
 
     # Parse and find the statement at the cursor line
     try:
@@ -225,12 +230,15 @@ def _get_command_key_at_position(text: str, line: int, uri: str):
         return None
 
     command_key = stmt.command_key.lower()
+    first_line = lines[stmt.line_start] if 0 <= stmt.line_start < len(lines) else ""
+    leading = len(first_line) - len(first_line.lstrip())
+    origin_range = (stmt.line_start, leading, leading + len(stmt.command_key))
 
     # Check registry (workspace .mac files)
     if _macro_registry is not None:
         macro_def = _macro_registry.lookup_command(command_key)
         if macro_def is not None:
-            return ("registry", command_key, macro_def)
+            return ("registry", command_key, macro_def, origin_range)
 
     # Check inline macros defined earlier in the same file
     path = _uri_to_path(uri)
@@ -238,7 +246,7 @@ def _get_command_key_at_position(text: str, line: int, uri: str):
     inline_macros = extract_macros_from_statements(preceding, _schema, source_file=path)
     for idef in inline_macros:
         if idef.command == command_key:
-            return ("inline", command_key, idef)
+            return ("inline", command_key, idef, origin_range)
 
     return None
 
@@ -366,7 +374,11 @@ def main():
 
 @server.feature(types.TEXT_DOCUMENT_DEFINITION)
 def goto_definition(params: types.DefinitionParams):
-    """Jump to the definition of the macro invoked at the cursor position."""
+    """Jump to the definition of the macro invoked at the cursor position.
+
+    Returns a LocationLink so that VS Code underlines the full multi-word
+    command key on Ctrl+hover, not just the single word under the cursor.
+    """
     uri = params.text_document.uri
     line = params.position.line
     try:
@@ -379,29 +391,42 @@ def goto_definition(params: types.DefinitionParams):
     if result is None:
         return None
 
-    origin, _command_key, macro_def = result
+    origin, _command_key, macro_def, origin_range = result
+    src_line, src_col_start, src_col_end = origin_range
+    origin_selection = types.Range(
+        start=types.Position(line=src_line, character=src_col_start),
+        end=types.Position(line=src_line, character=src_col_end),
+    )
 
     if origin == "definition_site":
-        # Already at the definition — return the same location
-        return types.Location(
-            uri=uri,
-            range=types.Range(
+        # Already at the definition — link back to itself
+        return [types.LocationLink(
+            target_uri=uri,
+            target_range=types.Range(
                 start=types.Position(line=line, character=0),
                 end=types.Position(line=line, character=0),
             ),
-        )
+            target_selection_range=types.Range(
+                start=types.Position(line=line, character=0),
+                end=types.Position(line=line, character=0),
+            ),
+            origin_selection_range=origin_selection,
+        )]
 
     if macro_def is None:
         return None
 
     def_uri = _path_to_uri(macro_def.source_file) if macro_def.source_file else uri
-    return types.Location(
-        uri=def_uri,
-        range=types.Range(
-            start=types.Position(line=macro_def.line, character=0),
-            end=types.Position(line=macro_def.line, character=0),
-        ),
+    target_range = types.Range(
+        start=types.Position(line=macro_def.line, character=0),
+        end=types.Position(line=macro_def.line, character=0),
     )
+    return [types.LocationLink(
+        target_uri=def_uri,
+        target_range=target_range,
+        target_selection_range=target_range,
+        origin_selection_range=origin_selection,
+    )]
 
 
 @server.feature(types.TEXT_DOCUMENT_REFERENCES)
@@ -423,7 +448,7 @@ def find_references(params: types.ReferenceParams):
     if result is None:
         return []
 
-    origin, command_key, macro_def = result
+    origin, command_key, macro_def, _origin_range = result
 
     # Collect all locations from the persistent index
     refs = _macro_index.get_references(command_key)
