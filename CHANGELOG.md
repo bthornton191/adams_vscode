@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.8.0 (March 31st 2026)](#180-march-31st-2026)
   - [1.7.4 (March 30th 2026)](#174-march-30th-2026)
   - [1.7.3 (March 30th 2026)](#173-march-30th-2026)
   - [1.7.0 (March 30th 2026)](#170-march-30th-2026)
@@ -38,6 +39,15 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.8.0 (March 31st 2026)
+
+- **Added** Go-to-definition for macro invocations — Ctrl+Click a macro call to jump to its
+  `.mac` file or inline `macro create` statement.
+- **Added** Find-all-references for macros — right-click a macro definition or invocation to
+  find all workspace-wide usages.
+- **Added** Persistent macro invocation index for fast cross-file reference queries in large
+  workspaces, with incremental updates on file open/save.
 
 ## 1.7.4 (March 30th 2026)
 
