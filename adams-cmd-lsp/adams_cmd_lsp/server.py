@@ -11,15 +11,21 @@ import argparse
 import fnmatch
 import os
 from pathlib import Path
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, quote
 
 from pygls.lsp.server import LanguageServer
 from lsprotocol import types
 
 from .linter import lint_text
+from .parser import parse as _parse_cmd
 from .schema import Schema
 from .diagnostics import Severity
-from .macros import scan_macro_files, parse_macro_file, MacroRegistry, DEFAULT_MACRO_PATTERNS
+from .macros import (
+    scan_macro_files, parse_macro_file, MacroRegistry, DEFAULT_MACRO_PATTERNS,
+    DEFAULT_IGNORE_DIRS, extract_macros_from_statements,
+    _USER_ENTERED_COMMAND_RE,
+)
+from .references import MacroIndex, index_file_text
 
 
 server = LanguageServer("adams-cmd-lsp", "v0.1.0")
@@ -27,11 +33,13 @@ server = LanguageServer("adams-cmd-lsp", "v0.1.0")
 # Schema and macro registry are loaded once in main() and stored here
 _schema = None
 _macro_registry = None
+_macro_index = MacroIndex()          # persistent cross-file invocation index
 _macro_patterns = DEFAULT_MACRO_PATTERNS
 _macro_ignore_patterns: list = []
 _scan_workspace_macros = False
 _macro_show_hint: bool = True
 _workspace_roots: list = []
+_index_cmd_extensions = {".cmd", ".mac"}
 
 _SEVERITY_MAP = {
     Severity.ERROR: types.DiagnosticSeverity.Error,
@@ -82,12 +90,14 @@ def _validate_document(uri, text):
 def did_open(params: types.DidOpenTextDocumentParams):
     doc = params.text_document
     _validate_document(doc.uri, doc.text)
+    _index_document(doc.uri, doc.text)
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_CHANGE)
 def did_change(params: types.DidChangeTextDocumentParams):
     doc = server.workspace.get_text_document(params.text_document.uri)
     _validate_document(params.text_document.uri, doc.source)
+    _index_document(params.text_document.uri, doc.source)
 
 
 @server.feature(types.TEXT_DOCUMENT_DID_CLOSE)
@@ -101,6 +111,7 @@ def did_close(params: types.DidCloseTextDocumentParams):
 def did_save(params: types.DidSaveTextDocumentParams):
     doc = server.workspace.get_text_document(params.text_document.uri)
     _validate_document(params.text_document.uri, doc.source)
+    _index_document(params.text_document.uri, doc.source)
     # If the saved file is a macro file, refresh that entry in the registry
     _refresh_macro_file(params.text_document.uri, doc.source)
 
@@ -113,6 +124,123 @@ def _uri_to_path(uri: str) -> str:
     if os.name == "nt" and path.startswith("/") and len(path) > 2 and path[2] == ":":
         path = path[1:]
     return path
+
+
+def _path_to_uri(path: str) -> str:
+    """Convert a local filesystem path to a file:// URI."""
+    p = Path(path)
+    # Use as_posix() so we get forward slashes then url-encode
+    posix = p.as_posix()
+    # Encode special chars but keep slashes and colons (drive letter) intact
+    encoded = quote(posix, safe="/:")
+    if os.name == "nt" and not encoded.startswith("/"):
+        # Windows: "C:/path" -> "file:///C:/path"
+        return "file:///" + encoded
+    return "file://" + encoded
+
+
+def _collect_cmd_files(roots):
+    """Walk *roots* and return all .cmd / .mac file paths.
+
+    Skips directories in DEFAULT_IGNORE_DIRS (same set used by the macro
+    scanner) so version-control folders, build artefacts, etc. are excluded.
+    """
+    results = []
+    for root in roots:
+        root_path = Path(root)
+        if not root_path.is_dir():
+            continue
+        for dirpath, dirnames, filenames in os.walk(root_path):
+            # Prune ignored directories in-place so os.walk doesn't recurse
+            dirnames[:] = [
+                d for d in dirnames if d not in DEFAULT_IGNORE_DIRS
+            ]
+            for fname in filenames:
+                if Path(fname).suffix.lower() in _index_cmd_extensions:
+                    results.append(Path(dirpath) / fname)
+    return results
+
+
+def _index_document(uri: str, text: str) -> None:
+    """Re-index a single document's macro invocations in _macro_index."""
+    if _schema is None:
+        return
+    path = _uri_to_path(uri)
+    if not path:
+        return
+    try:
+        refs = index_file_text(text, _schema, source_file=path)
+        _macro_index.update_file(path, refs)
+        _macro_index.record_mtime(path)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _get_command_key_at_position(text: str, line: int, uri: str):
+    """Return (origin, command_key, macro_def_or_None) for the command at *line*.
+
+    *origin* is one of:
+    - ``"registry"``        — command matched a workspace macro in _macro_registry
+    - ``"inline"``          — command matched an inline macro create/read in the file
+    - ``"definition_site"`` — cursor is on a !USER_ENTERED_COMMAND line
+    - ``None``              — not a macro invocation (built-in or unrecognised)
+
+    Returns None when no match is found.
+    """
+    if _schema is None:
+        return None
+
+    # Check if the cursor is on a !USER_ENTERED_COMMAND comment line in a .mac
+    lines = text.splitlines()
+    if 0 <= line < len(lines):
+        m = _USER_ENTERED_COMMAND_RE.match(lines[line])
+        if m:
+            command_key = m.group(1).strip().lower()
+            macro_def = _macro_registry.lookup_command(command_key) if _macro_registry else None
+            return ("definition_site", command_key, macro_def)
+
+    # Parse and find the statement at the cursor line
+    try:
+        statements = _parse_cmd(text)
+    except Exception:  # noqa: BLE001
+        return None
+
+    stmt = None
+    for s in statements:
+        if s.is_comment or s.is_blank:
+            continue
+        if s.line_start <= line <= s.line_end:
+            stmt = s
+            break
+    if stmt is None:
+        return None
+
+    tokens = stmt.command_key.split() if stmt.command_key else []
+    if not tokens:
+        return None
+
+    # If the command resolves as a built-in, it's not a macro
+    resolved_key, _ = _schema.resolve_command_key(tokens)
+    if resolved_key is not None:
+        return None
+
+    command_key = stmt.command_key.lower()
+
+    # Check registry (workspace .mac files)
+    if _macro_registry is not None:
+        macro_def = _macro_registry.lookup_command(command_key)
+        if macro_def is not None:
+            return ("registry", command_key, macro_def)
+
+    # Check inline macros defined earlier in the same file
+    path = _uri_to_path(uri)
+    preceding = [s for s in statements if s.line_end < stmt.line_start]
+    inline_macros = extract_macros_from_statements(preceding, _schema, source_file=path)
+    for idef in inline_macros:
+        if idef.command == command_key:
+            return ("inline", command_key, idef)
+
+    return None
 
 
 def _refresh_macro_file(uri: str, text: str) -> None:
@@ -160,7 +288,7 @@ def _refresh_macro_file(uri: str, text: str) -> None:
 
 def main():
     """Entry point for the adams-cmd-lsp LSP server."""
-    global _schema, _macro_registry, _macro_patterns, _macro_ignore_patterns, _scan_workspace_macros, _macro_show_hint, _workspace_roots  # noqa: PLW0603
+    global _schema, _macro_registry, _macro_patterns, _macro_ignore_patterns, _scan_workspace_macros, _macro_show_hint, _workspace_roots, _macro_index  # noqa: PLW0603
 
     parser = argparse.ArgumentParser(
         prog="adams-cmd-lsp",
@@ -225,9 +353,10 @@ def main():
     _scan_workspace_macros = args.scan_workspace_macros
     _macro_show_hint = args.show_macro_hint
 
-    # Build initial registry — always created so did_save can refresh it later.
-    # Workspace folders are merged in after the client connects (see INITIALIZED).
+    # Build initial registry and index — always created so did_save can
+    # refresh them later. Workspace folders are merged after client connects.
     _macro_registry = MacroRegistry()
+    _macro_index = MacroIndex()  # reset in case main() is called more than once
 
     if args.tcp:
         server.start_tcp("localhost", args.port)
@@ -235,9 +364,95 @@ def main():
         server.start_io()
 
 
+@server.feature(types.TEXT_DOCUMENT_DEFINITION)
+def goto_definition(params: types.DefinitionParams):
+    """Jump to the definition of the macro invoked at the cursor position."""
+    uri = params.text_document.uri
+    line = params.position.line
+    try:
+        doc = server.workspace.get_text_document(uri)
+        text = doc.source
+    except Exception:  # noqa: BLE001
+        return None
+
+    result = _get_command_key_at_position(text, line, uri)
+    if result is None:
+        return None
+
+    origin, _command_key, macro_def = result
+
+    if origin == "definition_site":
+        # Already at the definition — return the same location
+        return types.Location(
+            uri=uri,
+            range=types.Range(
+                start=types.Position(line=line, character=0),
+                end=types.Position(line=line, character=0),
+            ),
+        )
+
+    if macro_def is None:
+        return None
+
+    def_uri = _path_to_uri(macro_def.source_file) if macro_def.source_file else uri
+    return types.Location(
+        uri=def_uri,
+        range=types.Range(
+            start=types.Position(line=macro_def.line, character=0),
+            end=types.Position(line=macro_def.line, character=0),
+        ),
+    )
+
+
+@server.feature(types.TEXT_DOCUMENT_REFERENCES)
+def find_references(params: types.ReferenceParams):
+    """Return all workspace invocations of the macro at the cursor position."""
+    uri = params.text_document.uri
+    line = params.position.line
+    include_declaration = (
+        params.context.include_declaration
+        if params.context is not None else False
+    )
+    try:
+        doc = server.workspace.get_text_document(uri)
+        text = doc.source
+    except Exception:  # noqa: BLE001
+        return []
+
+    result = _get_command_key_at_position(text, line, uri)
+    if result is None:
+        return []
+
+    origin, command_key, macro_def = result
+
+    # Collect all locations from the persistent index
+    refs = _macro_index.get_references(command_key)
+    locations = []
+    for file_path, ref in refs:
+        locations.append(types.Location(
+            uri=_path_to_uri(file_path),
+            range=types.Range(
+                start=types.Position(line=ref.line, character=ref.column),
+                end=types.Position(line=ref.line, character=ref.end_column),
+            ),
+        ))
+
+    # Include the declaration site if requested
+    if include_declaration and macro_def is not None and macro_def.source_file:
+        locations.append(types.Location(
+            uri=_path_to_uri(macro_def.source_file),
+            range=types.Range(
+                start=types.Position(line=macro_def.line, character=0),
+                end=types.Position(line=macro_def.line, character=0),
+            ),
+        ))
+
+    return locations
+
+
 @server.feature(types.INITIALIZED)
 def on_initialized(params: types.InitializedParams):
-    """Scan workspace folders for macro files once the client reports ready."""
+    """Scan workspace folders for macro files and build the reference index."""
     global _macro_registry, _workspace_roots  # noqa: PLW0603
     workspace = server.workspace
     if not workspace:
@@ -253,11 +468,14 @@ def on_initialized(params: types.InitializedParams):
     # Always record workspace roots so _refresh_macro_file can do accurate
     # relative-path pattern matching even when scanning is disabled.
     _workspace_roots = list(workspace_paths)
+    if not workspace_paths:
+        return
+    # Always build the reference index — it is needed for find-references even
+    # when macro scanning is disabled for linting purposes.
+    _build_index_for_workspace(workspace_paths)
     if not _scan_workspace_macros:
         return
     if _macro_registry is None:
-        return
-    if not workspace_paths:
         return
     # Merge workspace-discovered macros into the existing registry (incremental)
     try:
@@ -293,5 +511,40 @@ def on_initialized(params: types.InitializedParams):
             types.LogMessageParams(
                 type=types.MessageType.Info,
                 message="\n".join(lines),
+            )
+        )
+
+
+def _build_index_for_workspace(workspace_paths):
+    """Walk *workspace_paths* and index all .cmd/.mac files into _macro_index."""
+    if _schema is None:
+        return
+    if not workspace_paths:
+        return
+    all_files = _collect_cmd_files(workspace_paths)
+    indexed = 0
+    for abs_path in all_files:
+        path_str = str(abs_path)
+        if not _macro_index.needs_refresh(path_str):
+            continue
+        try:
+            text = abs_path.read_text(encoding="utf-8", errors="replace")
+        except OSError:
+            continue
+        try:
+            refs = index_file_text(text, _schema, source_file=path_str)
+            _macro_index.update_file(path_str, refs)
+            _macro_index.record_mtime(path_str)
+            indexed += 1
+        except Exception:  # noqa: BLE001
+            continue
+    if indexed:
+        server.window_log_message(
+            types.LogMessageParams(
+                type=types.MessageType.Info,
+                message=(
+                    f"Adams reference index built: {indexed} file(s) indexed, "
+                    f"{_macro_index.total_references()} macro invocation(s) found."
+                ),
             )
         )
