@@ -7,9 +7,10 @@ name = "adams-cmd-lsp"
 version = "0.1.0"
 description = "LSP server and CLI linter for MSC Adams CMD language"
 requires-python = ">=3.9"
-dependencies = ["pygls>=2.0", "lsprotocol", "mcp[cli]>=1.0"]
+dependencies = ["pygls>=2.0", "lsprotocol"]
 
 [project.optional-dependencies]
+mcp = ["mcp[cli]>=1.0"]
 dev = ["pytest", "pytest-asyncio"]
 
 [project.scripts]
