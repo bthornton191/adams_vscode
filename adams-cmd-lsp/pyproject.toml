@@ -7,14 +7,18 @@ name = "adams-cmd-lsp"
 version = "0.1.0"
 description = "LSP server and CLI linter for MSC Adams CMD language"
 requires-python = ">=3.9"
-dependencies = ["pygls>=2.0", "lsprotocol"]
+dependencies = ["pygls>=2.0", "lsprotocol", "mcp[cli]>=1.0"]
 
 [project.optional-dependencies]
-dev = ["pytest"]
+dev = ["pytest", "pytest-asyncio"]
 
 [project.scripts]
 adams-cmd-lint = "adams_cmd_lsp.cli:main"
 adams-cmd-lsp = "adams_cmd_lsp.server:main"
+adams-cmd-mcp = "adams_cmd_lsp.mcp_server:main"
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
 
 [tool.setuptools.package-data]
 adams_cmd_lsp = ["data/*.json"]

@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.9.0 (March 31st 2026)](#190-march-31st-2026)
   - [1.8.0 (March 31st 2026)](#180-march-31st-2026)
   - [1.7.4 (March 30th 2026)](#174-march-30th-2026)
   - [1.7.3 (March 30th 2026)](#173-march-30th-2026)
@@ -39,6 +40,12 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.9.0 (March 31st 2026)
+
+- **Added** Adams CMD Lint MCP Server — exposes `adams_lint_cmd_text`, `adams_lint_cmd_file`, and
+  `adams_lookup_command` as MCP tools so Copilot agents can lint CMD text, lint CMD files, and look
+  up command arguments and exclusive groups without Adams View running.
 
 ## 1.8.0 (March 31st 2026)
 
