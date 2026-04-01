@@ -141,14 +141,70 @@ def _setup_server():
 
 @pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls / lsprotocol not installed")
 @pytest.mark.usefixtures("_setup_server")
-def test_compute_tokens_builtin_command_no_tokens():
-    """Built-in commands should produce no semantic tokens."""
+def test_compute_tokens_builtin_command_emits_tokens():
+    """Built-in commands should produce keyword + parameter semantic tokens."""
     data = srv._compute_semantic_tokens(
         "model create model_name=my_model\n",
         "file:///test.cmd",
     )
-    assert data == []
+    # 3 tokens: "model" (keyword), "create" (keyword), "model_name" (parameter)
+    assert len(data) == 15
+    tokens = [(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
+              for i in range(0, len(data), 5)]
+    assert tokens[0] == (0, 0, 5, srv._TOKEN_TYPE_KEYWORD, 0)   # "model"
+    assert tokens[1] == (0, 6, 6, srv._TOKEN_TYPE_KEYWORD, 0)   # "create"
+    assert tokens[2] == (0, 7, 10, srv._TOKEN_TYPE_PARAMETER, 0)  # "model_name"
 
+
+@pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls / lsprotocol not installed")
+@pytest.mark.usefixtures("_setup_server")
+def test_compute_tokens_builtin_abbreviated_command():
+    """Abbreviated built-in command should be resolved and emit keyword tokens."""
+    data = srv._compute_semantic_tokens(
+        "mod cre model_name=m1\n",
+        "file:///test.cmd",
+    )
+    # "mod" and "cre" should both get keyword tokens, "model_name" a parameter token
+    assert len(data) == 15
+    tokens = [(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
+              for i in range(0, len(data), 5)]
+    keyword_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_KEYWORD]
+    assert len(keyword_tokens) == 2
+    assert keyword_tokens[0][:3] == (0, 0, 3)  # "mod"
+    assert keyword_tokens[1][:3] == (0, 4, 3)  # "cre"
+
+
+@pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls / lsprotocol not installed")
+@pytest.mark.usefixtures("_setup_server")
+def test_compute_tokens_builtin_invalid_arg_not_highlighted():
+    """Invalid argument names on a built-in command should NOT get a parameter token."""
+    data = srv._compute_semantic_tokens(
+        "model create bogus_arg=foo\n",
+        "file:///test.cmd",
+    )
+    tokens = [(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
+              for i in range(0, len(data), 5)]
+    keyword_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_KEYWORD]
+    parameter_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_PARAMETER]
+    assert len(keyword_tokens) == 2  # "model" and "create"
+    assert len(parameter_tokens) == 0  # "bogus_arg" not valid
+
+
+@pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls / lsprotocol not installed")
+@pytest.mark.usefixtures("_setup_server")
+def test_compute_tokens_builtin_abbreviated_arg_highlighted():
+    """Abbreviated valid argument name on built-in command should get a parameter token."""
+    # "mod" is a valid prefix for "model_name" on "model create"
+    data = srv._compute_semantic_tokens(
+        "model create mod=m1\n",
+        "file:///test.cmd",
+    )
+    tokens = [(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
+              for i in range(0, len(data), 5)]
+    parameter_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_PARAMETER]
+    assert len(parameter_tokens) == 1
+    # "mod" comes after "create" (col 6) on the same line, so delta_col = 13 - 6 = 7
+    assert parameter_tokens[0][1] == 7
 
 @pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls / lsprotocol not installed")
 @pytest.mark.usefixtures("_setup_server")
@@ -203,8 +259,10 @@ def test_compute_tokens_inline_macro_emits_tokens():
               for i in range(0, len(data), 5)]
     keyword_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_KEYWORD]
     assert len(keyword_tokens) >= 1
-    # "my_command" should be on line 1 (delta-line 1 from start)
-    assert keyword_tokens[0][0] == 1
+    # "my_command" keyword should appear after the line-0 'macro create' tokens
+    # (delta_line > 0 means the token is on a new line relative to the previous token)
+    line1_keyword_tokens = [t for t in keyword_tokens if t[0] > 0]
+    assert len(line1_keyword_tokens) >= 1
 
 
 @pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls / lsprotocol not installed")
@@ -289,12 +347,12 @@ def test_compute_tokens_multiple_macro_invocations():
     tokens = [(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
               for i in range(0, len(data), 5)]
     # Line 0: "cdm" keyword, "wear" keyword, "model" parameter
-    # Line 1: built-in "model create" — skipped
+    # Line 1: built-in "model create" — now also emits tokens (model, create, model_name)
     # Line 2: "cdm" keyword, "create" keyword, "part" parameter
     keyword_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_KEYWORD]
-    assert len(keyword_tokens) == 4  # cdm, wear, cdm, create
-    # The third keyword ("cdm" on line 2) should have delta_line=2 from line 0
-    assert keyword_tokens[2][0] == 2
+    assert len(keyword_tokens) == 6  # cdm, wear, model, create, cdm, create
+    parameter_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_PARAMETER]
+    assert len(parameter_tokens) == 3  # model, model_name, part
 
 
 @pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls / lsprotocol not installed")
@@ -318,3 +376,29 @@ def test_compute_tokens_continuation_line_macro():
     assert keyword_tokens[0][:3] == (0, 0, 3)
     # "wear" at line 1, col 2
     assert keyword_tokens[1][:3] == (1, 2, 4)
+
+
+@pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls / lsprotocol not installed")
+@pytest.mark.usefixtures("_setup_server")
+def test_compute_tokens_mixed_builtin_and_macro():
+    """A file with both a built-in command and a macro invocation should emit
+    tokens for both with correct delta encoding."""
+    registry = MacroRegistry()
+    registry.register(MacroDefinition(
+        command="cdm wear", parameters={"model": None}, source_file="/fake/tool.mac", line=0,
+    ))
+    srv._macro_registry = registry
+
+    text = "model create model_name=m1\ncdm wear model=.model\n"
+    data = srv._compute_semantic_tokens(text, "file:///test.cmd")
+    tokens = [(data[i], data[i+1], data[i+2], data[i+3], data[i+4])
+              for i in range(0, len(data), 5)]
+    keyword_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_KEYWORD]
+    parameter_tokens = [t for t in tokens if t[3] == srv._TOKEN_TYPE_PARAMETER]
+    # Line 0: "model" keyword, "create" keyword, "model_name" parameter
+    # Line 1: "cdm" keyword, "wear" keyword, "model" parameter
+    assert len(keyword_tokens) == 4
+    assert len(parameter_tokens) == 2
+    # "cdm" on line 1 should have delta_line=1 from the last token on line 0
+    cdm_token = next(t for t in tokens if t[3] == srv._TOKEN_TYPE_KEYWORD and t[2] == 3)
+    assert cdm_token[0] == 1  # delta_line from previous token on line 0

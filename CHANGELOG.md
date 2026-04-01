@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.9.7 (April 1st 2026)](#197-april-1st-2026)
   - [1.9.6 (April 1st 2026)](#196-april-1st-2026)
   - [1.9.5 (April 1st 2026)](#195-april-1st-2026)
   - [1.9.4 (April 1st 2026)](#194-april-1st-2026)
@@ -46,6 +47,17 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.9.7 (April 1st 2026)
+
+- **Improved** Semantic token highlighting now covers all recognised built-in
+  commands (not just user-defined macros). Command key words are highlighted as
+  keywords and valid (including abbreviated) argument names are highlighted as
+  parameters. Invalid argument names receive no semantic token so they remain
+  visually distinct. Abbreviated commands are resolved to their canonical form
+  before highlighting. Setting `"semanticHighlighting": true` on the CMD grammar
+  ensures VS Code prefers semantic tokens over the static TextMate fallback once
+  the LSP server has started.
 
 ## 1.9.6 (April 1st 2026)
 

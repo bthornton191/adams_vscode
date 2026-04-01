@@ -506,7 +506,11 @@ def semantic_tokens_full(params: types.SemanticTokensParams):
 
 
 def _compute_semantic_tokens(text, uri):
-    """Build the integer-encoded semantic token data for macro invocations.
+    """Build the integer-encoded semantic token data for all recognised commands.
+
+    Emits ``keyword`` tokens for command key words of built-in and macro
+    commands, and ``parameter`` tokens for recognised argument names.
+    Unresolved commands produce no tokens (TextMate fallback applies).
 
     Returns a flat list of integers in groups of 5:
         [deltaLine, deltaStart, length, tokenType, tokenModifiers]
@@ -548,15 +552,24 @@ def _compute_semantic_tokens(text, uri):
         if stmt.command_key.startswith('.'):
             continue
 
-        # If this resolves as a built-in command, skip — TextMate handles it
         if stmt.resolved_command_key is not None:
+            # Built-in command — emit keyword tokens for each command key word
+            # and parameter tokens only for schema-resolved argument names.
+            for token_text, token_line, token_col in stmt.command_key_tokens:
+                raw_tokens.append((token_line, token_col, len(token_text), _TOKEN_TYPE_KEYWORD))
+
+            for arg in stmt.arguments:
+                canonical = _schema.resolve_argument_name(stmt.resolved_command_key, arg.name)
+                if canonical is not None:
+                    raw_tokens.append((arg.name_line, arg.name_column, len(arg.name), _TOKEN_TYPE_PARAMETER))
             continue
 
-        # Check workspace macro registry.
         # Normalise multi-space command keys (from continuation-line joining)
-        # to single spaces for exact match against the registry.
-        macro_def = None
+        # to single spaces for registry lookup.
         normalised_key = " ".join(stmt.command_key.split())
+
+        # Check workspace macro registry.
+        macro_def = None
         if _macro_registry is not None:
             macro_def = _macro_registry.lookup_command(normalised_key)
 
@@ -578,11 +591,11 @@ def _compute_semantic_tokens(text, uri):
         if macro_def is None:
             continue
 
-        # Emit keyword tokens for each command key word
+        # Macro invocation — emit keyword tokens for each command key word
+        # and parameter tokens for all argument names (no schema validation).
         for token_text, token_line, token_col in stmt.command_key_tokens:
             raw_tokens.append((token_line, token_col, len(token_text), _TOKEN_TYPE_KEYWORD))
 
-        # Emit parameter tokens for each argument name
         for arg in stmt.arguments:
             raw_tokens.append((arg.name_line, arg.name_column, len(arg.name), _TOKEN_TYPE_PARAMETER))
 
