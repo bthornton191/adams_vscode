@@ -19,6 +19,7 @@ function registerMcpServerProvider(context) {
         provideMcpServerDefinitions() {
             const config = vscode.workspace.getConfiguration("msc-adams");
             const port = config.get("aviewPortNumber", 5002);
+            const version = context.extension.packageJSON.version ?? "0.0.0";
 
             const definitions = [
                 new vscode.McpStdioServerDefinition(
@@ -30,7 +31,7 @@ function registerMcpServerProvider(context) {
                         ),
                     ],
                     { ADAMS_LISTENER_PORT: String(port) },
-                    "0.1.0",
+                    version,
                 ),
             ];
 
@@ -74,7 +75,7 @@ function registerMcpServerProvider(context) {
                         python_path,
                         mcp_args,
                         {},
-                        "0.1.0",
+                        version,
                     ),
                 );
             }
