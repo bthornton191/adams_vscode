@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.9.4 (April 1st 2026)](#194-april-1st-2026)
   - [1.9.3 (April 1st 2026)](#193-april-1st-2026)
   - [1.9.2 (April 1st 2026)](#192-april-1st-2026)
   - [1.9.1 (March 31st 2026)](#191-march-31st-2026)
@@ -43,6 +44,14 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.9.4 (April 1st 2026)
+
+- **Added** Semantic token highlighting for user-defined macro commands. When
+  `msc-adams.linter.scanWorkspaceMacros` is enabled, macro invocations in `.cmd`
+  and `.mac` files are now syntax-highlighted using the same colours as built-in
+  Adams commands. Command-key tokens receive the `command.command` colour and
+  argument names receive the `command.argument` colour.
 
 ## 1.9.3 (April 1st 2026)
 
