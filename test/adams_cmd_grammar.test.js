@@ -176,17 +176,17 @@ suite("adams_cmd grammar", () => {
         // A single quote INSIDE a double-quoted string is a literal character —
         // it must NOT open a nested string scope that breaks subsequent lines.
         const lines = [
-            "variable set variable=x string_value=\"it's fine\"",
+            'variable set variable=x string_value="it\'s fine"',
             "variable set variable=after real=1.0",
         ];
         const tokens = tokenizeLines(grammar, lines);
         assert.ok(
             !lineHasScope(tokens[1], "string.quoted.double.adams_cmd"),
-            "line after \"it's fine\" should not carry double-string scope",
+            'line after "it\'s fine" should not carry double-string scope',
         );
         assert.ok(
             !lineHasScope(tokens[1], "string.quoted.single.adams_cmd"),
-            "line after \"it's fine\" should not carry single-string scope",
+            'line after "it\'s fine" should not carry single-string scope',
         );
     });
 
@@ -194,7 +194,7 @@ suite("adams_cmd grammar", () => {
         // A double quote INSIDE a single-quoted string is a literal character —
         // it must NOT open a nested string scope that breaks subsequent lines.
         const lines = [
-            'variable set variable=x string_value=\'say "hello"\'',
+            "variable set variable=x string_value='say \"hello\"'",
             "variable set variable=after real=1.0",
         ];
         const tokens = tokenizeLines(grammar, lines);
@@ -227,7 +227,7 @@ suite("adams_cmd grammar", () => {
         // any string literal; only the "prefix['" and "']" segments are.
         const line =
             "var set var=$_self.py_str str=(eval($_self.py_str)), " +
-            "(eval(\"mod = Adams.Models['\" // $_self.model.object_value.name // \"']\"))";
+            '(eval("mod = Adams.Models[\'" // $_self.model.object_value.name // "\']"))';
 
         const tokens = tokenizeLines(grammar, [line])[0];
 
@@ -252,7 +252,7 @@ suite("adams_cmd grammar", () => {
     test("string // concat: line after concatenation expression is not a string", () => {
         const lines = [
             "var set var=$_self.py_str str=(eval($_self.py_str)), " +
-                "(eval(\"mod = Adams.Models['\" // $_self.model.object_value.name // \"']\"))",
+                '(eval("mod = Adams.Models[\'" // $_self.model.object_value.name // "\']"))',
             "variable set variable=after real=1.0",
         ];
         const tokens = tokenizeLines(grammar, lines);
