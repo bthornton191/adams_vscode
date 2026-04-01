@@ -10,9 +10,11 @@
  *   npm run test:e2e
  */
 
+import * as fs from "fs/promises";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { checkConnection, evaluateExp, executeCmd } from "../src/client.js";
+import { checkConnection, evaluateExp, executeCmd, sendCmd } from "../src/client.js";
 import { setupAdams, teardownAdams } from "./adams-fixtures.js";
+import { buildTimestampedBinPath } from "../src/tools/session.js";
 
 // ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -163,4 +165,79 @@ describe("E2E: executeCmd", () => {
     const stillConnected = await checkConnection();
     expect(stillConnected).toBe(true);
   });
+});
+
+// ── session: save bin, quit, restart ─────────────────────────────────────────
+// NOTE: These tests run LAST. The quit test terminates Adams View.
+// afterAll(teardownAdams) handles the already-down process gracefully.
+
+describe("E2E: session – save bin", () => {
+  e2e("file bin write saves a .bin file to the OS temp directory", async () => {
+    const binPath = buildTimestampedBinPath();
+    const adamsPath = binPath.replace(/\\/g, "/");
+    await executeCmd(`file bin write alert_if_exists=no file_name="${adamsPath}"`);
+    await expect(fs.access(binPath)).resolves.toBeUndefined();
+    await fs.unlink(binPath).catch(() => undefined);
+  });
+});
+
+describe("E2E: session – restart", () => {
+  // Restart must run BEFORE the quit test so Adams is still alive afterwards
+  // for the remaining suite teardown.
+  e2e(
+    "saving, quitting, and relaunching Adams restores connectivity",
+    async () => {
+      // Capture current working directory before quitting
+      const workDir = String(await evaluateExp("getcwd()"));
+
+      // Save session
+      const binPath = buildTimestampedBinPath();
+      const adamsPath = binPath.replace(/\\/g, "/");
+      await executeCmd(`file bin write alert_if_exists=no file_name="${adamsPath}"`);
+
+      // Quit Adams (fire-and-forget)
+      await sendCmd("quit confirmation=no");
+
+      // Wait for Adams to go down (max 30 s)
+      const deadline = Date.now() + 30_000;
+      while (Date.now() < deadline) {
+        if (!(await checkConnection())) break;
+        await new Promise((r) => setTimeout(r, 2000));
+      }
+      expect(await checkConnection()).toBe(false);
+
+      // Re-launch Adams using the fixture helper so the suite stays consistent
+      await setupAdams();
+
+      // Adams should be reachable again
+      expect(await checkConnection()).toBe(true);
+
+      // The .bin file should exist on disk
+      await expect(fs.access(binPath)).resolves.toBeUndefined();
+      await fs.unlink(binPath).catch(() => undefined);
+    },
+    120_000
+  );
+});
+
+describe("E2E: session – quit (MUST BE LAST)", () => {
+  e2e(
+    "quit confirmation=no terminates Adams View",
+    async () => {
+      // Save session first so we don't lose work
+      const binPath = buildTimestampedBinPath();
+      const adamsPath = binPath.replace(/\\/g, "/");
+      await executeCmd(`file bin write alert_if_exists=no file_name="${adamsPath}"`);
+
+      await sendCmd("quit confirmation=no");
+
+      // Give Adams a moment to terminate
+      await new Promise((r) => setTimeout(r, 4000));
+
+      expect(await checkConnection()).toBe(false);
+
+      await fs.unlink(binPath).catch(() => undefined);
+    },
+    20_000
+  );
 });

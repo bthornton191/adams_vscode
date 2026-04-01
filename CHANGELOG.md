@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.9.2 (April 1st 2026)](#192-april-1st-2026)
   - [1.9.1 (March 31st 2026)](#191-march-31st-2026)
   - [1.9.0 (March 31st 2026)](#190-march-31st-2026)
   - [1.8.0 (March 31st 2026)](#180-march-31st-2026)
@@ -41,6 +42,16 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.9.2 (April 1st 2026)
+
+- **Added** `adams_quit_view` MCP tool — saves the current Adams View session to a
+  timestamped `.bin` file in the OS temp directory, then shuts down the Adams
+  View process via `quit confirmation=no`. Returns the path to the saved file.
+- **Added** `adams_restart_view` MCP tool — saves the session, shuts down Adams
+  View, waits for the process to fully exit, then relaunches Adams View in the
+  same working directory with the Command Server running. Returns the bin file
+  path and Command Server port.
 
 ## 1.9.1 (March 31st 2026)
 

@@ -10,7 +10,7 @@ import * as path from "path";
 import { spawn } from "child_process";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import { checkConnection, getPort } from "../client.js";
+import { checkConnection, evaluateExp, executeCmd, getPort, sendCmd } from "../client.js";
 
 const AVIEW_AS_CMD = "aviewAS.cmd";
 const COMMAND_SERVER_LINE = "command_server start";
@@ -41,6 +41,154 @@ async function waitForAdams(timeoutMs: number): Promise<boolean> {
     await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
   }
   return false;
+}
+
+/**
+ * Poll checkConnection() until it returns false or the timeout expires.
+ * Returns true if Adams View went down within the timeout, false otherwise.
+ */
+async function waitForAdamsDown(timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    try {
+      const ready = await checkConnection();
+      if (!ready) return true;
+    } catch {
+      return true; // Connection error means Adams is down
+    }
+    await new Promise((resolve) => setTimeout(resolve, POLL_INTERVAL_MS));
+  }
+  return false;
+}
+
+/**
+ * Build a timestamped bin file path in the OS temp directory.
+ * Format: adams_session_YYYY-MM-DDTHH-MM-SS.bin
+ * Colons are replaced with hyphens for Windows filesystem safety.
+ */
+export function buildTimestampedBinPath(): string {
+  const now = new Date();
+  const ts = now.toISOString().slice(0, 19).replace(/:/g, "-");
+  return path.join(os.tmpdir(), `adams_session_${ts}.bin`);
+}
+
+/**
+ * Save the current Adams View session to a timestamped .bin file.
+ * Returns the local OS path to the saved file.
+ * Throws if the save command fails.
+ */
+async function saveSessionToBin(): Promise<string> {
+  const binPath = buildTimestampedBinPath();
+  const adamsPath = binPath.replace(/\\/g, "/");
+  await executeCmd(`file bin write alert_if_exists=no file_name="${adamsPath}"`);
+  return binPath;
+}
+
+/**
+ * Resolve and validate the Adams mdi executable path.
+ * Throws with a human-readable message if the path cannot be resolved.
+ */
+async function resolveMdiPath(mdiPath?: string): Promise<string> {
+  if (mdiPath) {
+    try {
+      await fs.access(mdiPath);
+    } catch {
+      throw new Error(`mdi executable not found at: ${mdiPath}`);
+    }
+    return mdiPath;
+  }
+  const discovered = await findMdi();
+  if (!discovered) {
+    throw new Error(
+      "Could not auto-discover the Adams executable (mdi.bat / mdi).\n" +
+      "Options:\n" +
+      "  1. Pass mdi_path explicitly to this tool.\n" +
+      "  2. Set the ADAMS_LAUNCH_COMMAND environment variable to the full path of mdi.bat.\n" +
+      "  3. Set ADAMS_INSTALL_DIR to your Adams installation parent directory\n" +
+      "     (e.g. C:\\Program Files\\MSC.Software\\Adams)."
+    );
+  }
+  return discovered;
+}
+
+/**
+ * Inject 'command_server start' into aviewAS.cmd, spawn Adams View as a
+ * detached hidden background process in workDir, then return a cleanup
+ * function. The caller must invoke the returned function after Adams has had
+ * time to read aviewAS.cmd on startup (i.e. after waitForAdams() resolves).
+ */
+async function spawnAdamsHidden(
+  resolvedMdi: string,
+  workDir: string
+): Promise<() => Promise<void>> {
+  const isWindows = process.platform === "win32";
+  const mdiArgs = isWindows
+    ? ["aview", "ru-s", "i"]
+    : ["-c", "aview", "ru-s", "i", "exit"];
+
+  // On Windows, launch via wscript.exe + Shell.Run with window style 0 (hidden)
+  // so the VBScript suppresses all console windows in the mdi.bat launch chain.
+  let spawnCmd: string;
+  let spawnArgs: string[];
+
+  if (isWindows) {
+    const mdiEscaped = resolvedMdi.replace(/"/g, '""');
+    const argsStr = mdiArgs.join(" ");
+    const cmd = `""${mdiEscaped}"" ${argsStr}`;
+    const vbs = `CreateObject("WScript.Shell").Run "${cmd}", 0, False`;
+    const vbsTmp = path.join(os.tmpdir(), `adams-launch-${crypto.randomUUID()}.vbs`);
+    await fs.writeFile(vbsTmp, vbs, "utf8");
+    setTimeout(() => fs.unlink(vbsTmp).catch(() => undefined), 10_000);
+    spawnCmd = "wscript.exe";
+    spawnArgs = ["/nologo", vbsTmp];
+  } else {
+    spawnCmd = resolvedMdi;
+    spawnArgs = mdiArgs;
+  }
+
+  const aviewAsCmdPath = path.join(workDir, AVIEW_AS_CMD);
+  let originalContent: string | null = null;
+
+  try {
+    originalContent = await fs.readFile(aviewAsCmdPath, "utf8");
+  } catch {
+    // File doesn't exist — will be created from scratch
+  }
+
+  const needsCleanup =
+    originalContent === null ||
+    !originalContent.trimEnd().endsWith(COMMAND_SERVER_LINE);
+
+  if (originalContent === null) {
+    await fs.writeFile(aviewAsCmdPath, `${COMMAND_SERVER_LINE}\n`, "utf8");
+  } else if (!originalContent.trimEnd().endsWith(COMMAND_SERVER_LINE)) {
+    const sep = originalContent.endsWith("\n") ? "" : "\n";
+    await fs.writeFile(
+      aviewAsCmdPath,
+      `${originalContent}${sep}${COMMAND_SERVER_LINE}\n`,
+      "utf8"
+    );
+  }
+
+  const adams = spawn(spawnCmd, spawnArgs, {
+    cwd: workDir,
+    detached: true,
+    stdio: "ignore",
+  });
+  adams.unref();
+
+  return async () => {
+    if (!needsCleanup) return;
+    try {
+      if (originalContent === null) {
+        await fs.unlink(aviewAsCmdPath);
+      } else {
+        await fs.writeFile(aviewAsCmdPath, originalContent, "utf8");
+      }
+    } catch {
+      // Best-effort; don't mask the real result
+    }
+  };
 }
 
 /**
@@ -189,108 +337,26 @@ Returns:
       }
 
       // ── Step 2: Resolve Adams executable ────────────────────────────────
-      const isWindows = process.platform === "win32";
       let resolvedMdi: string;
-
-      if (mdi_path) {
-        try {
-          await fs.access(mdi_path);
-        } catch {
-          return errorResult(`mdi executable not found at: ${mdi_path}`);
-        }
-        resolvedMdi = mdi_path;
-      } else {
-        const discovered = await findMdi();
-        if (!discovered) {
-          return errorResult(
-            "Could not auto-discover the Adams executable (mdi.bat / mdi).\n" +
-            "Options:\n" +
-            "  1. Pass mdi_path explicitly to this tool.\n" +
-            "  2. Set the ADAMS_LAUNCH_COMMAND environment variable to the full path of mdi.bat.\n" +
-            "  3. Set ADAMS_INSTALL_DIR to your Adams installation parent directory\n" +
-            "     (e.g. C:\\Program Files\\MSC.Software\\Adams)."
-          );
-        }
-        resolvedMdi = discovered;
-      }
-
-      const mdiArgs = isWindows
-        ? ["aview", "ru-s", "i"]
-        : ["-c", "aview", "ru-s", "i", "exit"];
-
-      // On Windows, mdi.bat internally uses `start` to launch sub-processes,
-      // each of which creates a brief console window. windowsHide:true only
-      // hides the process Node spawns directly — it cannot suppress windows
-      // opened by `start` calls inside mdi.bat.
-      //
-      // The fix: launch via wscript.exe + Shell.Run with window style 0
-      // (SW_HIDE). Shell.Run propagates the hidden flag through the batch
-      // launch chain, suppressing all intermediate console windows.
-      let spawnCmd: string;
-      let spawnArgs: string[];
-
-      if (isWindows) {
-        // Build a single-line VBScript that runs mdi.bat hidden and detached.
-        // Shell.Run(..., 0, False) = window style 0 (hidden), don't wait.
-        // Shell.Run requires paths with spaces to be quoted; in VBScript a
-        // literal " inside a "-delimited string is written as "".
-        const mdiEscaped = resolvedMdi.replace(/"/g, '""');
-        const argsStr = mdiArgs.join(" ");
-        const cmd = `""${mdiEscaped}"" ${argsStr}`;
-        const vbs = `CreateObject("WScript.Shell").Run "${cmd}", 0, False`;
-        const vbsTmp = path.join(os.tmpdir(), `adams-launch-${crypto.randomUUID()}.vbs`);
-        await fs.writeFile(vbsTmp, vbs, "utf8");
-        // Schedule cleanup after a short delay so wscript has time to read it
-        setTimeout(() => fs.unlink(vbsTmp).catch(() => undefined), 10_000);
-        spawnCmd = "wscript.exe";
-        spawnArgs = ["/nologo", vbsTmp];
-      } else {
-        spawnCmd = resolvedMdi;
-        spawnArgs = mdiArgs;
-      }
-
-      // ── Step 3: Manage aviewAS.cmd ───────────────────────────────────────
-      const aviewAsCmdPath = path.join(working_directory, AVIEW_AS_CMD);
-      let originalContent: string | null = null;
-
       try {
-        originalContent = await fs.readFile(aviewAsCmdPath, "utf8");
-      } catch {
-        // File doesn't exist — will be created from scratch
+        resolvedMdi = await resolveMdiPath(mdi_path);
+      } catch (e: unknown) {
+        return errorResult(e instanceof Error ? e.message : String(e));
       }
 
-      const needsCleanup =
-        originalContent === null ||
-        !originalContent.trimEnd().endsWith(COMMAND_SERVER_LINE);
-
+      // ── Step 3: Spawn Adams View (with aviewAS.cmd management) ──────────
+      let cleanupAviewAs: () => Promise<void>;
       try {
-        if (originalContent === null) {
-          // Create new file
-          await fs.writeFile(aviewAsCmdPath, `${COMMAND_SERVER_LINE}\n`, "utf8");
-        } else if (!originalContent.trimEnd().endsWith(COMMAND_SERVER_LINE)) {
-          // Append to existing file
-          const sep = originalContent.endsWith("\n") ? "" : "\n";
-          await fs.writeFile(
-            aviewAsCmdPath,
-            `${originalContent}${sep}${COMMAND_SERVER_LINE}\n`,
-            "utf8"
-          );
-        }
-        // If the file already ends with the line, no modification needed
+        cleanupAviewAs = await spawnAdamsHidden(resolvedMdi, working_directory);
+      } catch (e: unknown) {
+        return errorResult(
+          `Failed to launch Adams: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
 
-        // ── Step 4: Launch Adams View ──────────────────────────────────────
-        const adams = spawn(spawnCmd, spawnArgs, {
-          cwd: working_directory,
-          detached: true,
-          stdio: "ignore",
-        });
-        adams.unref();
-
-        // ── Step 5: Wait for Command Server to become reachable ────────────
-        // Adams needs time to start up and process aviewAS.cmd before the
-        // Command Server is ready on its port.
+      // ── Step 4+5: Wait for Command Server, then restore aviewAS.cmd ─────
+      try {
         const ready = await waitForAdams(timeout_seconds * 1000);
-
         if (!ready) {
           return errorResult(
             `Adams View was launched but did not become reachable on port ${getPort()} ` +
@@ -299,7 +365,6 @@ Returns:
             `(Tools > Command Server > Start).`
           );
         }
-
         return {
           content: [
             {
@@ -313,20 +378,205 @@ Returns:
           ],
         };
       } finally {
-        // ── Step 6: Restore aviewAS.cmd ────────────────────────────────────
-        if (needsCleanup) {
-          try {
-            if (originalContent === null) {
-              // We created it — delete it
-              await fs.unlink(aviewAsCmdPath);
-            } else {
-              // We appended — restore original
-              await fs.writeFile(aviewAsCmdPath, originalContent, "utf8");
-            }
-          } catch {
-            // Best-effort; don't mask the real result
-          }
+        await cleanupAviewAs();
+      }
+    }
+  );
+
+  // ── adams_quit_view ───────────────────────────────────────────────────────
+  server.registerTool(
+    "adams_quit_view",
+    {
+      title: "Quit Adams View",
+      description: `Saves the current Adams View session to a timestamped .bin backup file,
+then shuts down the Adams View process.
+
+How it works:
+  1. Checks that Adams View is reachable via the Command Server.
+  2. Saves the session: executes 'file bin write alert_if_exists=no file_name=<tmp>'.
+  3. Sends 'quit confirmation=no' — Adams terminates immediately and does not
+     send a response, so no acknowledgement is expected (fire-and-forget).
+  4. Returns the path to the saved .bin file.
+
+Returns:
+  Success message with the path to the .bin backup file, or an error.`,
+      inputSchema: z.object({}).strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async () => {
+      if (!(await checkConnection())) {
+        return errorResult(
+          "Adams View is not running or the Command Server is not reachable.\n" +
+          "In Adams View: Tools > Command Server > Start"
+        );
+      }
+
+      let binPath: string;
+      try {
+        binPath = await saveSessionToBin();
+      } catch (e: unknown) {
+        return errorResult(
+          `Failed to save session before quitting: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      await sendCmd("quit confirmation=no");
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text:
+              `Adams View has been shut down.\n` +
+              `  Session saved to: ${binPath}`,
+          },
+        ],
+      };
+    }
+  );
+
+  // ── adams_restart_view ────────────────────────────────────────────────────
+  server.registerTool(
+    "adams_restart_view",
+    {
+      title: "Restart Adams View",
+      description: `Saves the current Adams View session, shuts down Adams View, and immediately
+relaunches it in the same working directory with the Command Server running.
+
+How it works:
+  1. Checks that Adams View is reachable via the Command Server.
+  2. Captures the current working directory via getcwd().
+  3. Resolves the Adams executable (mdi_path or auto-discovery).
+  4. Saves the session: 'file bin write alert_if_exists=no file_name=<tmp>'.
+  5. Sends 'quit confirmation=no' to shut Adams down.
+  6. Waits up to 30 seconds for Adams to fully exit (avoids port-binding race).
+  7. Relaunches Adams View via the same mechanism as adams_launch_view.
+  8. Waits up to timeout_seconds for the Command Server to become reachable.
+  9. Returns success with the bin file path and Command Server port.
+
+Args:
+  - mdi_path (string, optional): Explicit path to mdi.bat (Windows) or mdi
+    (Linux). If omitted, auto-discovery is used (same as adams_launch_view).
+  - timeout_seconds (integer, default 120): How long to wait for Adams View
+    to become reachable after restart.
+
+Returns:
+  Success message with the session backup path, working directory, executable,
+  and Command Server port — or an error.`,
+      inputSchema: z
+        .object({
+          mdi_path: z
+            .string()
+            .optional()
+            .describe(
+              "Explicit path to mdi.bat (Windows) or mdi (Linux). " +
+              "If omitted, auto-discovery is attempted via ADAMS_LAUNCH_COMMAND " +
+              "env var, ADAMS_INSTALL_DIR env var, or the default install location."
+            ),
+          timeout_seconds: z
+            .number()
+            .int()
+            .min(10)
+            .max(600)
+            .default(120)
+            .describe(
+              "How long to wait for Adams View to become reachable after restart (seconds). Default 120."
+            ),
+        })
+        .strict(),
+      annotations: {
+        readOnlyHint: false,
+        destructiveHint: true,
+        idempotentHint: false,
+        openWorldHint: false,
+      },
+    },
+    async ({ mdi_path, timeout_seconds }) => {
+      // ── Step 1: Pre-flight check ─────────────────────────────────────────
+      if (!(await checkConnection())) {
+        return errorResult(
+          "Adams View is not running or the Command Server is not reachable.\n" +
+          "In Adams View: Tools > Command Server > Start"
+        );
+      }
+
+      // ── Step 2: Capture working directory before quitting ────────────────
+      let workDir: string;
+      try {
+        workDir = String(await evaluateExp("getcwd()"));
+      } catch (e: unknown) {
+        return errorResult(
+          `Failed to get Adams working directory: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      // ── Step 3: Resolve executable before quitting ───────────────────────
+      let resolvedMdi: string;
+      try {
+        resolvedMdi = await resolveMdiPath(mdi_path);
+      } catch (e: unknown) {
+        return errorResult(e instanceof Error ? e.message : String(e));
+      }
+
+      // ── Step 4: Save session ─────────────────────────────────────────────
+      let binPath: string;
+      try {
+        binPath = await saveSessionToBin();
+      } catch (e: unknown) {
+        return errorResult(
+          `Failed to save session before restarting: ${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      // ── Step 5: Quit Adams ───────────────────────────────────────────────
+      await sendCmd("quit confirmation=no");
+
+      // ── Step 6: Wait for Adams to fully exit ─────────────────────────────
+      // Prevents a port-binding race where the new process tries to listen
+      // on the same port before the old one has fully released it.
+      await waitForAdamsDown(30_000);
+
+      // ── Step 7: Relaunch Adams View ──────────────────────────────────────
+      let cleanupAviewAs: () => Promise<void>;
+      try {
+        cleanupAviewAs = await spawnAdamsHidden(resolvedMdi, workDir);
+      } catch (e: unknown) {
+        return errorResult(
+          `Session saved to ${binPath} but failed to relaunch Adams: ` +
+          `${e instanceof Error ? e.message : String(e)}`
+        );
+      }
+
+      // ── Step 8+9: Wait for Command Server, then restore aviewAS.cmd ─────
+      try {
+        const ready = await waitForAdams(timeout_seconds * 1000);
+        if (!ready) {
+          return errorResult(
+            `Session saved to ${binPath}. Adams quit successfully but did not become ` +
+            `reachable again on port ${getPort()} within ${timeout_seconds} seconds.\n` +
+            `Try launching Adams manually: adams_launch_view`
+          );
         }
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text:
+                `Adams View restarted successfully.\n` +
+                `  Session saved to: ${binPath}\n` +
+                `  Working directory: ${workDir}\n` +
+                `  Executable: ${resolvedMdi}\n` +
+                `  Command Server ready on port ${getPort()}.`,
+            },
+          ],
+        };
+      } finally {
+        await cleanupAviewAs();
       }
     }
   );

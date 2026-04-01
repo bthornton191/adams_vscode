@@ -5,8 +5,11 @@
  * directly via vitest mocking. No real TCP server needed here.
  */
 
+import * as os from "os";
+import * as path from "path";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { parseDescription, parseData } from "../src/client.js";
+import { buildTimestampedBinPath } from "../src/tools/session.js";
 
 // ── Smoke tests for tool-level parsing/normalization helpers ─────────────────
 // (Full tool tests require wiring into McpServer and are integration-level;
@@ -108,5 +111,35 @@ describe("log flags bitmask", () => {
 
   it("excludes infos bit when show_infos is false", () => {
     expect(buildFlags({ ...defaults, show_infos: false }) & 2).toBe(0);
+  });
+});
+
+// ── buildTimestampedBinPath ───────────────────────────────────────────────────
+
+describe("buildTimestampedBinPath", () => {
+  it("returns a string ending in .bin", () => {
+    expect(buildTimestampedBinPath()).toMatch(/\.bin$/);
+  });
+
+  it("filename matches the expected datetime pattern", () => {
+    const p = path.basename(buildTimestampedBinPath());
+    expect(p).toMatch(/^adams_session_\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}\.bin$/);
+  });
+
+  it("file is located inside the OS temp directory", () => {
+    const p = buildTimestampedBinPath();
+    expect(p.startsWith(os.tmpdir())).toBe(true);
+  });
+
+  it("two calls within the same second return the same path", () => {
+    // Both calls happen in the same second so toISOString().slice(0,19) is identical
+    const a = buildTimestampedBinPath();
+    const b = buildTimestampedBinPath();
+    expect(a).toBe(b);
+  });
+
+  it("uses hyphens rather than colons in the time component", () => {
+    const p = path.basename(buildTimestampedBinPath());
+    expect(p).not.toContain(":");
   });
 });
