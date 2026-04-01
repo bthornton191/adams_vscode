@@ -10,7 +10,6 @@ requires-python = ">=3.9"
 dependencies = ["pygls>=2.0", "lsprotocol"]
 
 [project.optional-dependencies]
-mcp = ["mcp[cli]>=1.0"]
 dev = ["pytest", "pytest-asyncio"]
 
 [project.scripts]

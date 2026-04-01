@@ -46,9 +46,8 @@ bundled/libs/PyWin32.chm
 bundled/libs/pywin32.pth
 bundled/libs/pywin32.version.txt
 
-# pygments — rich.traceback imports pygments.lexers at top level, but the
-# cascading ImportError is caught by FastMCP's configure_logging() try/except.
-# The MCP server falls back to plain logging. No functional impact.
+# pygments — installed as a transitive dependency; lexers and formatters are
+# not used by the bundled tools, so strip them to keep the package small.
 bundled/libs/pygments/lexers/**
 bundled/libs/pygments/formatters/**
 
