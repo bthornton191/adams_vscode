@@ -46,13 +46,17 @@
      "     any one suppresses the others. Also: plot_name is derivable from the curve_name",
      "     path (e.g. .plot_1.curve_1), so it is not truly required.",
      "",
-     " 10) view management orient: this command is absent from commands.exp entirely.",
+     " 10) mdi gui_utl_alert_box_1: this command is absent from commands.exp entirely.",
+     "     It is a built-in Adams MDI alert-dialog command.  Arguments: type (enum:",
+     "     ERROR/WARNING/INFO/QUESTION, required), text (string, required).",
+     "",
+     " 11) view management orient: this command is absent from commands.exp entirely.",
      "     It is a valid Adams View command for setting the view orientation (up/forward axis).",
      "     Added as a new entry with: view (existing_object/View/required),",
      "     up_axis (enum, optional), forward_axis (enum, optional).",
      "     Also added to command_tree under view -> management.",
      "",
-     " 11) data_element create matrix full: 'values' and 'result_set_component_names' are",
+     " 12) data_element create matrix full: 'values' and 'result_set_component_names' are",
      "     mutually exclusive data sources (inline values vs result-set reference).",
      "     commands.exp marks both required with no exclusive groups.",
      "",
@@ -372,6 +376,23 @@
     }
   },
   "new_commands": {
+    "mdi gui_utl_alert_box_1": {
+      "_comment": "Absent from commands.exp entirely. Built-in Adams MDI alert dialog command.",
+      "args": {
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum_values": ["error", "warning", "info", "question"],
+          "min_prefix": 2
+        },
+        "text": {
+          "type": "string",
+          "required": true,
+          "min_prefix": 2
+        }
+      },
+      "exclusive_groups": []
+    },
     "view management orient": {
       "_comment": "Absent from commands.exp entirely. Valid Adams View command for setting view orientation.",
       "args": {

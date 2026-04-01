@@ -68922,6 +68922,27 @@
     "vibration vibration_analysis modify": {
       "args": {},
       "exclusive_groups": []
+    },
+    "mdi gui_utl_alert_box_1": {
+      "args": {
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum_values": [
+            "error",
+            "warning",
+            "info",
+            "question"
+          ],
+          "min_prefix": 2
+        },
+        "text": {
+          "type": "string",
+          "required": true,
+          "min_prefix": 2
+        }
+      },
+      "exclusive_groups": []
     }
   },
   "command_tree": {
@@ -76295,6 +76316,10 @@
           },
           "flx_unv2mnf": {
             "min_prefix": 1
+          },
+          "gui_utl_alert_box_1": {
+            "min_prefix": 1,
+            "is_leaf": true
           }
         }
       },
