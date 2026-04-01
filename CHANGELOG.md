@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.9.6 (April 1st 2026)](#196-april-1st-2026)
   - [1.9.5 (April 1st 2026)](#195-april-1st-2026)
   - [1.9.4 (April 1st 2026)](#194-april-1st-2026)
   - [1.9.3 (April 1st 2026)](#193-april-1st-2026)
@@ -45,6 +46,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.9.6 (April 1st 2026)
+
+- **Fixed** Syntax highlighting incorrectly coloured code between `//` string-concatenation operators as a string. Single-quoted strings inside double-quoted strings (and vice versa) no longer open a nested string scope, preventing highlight bleed onto subsequent tokens and lines.
 
 ## 1.9.5 (April 1st 2026)
 
