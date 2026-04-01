@@ -3,7 +3,10 @@
 Exposes Adams CMD linting and schema lookup as MCP tools consumable by any
 MCP-compatible agent harness (e.g. GitHub Copilot in agent mode).
 
-Transport: stdio (default).
+Pure stdlib implementation — no external MCP/pydantic dependencies required.
+
+Transport: stdio (JSON-RPC 2.0 over newline-delimited JSON).
+Protocol: MCP 2024-11-05
 
 Tools provided:
   adams_lint_cmd_text  — Lint raw CMD text, return JSON diagnostics.
@@ -14,21 +17,21 @@ The Schema and MacroRegistry are loaded once at startup in main() and stored
 as module-level globals shared across all tool calls.
 """
 
+from __future__ import annotations
+
 import argparse
+import asyncio
 import json
 import os
+import sys
 from pathlib import Path
-
-from mcp.server.fastmcp import FastMCP
 
 from .diagnostics import Severity
 from .linter import lint_text
 from .macros import MacroRegistry, scan_macro_files, DEFAULT_MACRO_PATTERNS
 from .schema import Schema
 
-mcp = FastMCP("adams_cmd_lint_mcp")
-
-# Module-level singletons initialised by main() before mcp.run().
+# Module-level singletons initialised by main() before the server loop starts.
 _schema: Schema | None = None
 _macro_registry: MacroRegistry | None = None
 _show_macro_hint: bool = True
@@ -64,19 +67,9 @@ def _serialise_diagnostics(diagnostics, file_path=None):
 
 
 # ---------------------------------------------------------------------------
-# Tools
+# Tool handlers  (async so callers can `await` them)
 # ---------------------------------------------------------------------------
 
-@mcp.tool(
-    name="adams_lint_cmd_text",
-    annotations={
-        "title": "Lint Adams CMD text",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
 async def adams_lint_cmd_text(text: str, min_severity: str = "info") -> str:
     """Lint a string of Adams CMD source text and return diagnostics as JSON.
 
@@ -135,16 +128,6 @@ async def adams_lint_cmd_text(text: str, min_severity: str = "info") -> str:
     return json.dumps(_serialise_diagnostics(diagnostics), indent=2)
 
 
-@mcp.tool(
-    name="adams_lint_cmd_file",
-    annotations={
-        "title": "Lint an Adams CMD file",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
 async def adams_lint_cmd_file(file_path: str, min_severity: str = "info") -> str:
     """Lint an Adams CMD file by path and return diagnostics as JSON.
 
@@ -200,16 +183,6 @@ async def adams_lint_cmd_file(file_path: str, min_severity: str = "info") -> str
     return json.dumps(_serialise_diagnostics(diagnostics, file_path=resolved), indent=2)
 
 
-@mcp.tool(
-    name="adams_lookup_command",
-    annotations={
-        "title": "Look up an Adams CMD command",
-        "readOnlyHint": True,
-        "destructiveHint": False,
-        "idempotentHint": True,
-        "openWorldHint": False,
-    },
-)
 async def adams_lookup_command(command: str) -> str:
     """Look up the schema definition of an Adams CMD command.
 
@@ -292,6 +265,201 @@ async def adams_lookup_command(command: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Tool registry
+# ---------------------------------------------------------------------------
+
+_TOOL_HANDLERS = {
+    "adams_lint_cmd_text": adams_lint_cmd_text,
+    "adams_lint_cmd_file": adams_lint_cmd_file,
+    "adams_lookup_command": adams_lookup_command,
+}
+
+_TOOLS_LIST = [
+    {
+        "name": "adams_lint_cmd_text",
+        "description": (
+            "Lint a string of Adams CMD source text and return diagnostics as JSON. "
+            "Use to validate CMD content before writing it to a file, or to check "
+            "a snippet the agent has just produced."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "text": {
+                    "type": "string",
+                    "description": "Raw Adams CMD content to lint.",
+                },
+                "min_severity": {
+                    "type": "string",
+                    "description": (
+                        'Minimum severity level to include: "error", "warning", '
+                        'or "info" (default).'
+                    ),
+                },
+            },
+            "required": ["text"],
+        },
+        "annotations": {
+            "title": "Lint Adams CMD text",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "adams_lint_cmd_file",
+        "description": (
+            "Lint an Adams CMD file by absolute path and return diagnostics as JSON. "
+            "Reads the file from disk. Results include the resolved file path."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "file_path": {
+                    "type": "string",
+                    "description": "Absolute path to a .cmd file to lint.",
+                },
+                "min_severity": {
+                    "type": "string",
+                    "description": (
+                        'Minimum severity level to include: "error", "warning", '
+                        'or "info" (default).'
+                    ),
+                },
+            },
+            "required": ["file_path"],
+        },
+        "annotations": {
+            "title": "Lint an Adams CMD file",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+    {
+        "name": "adams_lookup_command",
+        "description": (
+            "Look up the schema definition of an Adams CMD command. Resolves "
+            "abbreviated command names and returns arguments, required flags, "
+            "types, and mutual exclusion groups."
+        ),
+        "inputSchema": {
+            "type": "object",
+            "properties": {
+                "command": {
+                    "type": "string",
+                    "description": (
+                        "Command name to look up. May be abbreviated per Adams "
+                        "prefix rules. Example: \"marker create\" or \"mar cre\"."
+                    ),
+                },
+            },
+            "required": ["command"],
+        },
+        "annotations": {
+            "title": "Look up an Adams CMD command",
+            "readOnlyHint": True,
+            "destructiveHint": False,
+            "idempotentHint": True,
+            "openWorldHint": False,
+        },
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# JSON-RPC 2.0 / MCP protocol helpers
+# ---------------------------------------------------------------------------
+
+_PROTOCOL_VERSION = "2024-11-05"
+_SERVER_INFO = {"name": "adams_cmd_lint_mcp", "version": "0.1.0"}
+
+
+def _write_message(obj: dict) -> None:
+    """Serialise and write one JSON-RPC message to stdout."""
+    try:
+        sys.stdout.write(json.dumps(obj) + "\n")
+        sys.stdout.flush()
+    except (BrokenPipeError, OSError):
+        sys.exit(0)
+
+
+def _ok(req_id, result: dict) -> dict:
+    return {"jsonrpc": "2.0", "id": req_id, "result": result}
+
+
+def _err(req_id, code: int, message: str) -> dict:
+    return {"jsonrpc": "2.0", "id": req_id, "error": {"code": code, "message": message}}
+
+
+async def _handle_message(msg: dict) -> None:
+    """Dispatch a single JSON-RPC message and send a response when required."""
+    method = msg.get("method", "")
+    req_id = msg.get("id")  # None for notifications
+    params = msg.get("params") or {}
+
+    if method == "initialize":
+        _write_message(_ok(req_id, {
+            "protocolVersion": _PROTOCOL_VERSION,
+            "capabilities": {"tools": {"listChanged": False}},
+            "serverInfo": _SERVER_INFO,
+        }))
+
+    elif method == "ping":
+        _write_message(_ok(req_id, {}))
+
+    elif method in ("notifications/initialized", "notifications/cancelled"):
+        pass  # notifications — no response required
+
+    elif method == "tools/list":
+        _write_message(_ok(req_id, {"tools": _TOOLS_LIST}))
+
+    elif method == "tools/call":
+        name = params.get("name", "")
+        arguments = params.get("arguments") or {}
+        handler = _TOOL_HANDLERS.get(name)
+        if handler is None:
+            _write_message(_err(req_id, -32601, f"Unknown tool: {name!r}"))
+            return
+        try:
+            text = await handler(**arguments)
+        except TypeError as exc:
+            _write_message(_err(req_id, -32602, f"Invalid params: {exc}"))
+            return
+        except Exception as exc:  # noqa: BLE001
+            _write_message(_err(req_id, -32603, f"Internal error: {exc}"))
+            return
+        _write_message(_ok(req_id, {"content": [{"type": "text", "text": text}]}))
+
+    elif req_id is not None:
+        # Unknown method with an id — respond with Method Not Found
+        _write_message(_err(req_id, -32601, f"Method not found: {method!r}"))
+
+    # Unknown notifications (no id) are silently ignored per JSON-RPC 2.0
+
+
+async def _stdio_loop_async() -> None:
+    """Async stdin loop that processes each message within a single event loop."""
+    for raw_line in sys.stdin:
+        line = raw_line.strip()
+        if not line:
+            continue
+        try:
+            msg = json.loads(line)
+        except json.JSONDecodeError:
+            print(f"[adams-cmd-mcp] ignoring malformed JSON: {line!r}", file=sys.stderr)
+            continue
+        await _handle_message(msg)
+
+
+def _run_stdio_loop() -> None:
+    """Start the single-event-loop stdio server."""
+    asyncio.run(_stdio_loop_async())
+
+
+# ---------------------------------------------------------------------------
 # Entry point
 # ---------------------------------------------------------------------------
 
@@ -345,6 +513,13 @@ def main():
     )
     args = parser.parse_args()
 
+    # Reconfigure stdin/stdout to UTF-8 so that multi-byte characters in CMD
+    # text are handled correctly on all platforms (especially Windows).
+    if hasattr(sys.stdin, "reconfigure"):
+        sys.stdin.reconfigure(encoding="utf-8", errors="replace")
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
     # Load schema (once, shared for all tool calls)
     _schema = Schema.load(args.schema) if args.schema else Schema.load()
     _show_macro_hint = not args.no_show_macro_hint
@@ -364,4 +539,4 @@ def main():
             registry=_macro_registry,
         )
 
-    mcp.run(transport="stdio")
+    _run_stdio_loop()

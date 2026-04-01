@@ -3,7 +3,7 @@
 Tests exercise the MCP tool handler functions directly by calling them as
 async functions, without starting a live MCP server process.
 
-Requires: pytest, pytest-asyncio, and the mcp package (FastMCP).
+Requires: pytest, pytest-asyncio
 """
 
 from pathlib import Path
@@ -14,22 +14,9 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-# Guard: skip entire module if mcp package is not installed
-try:
-    import mcp  # noqa: F401
-    _MCP_AVAILABLE = True
-except ImportError:
-    _MCP_AVAILABLE = False
-
-pytestmark = pytest.mark.skipif(
-    not _MCP_AVAILABLE,
-    reason="mcp package not installed",
-)
-
-if _MCP_AVAILABLE:
-    import adams_cmd_lsp.mcp_server as srv
-    from adams_cmd_lsp.schema import Schema
-    from adams_cmd_lsp.macros import MacroRegistry, scan_macro_files
+import adams_cmd_lsp.mcp_server as srv
+from adams_cmd_lsp.schema import Schema
+from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition, scan_macro_files
 
 
 FIXTURES = Path(__file__).parent.parent.parent / "test" / "files"
@@ -112,7 +99,6 @@ async def test_lint_cmd_text_with_macro_registry_no_e001_for_known_macro():
     """A command matching a known user macro should not produce E001."""
     registry = MacroRegistry()
     # Register a fake macro definition
-    from adams_cmd_lsp.macros import MacroDefinition
     registry.register(MacroDefinition(command="my custom macro", parameters={}))
     _setup(macro_registry=registry)
 
@@ -271,3 +257,110 @@ def test_schema_loads_successfully():
     # Check some known commands exist
     assert schema.has_command("model create")
     assert schema.has_command("marker create")
+
+
+# ---------------------------------------------------------------------------
+# _handle_message — JSON-RPC / MCP protocol layer
+# ---------------------------------------------------------------------------
+
+from unittest.mock import patch  # noqa: E402
+
+
+async def _capture_handle(msg):
+    """Run _handle_message and return the list of messages passed to _write_message."""
+    captured = []
+    with patch.object(srv, "_write_message", side_effect=captured.append):
+        await srv._handle_message(msg)
+    return captured
+
+
+@pytest.mark.asyncio
+async def test_handle_initialize_returns_server_info():
+    captured = await _capture_handle({
+        "jsonrpc": "2.0", "id": 1, "method": "initialize",
+        "params": {"protocolVersion": "2024-11-05", "capabilities": {}, "clientInfo": {"name": "test", "version": "0"}},
+    })
+    assert len(captured) == 1
+    msg = captured[0]
+    assert msg["id"] == 1
+    assert msg["result"]["protocolVersion"] == "2024-11-05"
+    assert "tools" in msg["result"]["capabilities"]
+    assert msg["result"]["serverInfo"]["name"] == "adams_cmd_lint_mcp"
+
+
+@pytest.mark.asyncio
+async def test_handle_ping_returns_empty_result():
+    captured = await _capture_handle({"jsonrpc": "2.0", "id": 2, "method": "ping"})
+    assert len(captured) == 1
+    assert captured[0]["result"] == {}
+
+
+@pytest.mark.asyncio
+async def test_handle_tools_list_returns_all_tools():
+    captured = await _capture_handle({"jsonrpc": "2.0", "id": 3, "method": "tools/list"})
+    assert len(captured) == 1
+    tools = captured[0]["result"]["tools"]
+    names = {t["name"] for t in tools}
+    assert names == {"adams_lint_cmd_text", "adams_lint_cmd_file", "adams_lookup_command"}
+    # Each tool must have a string description and a dict inputSchema
+    for tool in tools:
+        assert isinstance(tool["description"], str), f"{tool['name']} description is not a string"
+        assert isinstance(tool["inputSchema"], dict)
+
+
+@pytest.mark.asyncio
+async def test_handle_tools_call_lint_text_happy_path():
+    _setup()
+    captured = await _capture_handle({
+        "jsonrpc": "2.0", "id": 4, "method": "tools/call",
+        "params": {"name": "adams_lint_cmd_text", "arguments": {"text": "model create model_name=x"}},
+    })
+    assert len(captured) == 1
+    content = captured[0]["result"]["content"]
+    assert content[0]["type"] == "text"
+    result = json.loads(content[0]["text"])
+    assert "diagnostics" in result
+
+
+@pytest.mark.asyncio
+async def test_handle_tools_call_unknown_tool_returns_error():
+    captured = await _capture_handle({
+        "jsonrpc": "2.0", "id": 5, "method": "tools/call",
+        "params": {"name": "nonexistent_tool", "arguments": {}},
+    })
+    assert len(captured) == 1
+    assert "error" in captured[0]
+    assert captured[0]["error"]["code"] == -32601
+
+
+@pytest.mark.asyncio
+async def test_handle_tools_call_bad_params_returns_error():
+    _setup()
+    captured = await _capture_handle({
+        "jsonrpc": "2.0", "id": 6, "method": "tools/call",
+        "params": {"name": "adams_lint_cmd_text", "arguments": {"totally_wrong_arg": 42}},
+    })
+    assert len(captured) == 1
+    assert "error" in captured[0]
+    assert captured[0]["error"]["code"] == -32602
+
+
+@pytest.mark.asyncio
+async def test_handle_notification_initialized_no_response():
+    captured = await _capture_handle({"jsonrpc": "2.0", "method": "notifications/initialized"})
+    assert len(captured) == 0
+
+
+@pytest.mark.asyncio
+async def test_handle_unknown_notification_no_response():
+    captured = await _capture_handle({"jsonrpc": "2.0", "method": "some/unknown/notification"})
+    assert len(captured) == 0
+
+
+@pytest.mark.asyncio
+async def test_handle_unknown_request_returns_method_not_found():
+    captured = await _capture_handle({"jsonrpc": "2.0", "id": 7, "method": "unknown/method"})
+    assert len(captured) == 1
+    assert "error" in captured[0]
+    assert captured[0]["error"]["code"] == -32601
+

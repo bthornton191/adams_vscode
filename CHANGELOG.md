@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.9.3 (April 1st 2026)](#193-april-1st-2026)
   - [1.9.2 (April 1st 2026)](#192-april-1st-2026)
   - [1.9.1 (March 31st 2026)](#191-march-31st-2026)
   - [1.9.0 (March 31st 2026)](#190-march-31st-2026)
@@ -42,6 +43,12 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.9.3 (April 1st 2026)
+
+- **Fixed** Adams CMD Lint MCP server failing to start due to `pydantic_core._pydantic_core`
+  C-extension version mismatch. Replaced FastMCP with a pure Python stdlib JSON-RPC 2.0
+  implementation — no external `mcp`, `pydantic`, or `pydantic_core` packages are required.
 
 ## 1.9.2 (April 1st 2026)
 
