@@ -487,10 +487,7 @@ def find_references(params: types.ReferenceParams):
 
 @server.feature(
     types.TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
-    types.SemanticTokensOptions(
-        legend=_SEMANTIC_LEGEND,
-        full=True,
-    ),
+    _SEMANTIC_LEGEND,
 )
 def semantic_tokens_full(params: types.SemanticTokensParams):
     """Provide semantic tokens for macro command invocations and their arguments."""

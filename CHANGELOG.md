@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.9.5 (April 1st 2026)](#195-april-1st-2026)
   - [1.9.4 (April 1st 2026)](#194-april-1st-2026)
   - [1.9.3 (April 1st 2026)](#193-april-1st-2026)
   - [1.9.2 (April 1st 2026)](#192-april-1st-2026)
@@ -44,6 +45,13 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.9.5 (April 1st 2026)
+
+- **Fixed** LSP server crash on startup (`AttributeError: 'SemanticTokensOptions' object
+  has no attribute 'token_types'`). The semantic tokens feature registration now passes
+  the `SemanticTokensLegend` directly to `@server.feature()` rather than wrapping it in
+  `SemanticTokensOptions` — pygls constructs `SemanticTokensOptions` internally.
 
 ## 1.9.4 (April 1st 2026)
 
