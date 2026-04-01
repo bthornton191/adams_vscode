@@ -30,6 +30,16 @@ from .references import MacroIndex, index_file_text
 
 server = LanguageServer("adams-cmd-lsp", "v0.1.0")
 
+# Semantic token legend — used for macro command/argument highlighting
+_SEMANTIC_TOKEN_TYPES = ["keyword", "parameter"]
+_SEMANTIC_TOKEN_MODIFIERS: list = []
+_SEMANTIC_LEGEND = types.SemanticTokensLegend(
+    token_types=_SEMANTIC_TOKEN_TYPES,
+    token_modifiers=_SEMANTIC_TOKEN_MODIFIERS,
+)
+_TOKEN_TYPE_KEYWORD = _SEMANTIC_TOKEN_TYPES.index("keyword")
+_TOKEN_TYPE_PARAMETER = _SEMANTIC_TOKEN_TYPES.index("parameter")
+
 # Schema and macro registry are loaded once in main() and stored here
 _schema = None
 _macro_registry = None
@@ -473,6 +483,128 @@ def find_references(params: types.ReferenceParams):
         ))
 
     return locations
+
+
+@server.feature(
+    types.TEXT_DOCUMENT_SEMANTIC_TOKENS_FULL,
+    types.SemanticTokensOptions(
+        legend=_SEMANTIC_LEGEND,
+        full=True,
+    ),
+)
+def semantic_tokens_full(params: types.SemanticTokensParams):
+    """Provide semantic tokens for macro command invocations and their arguments."""
+    uri = params.text_document.uri
+    try:
+        doc = server.workspace.get_text_document(uri)
+        text = doc.source
+    except Exception:  # noqa: BLE001
+        return types.SemanticTokens(data=[])
+
+    try:
+        data = _compute_semantic_tokens(text, uri)
+    except Exception:  # noqa: BLE001
+        data = []
+    return types.SemanticTokens(data=data)
+
+
+def _compute_semantic_tokens(text, uri):
+    """Build the integer-encoded semantic token data for macro invocations.
+
+    Returns a flat list of integers in groups of 5:
+        [deltaLine, deltaStart, length, tokenType, tokenModifiers]
+    sorted by position.
+    """
+    if _schema is None:
+        return []
+
+    try:
+        statements = _parse_cmd(text)
+    except Exception:  # noqa: BLE001
+        return []
+
+    # Resolve built-in command abbreviations so that
+    # extract_macros_from_statements can recognise "mac cre" → "macro create"
+    for stmt in statements:
+        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
+            continue
+        if not stmt.command_key or stmt.resolved_command_key:
+            continue
+        toks = stmt.command_key.split()
+        resolved, _ = _schema.resolve_command_key(toks)
+        if resolved:
+            stmt.resolved_command_key = resolved
+
+    # Pre-compute inline macros from the whole file for same-file matching
+    inline_macros = None
+
+    # Collect raw tokens as (line, col, length, type_index)
+    raw_tokens = []
+
+    for stmt in statements:
+        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
+            continue
+        if not stmt.command_key:
+            continue
+
+        # Skip dot-path property assignments (same as rule_unknown_command)
+        if stmt.command_key.startswith('.'):
+            continue
+
+        # If this resolves as a built-in command, skip — TextMate handles it
+        if stmt.resolved_command_key is not None:
+            continue
+
+        # Check workspace macro registry.
+        # Normalise multi-space command keys (from continuation-line joining)
+        # to single spaces for exact match against the registry.
+        macro_def = None
+        normalised_key = " ".join(stmt.command_key.split())
+        if _macro_registry is not None:
+            macro_def = _macro_registry.lookup_command(normalised_key)
+
+        # Check inline macros (lazily computed).
+        # Unlike _get_command_key_at_position (which uses only preceding stmts
+        # for accuracy), we use ALL statements so the entire file highlights
+        # consistently — a macro defined on line 50 colours invocations above.
+        if macro_def is None:
+            if inline_macros is None:
+                path = _uri_to_path(uri)
+                inline_macros = extract_macros_from_statements(
+                    statements, _schema, source_file=path,
+                )
+            for idef in inline_macros:
+                if idef.command == normalised_key:
+                    macro_def = idef
+                    break
+
+        if macro_def is None:
+            continue
+
+        # Emit keyword tokens for each command key word
+        for token_text, token_line, token_col in stmt.command_key_tokens:
+            raw_tokens.append((token_line, token_col, len(token_text), _TOKEN_TYPE_KEYWORD))
+
+        # Emit parameter tokens for each argument name
+        for arg in stmt.arguments:
+            raw_tokens.append((arg.name_line, arg.name_column, len(arg.name), _TOKEN_TYPE_PARAMETER))
+
+    if not raw_tokens:
+        return []
+
+    # Sort by (line, col) and encode as delta format
+    raw_tokens.sort(key=lambda t: (t[0], t[1]))
+    data = []
+    prev_line = 0
+    prev_col = 0
+    for line, col, length, token_type in raw_tokens:
+        delta_line = line - prev_line
+        delta_col = col - prev_col if delta_line == 0 else col
+        data.extend([delta_line, delta_col, length, token_type, 0])
+        prev_line = line
+        prev_col = col
+
+    return data
 
 
 @server.feature(types.INITIALIZED)

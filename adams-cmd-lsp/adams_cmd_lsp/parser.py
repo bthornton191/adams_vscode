@@ -29,6 +29,7 @@ class Statement:
     command_key: str                          # as written by user, normalised lowercase
     resolved_command_key: Optional[str]       # canonical form after abbreviation resolution, or None
     arguments: List[Argument] = field(default_factory=list)
+    command_key_tokens: List[Tuple[str, int, int]] = field(default_factory=list)  # [(token, line, col), ...]
     line_start: int = 0                       # 0-based first line
     line_end: int = 0                         # 0-based last line (inclusive)
     raw_text: str = ""                        # full raw text including continuations (no comments)
@@ -395,6 +396,51 @@ def _extract_command_key(text: str) -> str:
     return "".join(result).strip()
 
 
+def _extract_command_key_tokens(
+    text: str,
+    offsets: List[Tuple[int, int, int]],
+) -> List[Tuple[str, int, int]]:
+    """Extract command-key word tokens with their physical line/column positions.
+
+    Same logic as _extract_command_key (skip arg=value pairs) but returns a
+    list of (token_text_lowercase, phys_line, phys_col) for each bare word
+    in the command key.
+
+    Example:
+        "part create rigid_body part_name=.model.P1"
+        → [("part", 0, 0), ("create", 0, 5), ("rigid_body", 0, 12)]
+    """
+    tokens: List[Tuple[str, int, int]] = []
+    i = 0
+    n = len(text)
+
+    while i < n:
+        # Skip whitespace
+        if text[i].isspace():
+            i += 1
+            continue
+
+        # Look ahead: is this an arg=value pair?
+        m = re.match(r'(\w+\s*=\s*)', text[i:])
+        if m:
+            # Consume the arg=value pair entirely
+            value_start = i + len(m.group(0))
+            end = _consume_argument_value(text, value_start)
+            end = _consume_comma_separated_tail(text, end, value_start)
+            i = end
+            continue
+
+        # Bare word — part of the command key
+        word_start = i
+        while i < n and not text[i].isspace():
+            i += 1
+        word = text[word_start:i]
+        line, col = _char_to_line_col(word_start, offsets)
+        tokens.append((word.lower(), line, col))
+
+    return tokens
+
+
 # ---------------------------------------------------------------------------
 # Argument extraction
 # ---------------------------------------------------------------------------
@@ -517,11 +563,13 @@ def parse(text: str) -> List[Statement]:
 
         # Normal command statement — extract arguments
         args = _extract_arguments(joined, offsets)
+        cmd_tokens = _extract_command_key_tokens(joined, offsets)
 
         statements.append(Statement(
             command_key=cmd_key,
             resolved_command_key=None,  # filled in by rules.py rule_unknown_command
             arguments=args,
+            command_key_tokens=cmd_tokens,
             line_start=line_start,
             line_end=line_end,
             raw_text=joined,
