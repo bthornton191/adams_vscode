@@ -179,23 +179,8 @@
                 {
                     "name": "string.quoted.double.adams_cmd",
                     "begin": "\"",
-                    "end": "\"",
+                    "end": "(\"|$)",
                     "patterns": [
-                        {
-                            "name": "string.quoted.single.adams_cmd",
-                            "begin": "'",
-                            "end": "'",
-                            "patterns": [
-                                {
-                                    "name": "constant.character.escape.adams_cmd",
-                                    "match": "\\\\."
-                                },
-                                {
-                                    "name": "variable.patterns.parameter.reference",
-                                    "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
-                                }
-                            ]
-                        },
                         {
                             "name": "variable.patterns.parameter.reference",
                             "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
@@ -205,22 +190,11 @@
                 {
                     "name": "string.quoted.single.adams_cmd",
                     "begin": "'",
-                    "end": "'",
+                    "end": "('|$)",
                     "patterns": [
                         {
-                            "name": "string.quoted.double.adams_cmd",
-                            "begin": "\"",
-                            "end": "\"",
-                            "patterns": [
-                                {
-                                    "name": "constant.character.escape.adams_cmd",
-                                    "match": "\\\\."
-                                },
-                                {
-                                    "name": "variable.patterns.parameter.reference",
-                                    "match": "\\$('?)([a-zA-Z0-9_]*)\\1"
-                                }
-                            ]
+                            "name": "constant.character.escape.adams_cmd",
+                            "match": "\\\\."
                         },
                         {
                             "name": "variable.patterns.parameter.reference",

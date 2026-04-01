@@ -232,10 +232,6 @@ model create model_name=.demo_e102_clean title="My Demo Model"
 ! CLEAN: single-quoted string properly closed
 variable set variable_name=sep string_value='.'
 
-! BROKEN: double-quote opened but never closed on this line — E102
-model create model_name=.demo_e102_bad title="this string is never closed
-
-
 ! =============================================================================
 ! E104 — Control-flow balance (if/end, for/end, else without if)
 ! =============================================================================
@@ -378,3 +374,6 @@ model create model_name = .demo_model_b
 !         an accidental extra '&' or a missing continuation line.
 !         W103 is emitted.
 model create model_name = .demo_model_eof &
+
+
+var set var=$_self.py_str str=(eval($_self.py_str)), (eval("mod = Adams.Models['" // $_self.model.object_value.name // "']"))
