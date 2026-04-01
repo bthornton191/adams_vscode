@@ -9908,5 +9908,9 @@
         "axis_visibility",
         "axis_labels",
         "symbol"
+    ],
+    "mdi gui_utl_alert_box_1": [
+        "type",
+        "text"
     ]
 }
