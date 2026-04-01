@@ -6,6 +6,9 @@ async functions, without starting a live MCP server process.
 Requires: pytest, pytest-asyncio
 """
 
+from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition, scan_macro_files
+from adams_cmd_lsp.schema import Schema
+import adams_cmd_lsp.mcp_server as srv
 from pathlib import Path
 import json
 import sys
@@ -13,10 +16,6 @@ import os
 import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-import adams_cmd_lsp.mcp_server as srv
-from adams_cmd_lsp.schema import Schema
-from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition, scan_macro_files
 
 
 FIXTURES = Path(__file__).parent.parent.parent / "test" / "files"
@@ -363,4 +362,3 @@ async def test_handle_unknown_request_returns_method_not_found():
     assert len(captured) == 1
     assert "error" in captured[0]
     assert captured[0]["error"]["code"] == -32601
-
