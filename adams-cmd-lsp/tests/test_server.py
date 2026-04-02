@@ -453,11 +453,11 @@ def test_refresh_macro_file_parse_exception_swallowed(tmp_path, monkeypatch):
 # _refresh_macro_file — command change documents design limitation (G9)
 # ---------------------------------------------------------------------------
 
-def test_refresh_macro_file_old_command_persists_after_change(tmp_path):
-    """When a .mac file's command changes, the old command key remains in the registry.
+def test_refresh_macro_file_old_command_removed_after_change(tmp_path):
+    """When a .mac file's command changes, the old command key is removed from the registry.
 
-    MacroRegistry has no unregister mechanism, so re-saving a macro file registers
-    the new command but does NOT remove the old one. This is a known design limitation.
+    _refresh_macro_file calls unregister_by_file before re-parsing so that stale
+    entries from the same file do not accumulate in the registry.
     """
     from adams_cmd_lsp.macros import MacroRegistry
 
@@ -480,8 +480,8 @@ def test_refresh_macro_file_old_command_persists_after_change(tmp_path):
     assert srv._macro_registry.has_command("cdm new_cmd"), (
         "New command should be registered after re-save"
     )
-    assert srv._macro_registry.has_command("cdm old_cmd"), (
-        "Old command persists — this is a known design limitation of MacroRegistry"
+    assert not srv._macro_registry.has_command("cdm old_cmd"), (
+        "Old command should be removed after re-save with a different command key"
     )
 
 
@@ -857,6 +857,486 @@ def test_find_references_include_declaration(tmp_path, monkeypatch):
     decl_locs = [loc for loc in result if "wear.mac" in loc.uri]
     assert len(decl_locs) == 1
     assert decl_locs[0].range.start.line == 0
+
+
+# ---------------------------------------------------------------------------
+# MacroRegistry.unregister_by_file
+# ---------------------------------------------------------------------------
+
+def test_unregister_by_file_removes_entry(tmp_path):
+    """unregister_by_file must remove all commands registered from the given file."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm wear", parameters={}, source_file="/wear.mac"))
+    reg.register(MacroDefinition(command="cdm other", parameters={}, source_file="/other.mac"))
+
+    reg.unregister_by_file("/wear.mac")
+
+    assert not reg.has_command("cdm wear"), "Command from deleted file should be removed"
+    assert reg.has_command("cdm other"), "Command from other file should remain"
+
+
+def test_unregister_by_file_clears_mtime(tmp_path):
+    """unregister_by_file must clear the mtime cache so the file is re-parsed next scan."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    mac_path = tmp_path / "wear.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND cdm wear\n", encoding="utf-8")
+
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm wear", parameters={}, source_file=str(mac_path)))
+    reg._record_mtime(str(mac_path))
+    assert not reg.needs_refresh(str(mac_path)), "Precondition: mtime is cached"
+
+    reg.unregister_by_file(str(mac_path))
+
+    assert reg.needs_refresh(str(mac_path)), "After unregister_by_file mtime should be cleared"
+
+
+def test_unregister_by_file_multiple_commands_same_file(tmp_path):
+    """unregister_by_file removes ALL commands from a file (edge case: multi-command files)."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cmd one", parameters={}, source_file="/multi.mac"))
+    reg.register(MacroDefinition(command="cmd two", parameters={}, source_file="/multi.mac"))
+    reg.register(MacroDefinition(command="cmd three", parameters={}, source_file="/other.mac"))
+
+    reg.unregister_by_file("/multi.mac")
+
+    assert not reg.has_command("cmd one")
+    assert not reg.has_command("cmd two")
+    assert reg.has_command("cmd three"), "Command from other file must remain"
+
+
+def test_unregister_by_file_noop_when_not_registered():
+    """unregister_by_file is a no-op when the path is not in the registry."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    reg = MacroRegistry()
+    # Must not raise when the path is not registered
+    reg.unregister_by_file("/nonexistent.mac")
+    assert len(reg) == 0
+
+
+def test_unregister_by_file_normalizes_path_separators():
+    """unregister_by_file must match paths regardless of separator style.
+
+    On Windows, source_file values from workspace scan use backslashes while
+    paths from _uri_to_path() use forward slashes. Both must compare equal.
+    """
+    import platform
+    if platform.system() != "Windows":
+        pytest.skip("Separator normalization test is Windows-specific")
+
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    reg = MacroRegistry()
+    # Register with OS-native backslash path (as scan_macro_files would)
+    reg.register(MacroDefinition(
+        command="cdm sep_test",
+        parameters={},
+        source_file=r"C:\Users\project\tool.mac",
+    ))
+
+    # Unregister using forward-slash path (as _uri_to_path returns)
+    reg.unregister_by_file("C:/Users/project/tool.mac")
+
+    assert not reg.has_command("cdm sep_test"), (
+        "unregister_by_file must remove entry when paths differ only in separator style"
+    )
+
+
+# ---------------------------------------------------------------------------
+# did_change_configuration
+# ---------------------------------------------------------------------------
+
+def _make_mock_server_with_docs(docs=None):
+    """Return a mock server with a workspace containing the given open documents.
+
+    *docs* is a dict ``{uri: text}``.  Each value is wrapped in a SimpleNamespace
+    with a ``.source`` attribute, matching the pygls TextDocument interface.
+    """
+    import types as python_types
+    docs = docs or {}
+    text_docs = {
+        uri: python_types.SimpleNamespace(source=text)
+        for uri, text in docs.items()
+    }
+    mock_workspace = python_types.SimpleNamespace(
+        text_documents=text_docs,
+        folders={},
+    )
+    return python_types.SimpleNamespace(workspace=mock_workspace)
+
+
+def test_did_change_configuration_updates_scan_flag(monkeypatch):
+    """did_change_configuration must update _scan_workspace_macros from settings."""
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._scan_workspace_macros = False
+    srv._workspace_roots = []
+
+    params = types.DidChangeConfigurationParams(
+        settings={"msc-adams": {"linter": {"scanWorkspaceMacros": True}}}
+    )
+    srv.did_change_configuration(params)
+
+    assert srv._scan_workspace_macros is True
+
+
+def test_did_change_configuration_updates_macro_patterns(monkeypatch):
+    """did_change_configuration must update _macro_patterns from settings."""
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_patterns = ["**/*.mac"]
+    srv._scan_workspace_macros = False
+    srv._workspace_roots = []
+
+    params = types.DidChangeConfigurationParams(
+        settings={"msc-adams": {"linter": {"macroPaths": ["macros/*.mac", "tools/*.mac"]}}}
+    )
+    srv.did_change_configuration(params)
+
+    assert srv._macro_patterns == ["macros/*.mac", "tools/*.mac"]
+
+
+def test_did_change_configuration_updates_ignore_patterns(monkeypatch):
+    """did_change_configuration must update _macro_ignore_patterns from settings."""
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_ignore_patterns = []
+    srv._scan_workspace_macros = False
+    srv._workspace_roots = []
+
+    params = types.DidChangeConfigurationParams(
+        settings={"msc-adams": {"linter": {"macroIgnorePaths": ["**/test/**"]}}}
+    )
+    srv.did_change_configuration(params)
+
+    assert srv._macro_ignore_patterns == ["**/test/**"]
+
+
+def test_did_change_configuration_updates_show_macro_hint(monkeypatch):
+    """did_change_configuration must update _macro_show_hint from settings."""
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_show_hint = True
+    srv._scan_workspace_macros = False
+    srv._workspace_roots = []
+
+    params = types.DidChangeConfigurationParams(
+        settings={"msc-adams": {"linter": {"showMacroHint": False}}}
+    )
+    srv.did_change_configuration(params)
+
+    assert srv._macro_show_hint is False
+
+
+def test_did_change_configuration_triggers_rescan_when_scan_enabled(tmp_path, monkeypatch):
+    """Enabling scanWorkspaceMacros via config should trigger a workspace re-scan."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    mac_file = tmp_path / "new_tool.mac"
+    mac_file.write_text("!USER_ENTERED_COMMAND cdm config_scan\n", encoding="utf-8")
+
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_registry = MacroRegistry()
+    srv._scan_workspace_macros = False
+    srv._macro_patterns = ["**/*.mac"]
+    srv._macro_ignore_patterns = []
+    srv._workspace_roots = [str(tmp_path)]
+
+    params = types.DidChangeConfigurationParams(
+        settings={"msc-adams": {"linter": {"scanWorkspaceMacros": True}}}
+    )
+    srv.did_change_configuration(params)
+
+    assert srv._macro_registry.has_command("cdm config_scan"), (
+        "Enabling scanWorkspaceMacros should trigger a workspace scan"
+    )
+
+
+def test_did_change_configuration_no_rescan_when_scan_already_enabled_no_pattern_change(
+    tmp_path, monkeypatch
+):
+    """No rescan when scan was already on and patterns haven't changed."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    rescan_calls = []
+    original_scan = srv.scan_macro_files
+
+    def counting_scan(*args, **kwargs):
+        rescan_calls.append(1)
+        return original_scan(*args, **kwargs)
+
+    monkeypatch.setattr(srv, "scan_macro_files", counting_scan)
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_registry = MacroRegistry()
+    srv._scan_workspace_macros = True   # already enabled
+    srv._macro_patterns = ["**/*.mac"]
+    srv._macro_ignore_patterns = []
+    srv._workspace_roots = [str(tmp_path)]
+
+    params = types.DidChangeConfigurationParams(
+        settings={"msc-adams": {"linter": {"showMacroHint": False}}}  # unrelated change
+    )
+    srv.did_change_configuration(params)
+
+    assert len(rescan_calls) == 0, "No rescan should occur when scan was already on and patterns didn't change"
+
+
+def test_did_change_configuration_revalidates_open_docs(monkeypatch):
+    """did_change_configuration must re-lint all open documents after the update."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    validated_uris = []
+
+    def mock_validate(uri, text):
+        validated_uris.append(uri)
+
+    monkeypatch.setattr(srv, "_validate_document", mock_validate)
+    monkeypatch.setattr(
+        srv, "server",
+        _make_mock_server_with_docs({
+            "file:///a.cmd": "model create\n",
+            "file:///b.cmd": "marker create\n",
+        })
+    )
+    srv._macro_registry = MacroRegistry()
+    srv._scan_workspace_macros = False
+    srv._workspace_roots = []
+
+    params = types.DidChangeConfigurationParams(
+        settings={"msc-adams": {"linter": {"showMacroHint": False}}}
+    )
+    srv.did_change_configuration(params)
+
+    assert set(validated_uris) == {"file:///a.cmd", "file:///b.cmd"}, (
+        "did_change_configuration must re-validate all open documents"
+    )
+
+
+def test_did_change_configuration_empty_settings_is_noop(monkeypatch):
+    """did_change_configuration with empty settings payload must not crash."""
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._scan_workspace_macros = False
+    srv._workspace_roots = []
+
+    # Should not raise
+    srv.did_change_configuration(types.DidChangeConfigurationParams(settings={}))
+    srv.did_change_configuration(types.DidChangeConfigurationParams(settings=None))
+
+
+def test_did_change_configuration_empty_macro_paths_falls_back_to_default(monkeypatch):
+    """Setting macroPaths to [] in config must fall back to DEFAULT_MACRO_PATTERNS."""
+    from adams_cmd_lsp.macros import DEFAULT_MACRO_PATTERNS
+
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_patterns = ["custom/*.mac"]
+    srv._scan_workspace_macros = False
+    srv._workspace_roots = []
+
+    params = types.DidChangeConfigurationParams(
+        settings={"msc-adams": {"linter": {"macroPaths": []}}}
+    )
+    srv.did_change_configuration(params)
+
+    assert srv._macro_patterns == DEFAULT_MACRO_PATTERNS, (
+        "Empty macroPaths list should fall back to DEFAULT_MACRO_PATTERNS, not leave old value"
+    )
+
+
+# ---------------------------------------------------------------------------
+# did_change_watched_files
+# ---------------------------------------------------------------------------
+
+def test_did_change_watched_files_created_registers_macro(tmp_path, monkeypatch):
+    """A Created file event must parse and register the macro."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    mac_path = tmp_path / "tool.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND cdm watched_create\n", encoding="utf-8")
+
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_registry = MacroRegistry()
+
+    params = types.DidChangeWatchedFilesParams(
+        changes=[
+            types.FileEvent(uri=mac_path.as_uri(), type=types.FileChangeType.Created),
+        ]
+    )
+    srv.did_change_watched_files(params)
+
+    assert srv._macro_registry.has_command("cdm watched_create"), (
+        "Created file event should register the macro command"
+    )
+
+
+def test_did_change_watched_files_changed_updates_macro(tmp_path, monkeypatch):
+    """A Changed file event must re-parse and update the macro registry."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    mac_path = tmp_path / "tool.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND cdm watched_updated\n", encoding="utf-8")
+
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm watched_old", parameters={},
+                                 source_file=str(mac_path)))
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_registry = reg
+
+    params = types.DidChangeWatchedFilesParams(
+        changes=[
+            types.FileEvent(uri=mac_path.as_uri(), type=types.FileChangeType.Changed),
+        ]
+    )
+    srv.did_change_watched_files(params)
+
+    assert srv._macro_registry.has_command("cdm watched_updated"), (
+        "Changed file event should register the new command"
+    )
+    # Old command from this file should be removed by unregister_by_file
+    assert not srv._macro_registry.has_command("cdm watched_old"), (
+        "Old command from a changed file should be removed"
+    )
+
+
+def test_did_change_watched_files_deleted_removes_macro(tmp_path, monkeypatch):
+    """A Deleted file event must remove the macro from the registry."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    mac_path = tmp_path / "gone.mac"
+
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm deleted_cmd", parameters={},
+                                 source_file=str(mac_path)))
+    assert reg.has_command("cdm deleted_cmd"), "Precondition: macro is registered"
+
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_registry = reg
+
+    params = types.DidChangeWatchedFilesParams(
+        changes=[
+            types.FileEvent(uri=mac_path.as_uri(), type=types.FileChangeType.Deleted),
+        ]
+    )
+    srv.did_change_watched_files(params)
+
+    assert not srv._macro_registry.has_command("cdm deleted_cmd"), (
+        "Deleted file event should remove the macro command"
+    )
+
+
+def test_did_change_watched_files_revalidates_even_when_file_unreadable(tmp_path, monkeypatch):
+    """Re-validation must fire even when the new file content cannot be read.
+
+    When a Changed event fires but the file on disk is gone/unreadable, the
+    handler still calls unregister_by_file (which modifies the registry) and
+    must therefore re-validate open documents even though changed is set before
+    the OSError is raised.
+    """
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    validated_uris = []
+    monkeypatch.setattr(srv, "_validate_document", lambda u, t: validated_uris.append(u))
+
+    mac_path = tmp_path / "gone.mac"
+    # File does NOT exist on disk — Path.read_text() will raise OSError
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm stale", parameters={},
+                                 source_file=str(mac_path)))
+    monkeypatch.setattr(
+        srv, "server",
+        _make_mock_server_with_docs({"file:///open.cmd": "cdm stale\n"}),
+    )
+    srv._macro_registry = reg
+
+    params = types.DidChangeWatchedFilesParams(
+        changes=[
+            types.FileEvent(uri=mac_path.as_uri(), type=types.FileChangeType.Changed),
+        ]
+    )
+    srv.did_change_watched_files(params)
+
+    assert not reg.has_command("cdm stale"), (
+        "unregister_by_file must still remove the stale entry even when file read fails"
+    )
+    assert "file:///open.cmd" in validated_uris, (
+        "Re-validation must fire even when the new file content cannot be read"
+    )
+
+
+def test_did_change_watched_files_no_registry_is_noop(tmp_path, monkeypatch):
+    """did_change_watched_files must be a no-op when _macro_registry is None."""
+    srv._macro_registry = None
+    mac_path = tmp_path / "tool.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND cdm some_cmd\n", encoding="utf-8")
+    # Must not raise
+    params = types.DidChangeWatchedFilesParams(
+        changes=[
+            types.FileEvent(uri=mac_path.as_uri(), type=types.FileChangeType.Created),
+        ]
+    )
+    srv.did_change_watched_files(params)
+
+
+def test_did_change_watched_files_revalidates_open_docs(tmp_path, monkeypatch):
+    """did_change_watched_files must re-lint open documents when registry changes."""
+    from adams_cmd_lsp.macros import MacroRegistry
+
+    validated_uris = []
+
+    def mock_validate(uri, text):
+        validated_uris.append(uri)
+
+    mac_path = tmp_path / "tool.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND cdm revalidate\n", encoding="utf-8")
+
+    monkeypatch.setattr(srv, "_validate_document", mock_validate)
+    monkeypatch.setattr(
+        srv, "server",
+        _make_mock_server_with_docs({"file:///consumer.cmd": "cdm revalidate\n"}),
+    )
+    srv._macro_registry = MacroRegistry()
+
+    params = types.DidChangeWatchedFilesParams(
+        changes=[
+            types.FileEvent(uri=mac_path.as_uri(), type=types.FileChangeType.Created),
+        ]
+    )
+    srv.did_change_watched_files(params)
+
+    assert "file:///consumer.cmd" in validated_uris, (
+        "did_change_watched_files should re-validate open documents after a registry change"
+    )
+
+
+def test_did_change_watched_files_changed_removes_command_when_no_user_entered_command(
+    tmp_path, monkeypatch
+):
+    """If an updated .mac file no longer has !USER_ENTERED_COMMAND, its entry must be removed."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    mac_path = tmp_path / "tool.mac"
+    # Write the file WITHOUT a USER_ENTERED_COMMAND header
+    mac_path.write_text("! plain macro with no command header\npart create\n", encoding="utf-8")
+
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(command="cdm stale", parameters={},
+                                 source_file=str(mac_path)))
+    assert reg.has_command("cdm stale"), "Precondition: stale entry exists"
+
+    monkeypatch.setattr(srv, "server", _make_mock_server_with_docs())
+    srv._macro_registry = reg
+
+    params = types.DidChangeWatchedFilesParams(
+        changes=[
+            types.FileEvent(uri=mac_path.as_uri(), type=types.FileChangeType.Changed),
+        ]
+    )
+    srv.did_change_watched_files(params)
+
+    assert not reg.has_command("cdm stale"), (
+        "Stale entry should be removed when the file no longer has !USER_ENTERED_COMMAND"
+    )
 
 
 def test_find_references_no_references_in_index(tmp_path, monkeypatch):
