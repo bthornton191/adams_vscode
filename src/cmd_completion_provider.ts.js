@@ -262,3 +262,6 @@ function get_indent_level(line, indent_type) {
     }
     return indent_count;
 }
+
+exports.get_full_command_context = get_full_command_context;
+exports.strip_argument_pairs = strip_argument_pairs;

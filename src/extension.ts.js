@@ -57,14 +57,6 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     vscode.languages.registerDocumentLinkProvider("adams_to", link_provider());
 
     // ---------------------------------------------------------------------------
-    // Hover Provider
-    // ---------------------------------------------------------------------------
-    vscode.languages.registerHoverProvider(
-        "adams_cmd",
-        cmd_hover_provider(view_functions, reporter),
-    );
-
-    // ---------------------------------------------------------------------------
     // Completion Provider
     // ---------------------------------------------------------------------------
     const cmd_files_json = context.asAbsolutePath("resources/adams_view_commands/structured.json");
@@ -95,6 +87,14 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
             }
         }
     }
+
+    // ---------------------------------------------------------------------------
+    // Hover Provider
+    // ---------------------------------------------------------------------------
+    vscode.languages.registerHoverProvider(
+        "adams_cmd",
+        cmd_hover_provider(view_functions, view_commands, command_docs, reporter),
+    );
 
     vscode.languages.registerCompletionItemProvider(
         "adams_cmd",
