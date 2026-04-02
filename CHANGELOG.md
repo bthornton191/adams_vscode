@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.10.0 (April 2nd 2026)](#1100-april-2nd-2026)
   - [1.9.7 (April 1st 2026)](#197-april-1st-2026)
   - [1.9.6 (April 1st 2026)](#196-april-1st-2026)
   - [1.9.5 (April 1st 2026)](#195-april-1st-2026)
@@ -47,6 +48,13 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.10.0 (April 2nd 2026)
+
+- **Added** Hover documentation for Adams View commands in `.cmd` files. Hovering over a command keyword now shows its description, syntax, and argument details sourced from Adams documentation.
+- **Added** `command_server` (show/start/stop) commands to the linter schema and documentation.
+- **Fixed** Escape quotes in string literals for proper tokenization.
+- **Fixed** MCP server now runs workspace macro scan in a background thread to prevent startup hang.
 
 ## 1.9.7 (April 1st 2026)
 
