@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.10.2 (April 3rd 2026)](#1102-april-3rd-2026)
   - [1.10.1 (April 2nd 2026)](#1101-april-2nd-2026)
   - [1.10.0 (April 2nd 2026)](#1100-april-2nd-2026)
   - [1.9.7 (April 1st 2026)](#197-april-1st-2026)
@@ -49,6 +50,13 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.10.2 (April 3rd 2026)
+
+- **Added** Hover documentation for Adams View commands (e.g. hovering over `variable set` shows argument details and documentation).
+- **Added** Hover now works with abbreviated command names — `var set` resolves to `variable set`, `mar cre` to `marker create`, etc.
+- **Fixed** Hover no longer shows Adams design function docs when the cursor is on a command keyword that happens to share a name (e.g. `view center` no longer triggers the `CENTER()` function doc).
+- **Fixed** Hover inside an inline `!` comment correctly returns nothing.
 
 ## 1.10.1 (April 2nd 2026)
 
