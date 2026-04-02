@@ -1,7 +1,8 @@
 # Changelog
 
 - [Changelog](#changelog)
-  - [1.10.2 (April 3rd 2026)](#1102-april-3rd-2026)
+  - [1.10.3 (April 2nd 2026)](#1103-april-2nd-2026)
+  - [1.10.2 (April 2nd 2026)](#1102-april-2nd-2026)
   - [1.10.1 (April 2nd 2026)](#1101-april-2nd-2026)
   - [1.10.0 (April 2nd 2026)](#1100-april-2nd-2026)
   - [1.9.7 (April 1st 2026)](#197-april-1st-2026)
@@ -51,7 +52,11 @@
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
 
-## 1.10.2 (April 3rd 2026)
+## 1.10.3 (April 2nd 2026)
+
+- **Fixed** Hover abbreviation resolution now works in production — extension loads `command_schema.json` from bundled libs when the source package is excluded from the installed extension.
+
+## 1.10.2 (April 2nd 2026)
 
 - **Added** Hover documentation for Adams View commands (e.g. hovering over `variable set` shows argument details and documentation).
 - **Added** Hover now works with abbreviated command names — `var set` resolves to `variable set`, `mar cre` to `marker create`, etc.
