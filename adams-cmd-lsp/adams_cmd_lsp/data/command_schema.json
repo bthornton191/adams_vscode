@@ -41253,6 +41253,28 @@
       "args": {},
       "exclusive_groups": []
     },
+    "mdi toolbar display": {
+      "args": {
+        "toolbar": {
+          "type": "string",
+          "required": true,
+          "min_prefix": 1
+        },
+        "state": {
+          "type": "boolean",
+          "required": false,
+          "enum_values": ["on", "off"],
+          "min_prefix": 1
+        },
+        "top": {
+          "type": "boolean",
+          "required": false,
+          "enum_values": ["yes", "no", "same"],
+          "min_prefix": 1
+        }
+      },
+      "exclusive_groups": []
+    },
     "mdi durability export_q": {
       "args": {},
       "exclusive_groups": []
@@ -76332,6 +76354,15 @@
           "gui_utl_alert_box_1": {
             "min_prefix": 1,
             "is_leaf": true
+          },
+          "toolbar": {
+            "min_prefix": 1,
+            "children": {
+              "display": {
+                "min_prefix": 1,
+                "is_leaf": true
+              }
+            }
           }
         }
       },

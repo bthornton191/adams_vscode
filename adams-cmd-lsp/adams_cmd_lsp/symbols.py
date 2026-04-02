@@ -21,13 +21,26 @@ _EVAL_LITERAL_PREFIX_RE = re.compile(
 # so they would otherwise always trigger I202 "unresolved reference".
 # ---------------------------------------------------------------------------
 
-# Standard Adams color names (Adams accepts these case-insensitively)
+# Standard Adams color names sourced from afc/mdi/visedit/colors.py.
+# Adams accepts these case-insensitively (lookup is normalised to lowercase).
 _BUILTIN_COLORS = [
-    "RED", "GREEN", "BLUE", "WHITE", "BLACK", "YELLOW",
-    "CYAN", "MAGENTA", "ORANGE", "PURPLE", "MAIZE", "BROWN",
-    "PINK", "LIME", "NAVY", "TEAL", "MAROON", "OLIVE",
-    "GRAY", "GREY", "SILVER", "GOLD", "BEIGE", "IVORY",
-    "LAVENDER", "AQUA", "VIOLET", "INDIGO", "TURQUOISE",
+    # --- authoritative list from colors.py ---
+    "Aquamarine", "Black", "Blue", "Blue_Gray", "BlueViolet", "Brown",
+    "CadetBlue", "ClayRed", "Coral", "CornflowerBlue", "Cyan", "Dark_Gray",
+    "DkGreen", "DkOliveGreen", "DkOrchid", "DkSlateBlue", "DkSlateGray",
+    "DkTurquoise", "DkYellow", "DkRed", "DimGray", "Firebrick", "ForestGreen",
+    "Goldenrod", "Gray", "Green", "GreenYellow", "Khaki", "LtBlue", "LtGray",
+    "LtKhaki", "LtMagenta", "LtSteelBlue", "LimeGreen", "Maize", "Marine",
+    "Maroon", "Magenta", "MedAquamarine", "MedBlue", "MedForest", "MedGolden",
+    "MedOrchid", "MedSeaGray", "MedSlateBlue", "MedSpring", "MedTurquoise",
+    "MedViolet", "MidnightBlue", "Navy", "NearRed", "NearWhite", "NiceGreen",
+    "Orange", "Orchid", "PaleGreen", "Peach", "Pink", "Plum", "Red", "Salmon",
+    "SeaGreen", "Sienna", "Silver", "SkyBlue", "SlateBlue", "SpringGreen",
+    "SteelBlue", "Tan", "Thistle", "Turquoise", "Violet", "VioletRed",
+    "VlMagenta", "VlGray", "Wheat", "White", "Yellow", "YellowGreen",
+    # --- additional names present in older model files ---
+    "Purple", "Lime", "Teal", "Olive", "Gold", "Grey", "Beige", "Ivory",
+    "Lavender", "Aqua", "Indigo",
 ]
 
 # Standard Adams view names — only register the canonical ones that are
