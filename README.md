@@ -41,6 +41,7 @@
 ## Adams View Command Language Intellisense
 - Adams Function Completion Provider
 - Adams Function Documentation Hover Provider
+- Adams Command Documentation Hover Provider (hover over a command keyword to see its description, syntax, and argument details)
 
 ![Example of Adams Function Documentation Hover Provider Example](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/autocomplete_function.gif)
 

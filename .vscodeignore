@@ -27,6 +27,8 @@ adams-cmd-lsp-plan.md
 adams-view-mcp-server-plan.md
 qa_lint_results.csv
 adams-cmd-lsp/**
+.pytest_cache/**
+tsconfig.json
 
 # Bundled Python libs: exclude pip metadata and unneeded packages
 bundled/libs/**/__pycache__/**
