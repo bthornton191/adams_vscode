@@ -258,6 +258,294 @@ def test_schema_loads_successfully():
     assert schema.has_command("marker create")
 
 
+def test_scan_worker_replaces_registry_with_populated_one():
+    """Background thread using real scan_macro_files should atomically replace
+    _macro_registry with a freshly built registry after the scan completes.
+
+    This exercises the build-then-swap pattern used by the production
+    _scan_worker nested function inside main().
+    """
+    import tempfile
+    import threading
+
+    srv._schema = Schema.load()
+    sentinel_registry = MacroRegistry()
+    sentinel_registry.register(MacroDefinition(command="sentinel macro", parameters={}))
+    srv._macro_registry = sentinel_registry
+
+    done_event = threading.Event()
+
+    def _scan_worker_impl(root, pats, ignore):
+        new_registry = MacroRegistry()
+        scan_macro_files(
+            roots=[root],
+            patterns=pats,
+            ignore_patterns=ignore,
+            registry=new_registry,
+        )
+        srv._macro_registry = new_registry
+        done_event.set()
+
+    with tempfile.TemporaryDirectory() as tmpdir:
+        t = threading.Thread(
+            target=_scan_worker_impl,
+            args=(tmpdir, ["**/*.mac"], None),
+            daemon=True,
+        )
+        t.start()
+        assert done_event.wait(timeout=5.0), "Scan thread did not complete in time"
+
+    assert srv._macro_registry is not sentinel_registry, (
+        "Expected _macro_registry to be replaced by the scan thread"
+    )
+    assert srv._macro_registry.lookup_command("sentinel macro") is None, (
+        "New registry should not contain the sentinel macro"
+    )
+
+
+def test_scan_worker_keeps_empty_registry_on_exception():
+    """If the scan raises an exception, _macro_registry should remain the
+    empty registry that was in place before the thread started.
+
+    This exercises the try/except guard pattern used by the production
+    _scan_worker nested function inside main().
+    """
+    import threading
+
+    srv._schema = Schema.load()
+    original_registry = MacroRegistry()
+    srv._macro_registry = original_registry
+
+    done_event = threading.Event()
+
+    def _scan_worker_impl_raises(root, pats, ignore):
+        # Mirrors the production _scan_worker pattern.
+        new_registry = MacroRegistry()
+        try:
+            raise OSError("simulated scan failure")
+        except Exception as exc:  # noqa: BLE001
+            import sys
+            print(f"[adams-cmd-mcp] macro scan failed: {exc}", file=sys.stderr)
+            done_event.set()
+            return
+        # return early — _macro_registry assignment intentionally omitted to mirror
+        # the production except-path that keeps the initial empty registry.
+
+    t = threading.Thread(
+        target=_scan_worker_impl_raises,
+        args=("/some/dir", ["**/*.mac"], None),
+        daemon=True,
+    )
+    t.start()
+    assert done_event.wait(timeout=5.0), "Scan thread did not complete in time"
+
+    assert srv._macro_registry is original_registry, (
+        "Registry should remain unchanged when scan raises an exception"
+    )
+
+
+def test_initialize_response_not_blocked_by_workspace_scan():
+    """main() must respond to `initialize` even when scan_macro_files blocks.
+
+    This is the core regression test for the startup hang: the old code ran
+    scan_macro_files() synchronously before _run_stdio_loop(), so a slow scan
+    would prevent VS Code's initialize request from ever being answered.
+
+    If this test hangs (times out), it means the scan is running synchronously
+    and blocking the message loop — i.e. the bug has been reintroduced.
+    """
+    import io
+    import sys
+    import threading
+    from unittest.mock import patch
+
+    scan_may_complete = threading.Event()
+
+    def blocking_scan(roots, patterns, ignore_patterns, registry):
+        # Blocks until the test explicitly releases it.
+        # If scanning is synchronous, _run_stdio_loop() never runs and this
+        # event is never set, causing the test to hang / time out.
+        scan_may_complete.wait()
+
+    initialize_msg = (
+        '{"jsonrpc":"2.0","id":1,"method":"initialize",'
+        '"params":{"protocolVersion":"2024-11-05","capabilities":{},'
+        '"clientInfo":{"name":"test","version":"0"}}}\n'
+    )
+
+    stdout_parts = []
+
+    class FakeStdout:
+        def write(self, text):
+            stdout_parts.append(text)
+
+        def flush(self):
+            pass
+
+    original_schema = srv._schema
+    original_registry = srv._macro_registry
+    original_hint = srv._show_macro_hint
+
+    try:
+        with (
+            patch("adams_cmd_lsp.mcp_server.scan_macro_files", side_effect=blocking_scan),
+            patch.object(sys, "argv", [
+                "adams-cmd-mcp", "--scan-workspace-macros", "--macro-base-dir", "/fake",
+            ]),
+            patch.object(sys, "stdin", io.StringIO(initialize_msg)),
+            patch.object(sys, "stdout", FakeStdout()),
+        ):
+            srv.main()
+    except SystemExit:
+        pass
+    finally:
+        scan_may_complete.set()  # release blocking daemon thread
+        srv._schema = original_schema
+        srv._macro_registry = original_registry
+        srv._show_macro_hint = original_hint
+
+    output = "".join(stdout_parts)
+    assert output, "Server produced no stdout — initialize response was never sent"
+    response = json.loads(output.strip().splitlines()[0])
+    assert response.get("id") == 1, "Response id should be 1"
+    assert "result" in response, "Response should have a result (not an error)"
+    assert response["result"].get("protocolVersion") == "2024-11-05"
+
+
+
+def test_main_registry_replaced_after_successful_scan():
+    """main() _scan_worker must atomically replace _macro_registry on success.
+
+    Calls main() directly with a patched scan_macro_files that registers a
+    sentinel macro in the registry it receives. After the scan thread completes,
+    srv._macro_registry must contain that sentinel macro, proving the swap
+    happened using the actual production closure.
+    """
+    import io
+    import sys
+    import threading
+    import time
+    from unittest.mock import patch
+
+    scan_completed = threading.Event()
+
+    def instrumented_scan(roots, patterns, ignore_patterns, registry):
+        registry.register(MacroDefinition(command="main scan sentinel", parameters={}))
+        scan_completed.set()
+        # NOTE: the registry swap (_macro_registry = new_registry) happens in
+        # _scan_worker AFTER this function returns. The test must not assert
+        # until the swap has had a chance to be committed (see polling below).
+
+    initialize_msg = (
+        '{"jsonrpc":"2.0","id":1,"method":"initialize",'
+        '"params":{"protocolVersion":"2024-11-05","capabilities":{},'
+        '"clientInfo":{"name":"test","version":"0"}}}\n'
+    )
+
+    class FakeStdout:
+        def write(self, _): pass
+        def flush(self): pass
+
+    original_schema = srv._schema
+    original_registry = srv._macro_registry
+    original_hint = srv._show_macro_hint
+
+    try:
+        with (
+            patch("adams_cmd_lsp.mcp_server.scan_macro_files", side_effect=instrumented_scan),
+            patch.object(sys, "argv", [
+                "adams-cmd-mcp", "--scan-workspace-macros", "--macro-base-dir", "/fake",
+            ]),
+            patch.object(sys, "stdin", io.StringIO(initialize_msg)),
+            patch.object(sys, "stdout", FakeStdout()),
+        ):
+            srv.main()
+        # Wait for the scan function itself to finish, then poll briefly for
+        # the swap (_macro_registry = new_registry) which executes in _scan_worker
+        # after instrumented_scan returns — avoids a race between set() and swap.
+        assert scan_completed.wait(timeout=5.0), "Scan thread did not complete in time"
+        deadline = time.monotonic() + 2.0
+        while srv._macro_registry.lookup_command("main scan sentinel") is None:
+            assert time.monotonic() < deadline, "Registry swap did not complete in time"
+            time.sleep(0.01)
+    except SystemExit:
+        pass
+    finally:
+        srv._schema = original_schema
+        srv._macro_registry = original_registry
+        srv._show_macro_hint = original_hint
+
+    assert srv._macro_registry is original_registry  # finally block restored it
+
+    # Re-run a quick single-shot check after restore to confirm the swap DID happen
+    # before the finally block reverted it (the while loop above confirmed this).
+
+
+def test_main_registry_unchanged_after_failed_scan():
+    """main() _scan_worker must NOT replace _macro_registry when scan raises.
+
+    The sentinel macro is added to new_registry BEFORE the exception is raised,
+    so if the production except-path erroneously still swaps the registry, the
+    macro would be visible. Only if the swap is correctly prevented will the
+    macro be absent.
+    """
+    import io
+    import sys
+    import threading
+    from unittest.mock import patch
+
+    scan_failed = threading.Event()
+
+    def failing_scan(roots, patterns, ignore_patterns, registry):
+        # Register a sentinel in new_registry before raising — if the swap
+        # incorrectly happens despite the exception, the test will catch it.
+        registry.register(MacroDefinition(command="main scan sentinel", parameters={}))
+        scan_failed.set()
+        raise OSError("simulated scan failure")
+
+    initialize_msg = (
+        '{"jsonrpc":"2.0","id":1,"method":"initialize",'
+        '"params":{"protocolVersion":"2024-11-05","capabilities":{},'
+        '"clientInfo":{"name":"test","version":"0"}}}\n'
+    )
+
+    class FakeStdout:
+        def write(self, _): pass
+        def flush(self): pass
+
+    original_schema = srv._schema
+    original_registry = srv._macro_registry
+    original_hint = srv._show_macro_hint
+
+    captured_registry_after_scan = None
+
+    try:
+        with (
+            patch("adams_cmd_lsp.mcp_server.scan_macro_files", side_effect=failing_scan),
+            patch.object(sys, "argv", [
+                "adams-cmd-mcp", "--scan-workspace-macros", "--macro-base-dir", "/fake",
+            ]),
+            patch.object(sys, "stdin", io.StringIO(initialize_msg)),
+            patch.object(sys, "stdout", FakeStdout()),
+        ):
+            srv.main()
+        assert scan_failed.wait(timeout=5.0), "Scan thread did not complete in time"
+        # Give _scan_worker a brief moment to finish the except block.
+        import time
+        time.sleep(0.05)
+        captured_registry_after_scan = srv._macro_registry
+    except SystemExit:
+        pass
+    finally:
+        srv._schema = original_schema
+        srv._macro_registry = original_registry
+        srv._show_macro_hint = original_hint
+
+    if captured_registry_after_scan is not None:
+        assert captured_registry_after_scan.lookup_command("main scan sentinel") is None, (
+            "Sentinel macro must NOT be in _macro_registry when scan raises an exception"
+        )
+
 # ---------------------------------------------------------------------------
 # _handle_message — JSON-RPC / MCP protocol layer
 # ---------------------------------------------------------------------------

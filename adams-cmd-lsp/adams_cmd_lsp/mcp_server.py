@@ -24,6 +24,7 @@ import asyncio
 import json
 import os
 import sys
+import threading
 from pathlib import Path
 
 from .diagnostics import Severity
@@ -524,19 +525,39 @@ def main():
     _schema = Schema.load(args.schema) if args.schema else Schema.load()
     _show_macro_hint = not args.no_show_macro_hint
 
-    # Build macro registry at startup so the first lint call has no cold-start
-    # latency and config errors surface immediately rather than mid-session.
+    # Build macro registry.  An empty registry is created immediately so the
+    # message loop can start (and answer `initialize`) without any delay.
+    # If workspace scanning is requested it runs in a daemon thread so the
+    # server never blocks responding to the MCP initialisation handshake.
+    # Once the scan completes the global is replaced atomically (safe under
+    # CPython's GIL); subsequent tool calls will use the populated registry.
     _macro_registry = MacroRegistry()
 
     if args.scan_workspace_macros:
         base_dir = args.macro_base_dir or os.getcwd()
         patterns = args.macro_paths if args.macro_paths else DEFAULT_MACRO_PATTERNS
         ignore_patterns = args.macro_ignore_paths or None
-        scan_macro_files(
-            roots=[base_dir],
-            patterns=patterns,
-            ignore_patterns=ignore_patterns,
-            registry=_macro_registry,
-        )
+
+        def _scan_worker(root, pats, ignore):
+            global _macro_registry  # noqa: PLW0603
+            new_registry = MacroRegistry()
+            try:
+                scan_macro_files(
+                    roots=[root],
+                    patterns=pats,
+                    ignore_patterns=ignore,
+                    registry=new_registry,
+                )
+            except Exception as exc:  # noqa: BLE001
+                print(f"[adams-cmd-mcp] macro scan failed: {exc}", file=sys.stderr)
+                return  # keep the empty registry assigned before the thread started
+            _macro_registry = new_registry
+
+        threading.Thread(
+            target=_scan_worker,
+            args=(base_dir, patterns, ignore_patterns),
+            daemon=True,
+            name="adams-cmd-mcp-scan",
+        ).start()
 
     _run_stdio_loop()

@@ -1,4 +1,3 @@
-const vscode = require("vscode");
 const path = require("path");
 
 /**
@@ -11,6 +10,7 @@ const path = require("path");
  * @param {import("vscode").ExtensionContext} context
  */
 function registerMcpServerProvider(context) {
+    const vscode = require("vscode");
     if (typeof vscode.lm?.registerMcpServerDefinitionProvider !== "function") {
         return;
     }
@@ -53,6 +53,15 @@ function registerMcpServerProvider(context) {
 
                 if (config.get("linter.scanWorkspaceMacros")) {
                     mcp_args.push("--scan-workspace-macros");
+
+                    // Tell the server which directory to scan. Use the first
+                    // workspace folder so the scan targets project files rather
+                    // than whatever directory the extension host happens to use
+                    // as its cwd (which may be the extension install directory).
+                    const workspace_root = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+                    if (workspace_root) {
+                        mcp_args.push("--macro-base-dir", workspace_root);
+                    }
                 }
 
                 const macro_paths = config.get("linter.macroPaths");
