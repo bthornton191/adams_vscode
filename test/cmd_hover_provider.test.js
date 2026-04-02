@@ -50,7 +50,65 @@ const COMMAND_DOCS = new Map([
         "simulation single_run transient",
         "# simulation single_run transient\nRuns transient simulation.",
     ],
+    ["variable set", "# variable set\nSets a variable."],
 ]);
+
+/**
+ * Minimal command_tree fixture that mirrors the real schema structure.
+ * Mirrors the entries in VIEW_COMMANDS plus variable set for abbreviation tests.
+ *
+ * min_prefix values chosen to match the real command_schema.json:
+ *   variable → min_prefix 2  ("va..." unambiguous among siblings here)
+ *   set      → min_prefix 2  ("se..." needed to avoid ambiguity)
+ *   marker   → min_prefix 2
+ *   create   → min_prefix 2
+ *   view     → min_prefix 1  ("v" is unique in this fixture)
+ *   center   → min_prefix 2
+ *   simulation → min_prefix 2
+ *   single_run → min_prefix 2
+ *   transient  → min_prefix 2
+ */
+const COMMAND_TREE = {
+    children: {
+        marker: {
+            min_prefix: 2,
+            children: {
+                create: { min_prefix: 2, children: {}, is_leaf: true },
+            },
+        },
+        view: {
+            min_prefix: 1,
+            children: {
+                center: { min_prefix: 2, children: {}, is_leaf: true },
+            },
+        },
+        simulation: {
+            min_prefix: 2,
+            children: {
+                single_run: {
+                    min_prefix: 2,
+                    children: {
+                        transient: { min_prefix: 2, children: {}, is_leaf: true },
+                    },
+                },
+            },
+        },
+        variable: {
+            min_prefix: 2,
+            children: {
+                set: { min_prefix: 2, children: {}, is_leaf: true },
+            },
+        },
+    },
+};
+
+// schema_commands mirrors the commands the tree can resolve
+const SCHEMA_COMMANDS = {
+    "marker create": {},
+    "view center": {},
+    "simulation single_run transient": {},
+    "variable set": {},
+};
 
 // ---------------------------------------------------------------------------
 // Function hover tests
@@ -236,5 +294,124 @@ suite("cmd_hover_provider — command hover", () => {
         assert.strictEqual(reporter.calls.telemetry[0][0], "cmd_hover_provider");
         assert.strictEqual(reporter.calls.telemetry[0][1].word, "marker create");
         assert.strictEqual(reporter.calls.telemetry[0][1].type, "command");
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Abbreviation-aware command hover tests (uses command_tree)
+// ---------------------------------------------------------------------------
+
+suite("cmd_hover_provider — abbreviation resolution", () => {
+    function makeProvider() {
+        return cmd_hover_provider(
+            new Map(),
+            VIEW_COMMANDS,
+            COMMAND_DOCS,
+            null,
+            COMMAND_TREE,
+            SCHEMA_COMMANDS,
+        );
+    }
+
+    test("abbreviated first token resolves: 'mar create' → 'marker create'", () => {
+        const provider = makeProvider();
+        const doc = makeDocument("mar create marker_name=foo", "create");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.ok(result instanceof vscode.Hover);
+        assert.ok(result.contents[0].value.includes("marker create"));
+    });
+
+    test("abbreviated second token resolves: 'marker cr' → 'marker create'", () => {
+        const provider = makeProvider();
+        const doc = makeDocument("marker cr marker_name=foo", "cr");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.ok(result instanceof vscode.Hover);
+        assert.ok(result.contents[0].value.includes("marker create"));
+    });
+
+    test("'var set' → 'variable set'", () => {
+        const provider = makeProvider();
+        const doc = makeDocument("var set variable_name=x", "set");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.ok(result instanceof vscode.Hover);
+        assert.ok(result.contents[0].value.includes("variable set"));
+    });
+
+    test("hovering abbreviated first token of 'var set' works", () => {
+        const provider = makeProvider();
+        const doc = makeDocument("var set variable_name=x", "var");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.ok(result instanceof vscode.Hover);
+        assert.ok(result.contents[0].value.includes("variable set"));
+    });
+
+    test("too-short prefix (below min_prefix) returns undefined", () => {
+        const provider = makeProvider();
+        // "v" alone is fine (view min_prefix=1), but "v c" — "c" is ambiguous
+        // or short depending on fixture; use "ma" which needs 2 chars — "m" fails
+        const doc = makeDocument("m create", "create");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.strictEqual(result, undefined);
+    });
+
+    test("ambiguous prefix returns undefined", () => {
+        // "ma" matches both "marker" (min_prefix 2) and "macro" (min_prefix 2) → ambiguous
+        const ambig_tree = {
+            children: {
+                marker: { min_prefix: 2, children: { create: { min_prefix: 2, children: {}, is_leaf: true } } },
+                macro: { min_prefix: 2, children: { create: { min_prefix: 2, children: {}, is_leaf: true } } },
+            },
+        };
+        const ambig_cmds = { "marker create": {}, "macro create": {} };
+        const ambig_docs = new Map([
+            ["marker create", "# marker create"],
+            ["macro create", "# macro create"],
+        ]);
+        const provider = cmd_hover_provider(new Map(), {}, ambig_docs, null, ambig_tree, ambig_cmds);
+        // "ma" is ambiguous between marker and macro
+        const doc = makeDocument("ma create", "create");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.strictEqual(result, undefined);
+    });
+
+    test("full-length token still works when command_tree is present", () => {
+        const provider = makeProvider();
+        const doc = makeDocument("variable set variable_name=x", "variable");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.ok(result instanceof vscode.Hover);
+        assert.ok(result.contents[0].value.includes("variable set"));
+    });
+
+    test("argument name is not matched (startsWith does not false-positive)", () => {
+        const provider = makeProvider();
+        // "marker_name" starts with "marker" but is an argument, stripped by strip_argument_pairs
+        const doc = makeDocument("mar create marker_name=foo", "marker_name");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.strictEqual(result, undefined);
+    });
+
+    test("cursor in inline ! comment does not trigger hover", () => {
+        // Simulate range.start.character >= position of '!'
+        const comment_line = "var set variable_name=foo ! var init";
+        const comment_pos = comment_line.indexOf("!");
+        // Cursor placed on the 'var' inside the comment (character >= comment_pos)
+        const range = { start: { line: 0, character: comment_pos + 2 } };
+        const doc = {
+            getWordRangeAtPosition: () => range,
+            getText: () => "var",
+            lineAt: () => ({ text: comment_line }),
+        };
+        const provider = makeProvider();
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.strictEqual(result, undefined);
     });
 });
