@@ -21,6 +21,56 @@ def _canonical_key(stmt):
 
 
 # ---------------------------------------------------------------------------
+# Adams entity type names (used by type_filter / type= arguments, DB_ENT)
+#
+# These are the user-visible type names accepted by Adams for filtering
+# entities.  Derived from the class_name_list in Adams source (root.c).
+# Adams performs case-insensitive prefix matching on these names, so
+# 'spring' matches 'Spring_damper', 'constraint' matches 'Constraint', etc.
+# ---------------------------------------------------------------------------
+_ADAMS_ENTITY_TYPE_NAMES = [
+    # Simulation topology
+    "marker", "part", "joint", "primitive_joint", "coupler", "motion",
+    "constraint", "general_constraint", "user_constraint", "higher_pair_contact",
+    "floating_marker",
+    # Force elements
+    "force", "spring_damper", "spring_damper_graphic", "beam", "bushing",
+    "field", "single_component_force", "force_vector", "torque_vector",
+    "gravity_field", "general_force", "flexible_body_modal_force",
+    "point_to_point_force", "contact", "contact_force_graphic", "friction",
+    "gear", "tire",
+    # Geometry
+    "geometry", "arc", "circle", "block", "cylinder", "sphere", "torus",
+    "ellipsoid", "extrusion", "revolution", "shell", "solid", "bspline",
+    "outline", "polyline", "plate", "frustum", "contact_solid", "contact_curve",
+    "wire_geometry", "link", "plane_surf", "solid_geometry", "blendfeature",
+    "holefeature", "thin_shell_feature", "feature", "section", "face", "edge",
+    # Data elements
+    "data_element", "variable", "variable_class", "differential_equation",
+    "linear_state_equation", "general_state_equation", "spline",
+    "adams_matrix", "adams_array", "adams_string", "adams_surface",
+    "adams_curve", "equation",
+    # Flexible bodies
+    "flexible_body", "fe_part", "fe_load",
+    # Output / analysis
+    "request", "sensor", "measure", "analysis", "analysis_function",
+    "multi_run_analysis", "result_set", "result_set_component", "plot_curve",
+    "curve_curve", "plot", "plot3d", "subplot", "page", "page_template",
+    "response_surface", "linear_results", "mck", "eigen", "scatter",
+    "spec_line", "report", "simulation_script",
+    # Groups & model structure
+    "group", "library", "subsystem", "model", "plugin",
+    # Miscellaneous
+    "macro", "note", "material", "color", "animation", "view",
+    "time_marker", "legend", "image", "point", "body", "triad",
+    "reference_frame", "position", "construction_grid",
+    "symmetry_relationship", "clearance",
+    # Catch-all
+    "all",
+]
+
+
+# ---------------------------------------------------------------------------
 # Structural / command-level rules
 # ---------------------------------------------------------------------------
 
@@ -789,6 +839,30 @@ def rule_type_mismatch(statements, schema, symbols):
             # Strip surrounding quotes for symbol lookup (Adams allows both
             # "front" and front to refer to the same view object).
             lookup_val = val.strip('"\'')
+
+            # DB_ENT arguments (type_filter, type=) take an Adams entity-type
+            # name string, not an object reference.  Validate against the
+            # known list of entity type names using prefix matching (the same
+            # way Adams resolves them) and never emit I202.
+            if arg_def.get("db_type") == "DB_ENT":
+                val_lower = lookup_val.lower()
+                if not any(name.startswith(val_lower)
+                           for name in _ADAMS_ENTITY_TYPE_NAMES):
+                    diagnostics.append(Diagnostic(
+                        line=arg.value_line,
+                        column=arg.value_column,
+                        end_line=arg.value_line,
+                        end_column=arg.value_column + len(val),
+                        code="E004",
+                        message=(
+                            f"Unknown entity type name: '{val}'. "
+                            "Expected a valid Adams entity type "
+                            "(e.g. 'part', 'marker', 'constraint', "
+                            "'force', 'spring', 'geometry')."
+                        ),
+                        severity=Severity.ERROR,
+                    ))
+                continue
 
             symbol = symbols.lookup(lookup_val)
             expected_type = arg_def.get("object_type", "")

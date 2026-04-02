@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.10.1 (April 2nd 2026)](#1101-april-2nd-2026)
   - [1.10.0 (April 2nd 2026)](#1100-april-2nd-2026)
   - [1.9.7 (April 1st 2026)](#197-april-1st-2026)
   - [1.9.6 (April 1st 2026)](#196-april-1st-2026)
@@ -48,6 +49,12 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.10.1 (April 2nd 2026)
+
+- **Fixed** Linter no longer emits false-positive I202 for `type_filter` / `type=` arguments (e.g. `type_filter=constraint`, `type_filter=spring`). These take Adams entity type name strings, not object references. An E004 is now emitted instead when the type name is unrecognized.
+- **Fixed** Linter no longer emits false-positive I202 for built-in Adams color names that were missing from the symbol table (e.g. `DkGreen`, `Blue_Gray`, `LtBlue`). The full color list from Adams is now registered.
+- **Fixed** Linter no longer emits false-positive E001 for `mdi toolbar display` — the command is now in the schema with args `toolbar`, `state` (`on`/`off`), and `top` (`yes`/`no`/`same`).
 
 ## 1.10.0 (April 2nd 2026)
 

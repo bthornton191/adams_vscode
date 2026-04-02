@@ -2488,6 +2488,126 @@ def test_w201_lse_gse_as_equ():
     assert _types_compatible("Gse", "Equ"), "Gse must be compatible with Equ"
 
 
+# ---------------------------------------------------------------------------
+# Phase 1 — Expanded Adams color list (DkGreen, Blue_Gray, etc.)
+# ---------------------------------------------------------------------------
+
+def test_i202_no_false_positive_dkgreen_color():
+    """DkGreen must not fire I202 — it is a valid built-in Adams color."""
+    text = "entity attributes entity_name=.m.p1 color=DkGreen\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    i202 = [d for d in diags if d.code == "I202"]
+    assert len(i202) == 0, f"I202 must not fire for built-in color 'DkGreen': {i202}"
+
+
+def test_i202_no_false_positive_blue_gray_color():
+    """Blue_Gray must not fire I202 — it is a valid built-in Adams color."""
+    text = "entity attributes entity_name=.m.p1 color=Blue_Gray\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    i202 = [d for d in diags if d.code == "I202"]
+    assert len(i202) == 0, f"I202 must not fire for built-in color 'Blue_Gray': {i202}"
+
+
+def test_i202_no_false_positive_colors_case_insensitive():
+    """Color lookup must be case-insensitive — dkgreen should resolve same as DkGreen."""
+    for color in ["dkgreen", "DKGREEN", "DkGreen", "blue_gray", "BLUE_GRAY",
+                  "Violet", "VIOLET", "violet", "LtBlue", "ltblue"]:
+        text = f"entity attributes entity_name=.m.p1 color={color}\n"
+        diags = _lint(text, rule_fn=rule_type_mismatch)
+        i202 = [d for d in diags if d.code == "I202"]
+        assert len(i202) == 0, (
+            f"I202 must not fire for color '{color}' (case-insensitive): {i202}"
+        )
+
+
+# ---------------------------------------------------------------------------
+# Phase 2 — mdi toolbar display must not fire E001
+# ---------------------------------------------------------------------------
+
+def test_e001_no_false_positive_mdi_toolbar_display():
+    """mdi toolbar display must NOT fire E001 — it is a valid Adams command."""
+    text = "mdi toolbar display toolbar=dashboard state=off\n"
+    diags = _lint(text, rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, f"E001 must not fire for 'mdi toolbar display': {e001}"
+
+
+def test_e001_no_false_positive_mdi_toolbar_display_abbreviated():
+    """mdi toolbar display must resolve from common abbreviations."""
+    text = "mdi toolbar display toolbar=treeview state=off top=on\n"
+    diags = _lint(text, rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, (
+        f"E001 must not fire for 'mdi toolbar display' with all three args: {e001}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Phase 3 — type_filter / DB_ENT arguments must not fire I202
+# ---------------------------------------------------------------------------
+
+def test_i202_no_false_positive_type_filter_constraint():
+    """entity attributes type_filter=constraint must NOT fire I202."""
+    text = "entity attributes entity_name=* type_filter=constraint visibility=off\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    i202 = [d for d in diags if d.code == "I202"]
+    assert len(i202) == 0, (
+        f"I202 must not fire for type_filter=constraint: {i202}"
+    )
+
+
+def test_i202_no_false_positive_type_filter_force():
+    """entity attributes type_filter=force must NOT fire I202."""
+    text = "entity attributes entity_name=* type_filter=force visibility=off\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    i202 = [d for d in diags if d.code == "I202"]
+    assert len(i202) == 0, f"I202 must not fire for type_filter=force: {i202}"
+
+
+def test_i202_no_false_positive_type_filter_spring():
+    """group objects add type_filter=spring must NOT fire I202 for the type name."""
+    text = "group objects add objects_in_group=.m.* type_filter=spring\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    i202_type = [d for d in diags if d.code == "I202" and "spring" in d.message]
+    assert len(i202_type) == 0, f"I202 must not fire for type_filter=spring: {i202_type}"
+
+
+def test_i202_no_false_positive_type_filter_page():
+    """group modify type_filter=page must NOT fire I202."""
+    text = "group modify group_name=SELECT_LIST objects_in_group=* type_filter=page\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    i202 = [d for d in diags if d.code == "I202"]
+    assert len(i202) == 0, f"I202 must not fire for type_filter=page: {i202}"
+
+
+def test_i202_no_false_positive_type_filter_plot():
+    """group modify type_filter=plot must NOT fire I202."""
+    text = "group modify group_name=SELECT_LIST objects_in_group=* type_filter=plot\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    i202 = [d for d in diags if d.code == "I202"]
+    assert len(i202) == 0, f"I202 must not fire for type_filter=plot: {i202}"
+
+
+def test_e004_fires_for_invalid_entity_type_name():
+    """An unrecognized value in type_filter must fire E004, not I202."""
+    text = "entity attributes entity_name=* type_filter=xyzzy visibility=off\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    e004 = [d for d in diags if d.code == "E004"]
+    i202 = [d for d in diags if d.code == "I202"]
+    assert len(e004) > 0, f"E004 must fire for unknown entity type 'xyzzy': {diags}"
+    assert len(i202) == 0, f"I202 must NOT fire for type_filter (only E004): {i202}"
+
+
+def test_i202_no_false_positive_type_filter_prefix_spring():
+    """'spring' prefix must match 'spring_damper' — no I202, no E004."""
+    text = "group objects add objects_in_group=.m.* type_filter=spring\n"
+    diags = _lint(text, rule_fn=rule_type_mismatch)
+    type_diags = [d for d in diags if d.code in ("I202", "E004") and "spring" in d.message]
+    assert len(type_diags) == 0, (
+        f"No I202 or E004 expected for type_filter=spring (matches spring_damper): {type_diags}"
+    )
+
+
 def test_w201_equ_as_tfsiso():
     """A generic Equ is accepted where Tfsiso is expected (copy pattern)."""
     assert _types_compatible("Equ", "Tfsiso"), "Equ must be compatible with Tfsiso (copy pattern)"
