@@ -2756,3 +2756,34 @@ def test_macro_invalid_argument_continuation_line_abbreviation():
     assert len(e002) == 0, (
         f"E002 must not fire for abbreviated args on continuation lines, got: {e002}"
     )
+
+
+# ---------------------------------------------------------------------------
+# command_server — must NOT fire E001
+# ---------------------------------------------------------------------------
+
+def test_e001_no_false_positive_command_server_start():
+    """command_server start is a valid Adams command and must not fire E001."""
+    diags = _lint("command_server start", rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, (
+        f"E001 must not fire for 'command_server start', got: {e001}"
+    )
+
+
+def test_e001_no_false_positive_command_server_stop():
+    """command_server stop is a valid Adams command and must not fire E001."""
+    diags = _lint("command_server stop", rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, (
+        f"E001 must not fire for 'command_server stop', got: {e001}"
+    )
+
+
+def test_e001_no_false_positive_command_server_show():
+    """command_server show is a valid Adams command and must not fire E001."""
+    diags = _lint("command_server show", rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, (
+        f"E001 must not fire for 'command_server show', got: {e001}"
+    )
