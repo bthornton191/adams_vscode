@@ -91,9 +91,13 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     // ---------------------------------------------------------------------------
     // Hover Provider
     // ---------------------------------------------------------------------------
-    const schema_json_path = context.asAbsolutePath(
+    const _schema_source = context.asAbsolutePath(
         "adams-cmd-lsp/adams_cmd_lsp/data/command_schema.json",
     );
+    const _schema_bundled = context.asAbsolutePath(
+        "bundled/libs/adams_cmd_lsp/data/command_schema.json",
+    );
+    const schema_json_path = fs.existsSync(_schema_source) ? _schema_source : _schema_bundled;
     let command_tree = null;
     let schema_commands = null;
     if (fs.existsSync(schema_json_path)) {
