@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.10.4 (April 2nd 2026)](#1104-april-2nd-2026)
   - [1.10.3 (April 2nd 2026)](#1103-april-2nd-2026)
   - [1.10.2 (April 2nd 2026)](#1102-april-2nd-2026)
   - [1.10.1 (April 2nd 2026)](#1101-april-2nd-2026)
@@ -51,6 +52,13 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.10.4 (April 2nd 2026)
+
+- **Fixed** Adams CMD linter macro registry now updates when `.mac` files are edited, saved, created, or deleted outside the editor — no extension restart required.
+- **Fixed** "Ignoring notification for unknown method 'workspace/didChangeConfiguration'" and cancel notification log spam eliminated; linter server now properly handles VS Code settings change notifications.
+- **Improved** Changing `msc-adams.linter.macroPaths`, `macroIgnorePaths`, `scanWorkspaceMacros`, or `pythonPath` in settings automatically restarts the language server with the new configuration and fresh file watchers.
+- **Fixed** Changing a macro file's `!USER_ENTERED_COMMAND` and saving no longer leaves the old command registered in the macro index.
 
 ## 1.10.3 (April 2nd 2026)
 

@@ -346,6 +346,25 @@ class MacroRegistry:
         except OSError:
             pass
 
+    def unregister_by_file(self, path: str) -> None:
+        """Remove all registry entries whose source_file matches *path*.
+
+        Uses Path-based comparison so that equivalent paths with different
+        separator styles (forward vs backslash on Windows) are treated as equal.
+        Also removes the cached mtime so the file will be re-parsed next time
+        the workspace scanner encounters it.
+        """
+        norm = Path(path)
+        to_remove = [
+            key for key, defn in self._commands.items()
+            if Path(defn.source_file) == norm
+        ]
+        for key in to_remove:
+            del self._commands[key]
+        # Remove mtime entry under both the original and normalised form
+        self._mtimes.pop(path, None)
+        self._mtimes.pop(str(norm), None)
+
     def __len__(self) -> int:
         return len(self._commands)
 

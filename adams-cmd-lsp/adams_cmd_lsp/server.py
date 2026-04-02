@@ -297,6 +297,7 @@ def _refresh_macro_file(uri: str, text: str) -> None:
     if not matched:
         return
     try:
+        _macro_registry.unregister_by_file(path)
         macro_def = parse_macro_file(text, source_file=path)
         if macro_def is not None:
             _macro_registry.register(macro_def)
@@ -615,6 +616,100 @@ def _compute_semantic_tokens(text, uri):
         prev_col = col
 
     return data
+
+
+@server.feature(types.WORKSPACE_DID_CHANGE_CONFIGURATION)
+def did_change_configuration(params: types.DidChangeConfigurationParams):
+    """Update server globals when VS Code settings change.
+
+    The vscode-languageclient library sends changes as:
+        {"msc-adams": {"linter": {"scanWorkspaceMacros": true, ...}}}
+    All keys are optional — guard against missing keys throughout.
+    """
+    global _scan_workspace_macros, _macro_patterns, _macro_ignore_patterns, _macro_show_hint  # noqa: PLW0603
+
+    raw = params.settings or {}
+    linter_cfg = {}
+    if isinstance(raw, dict):
+        adams_cfg = raw.get("msc-adams") or {}
+        if isinstance(adams_cfg, dict):
+            linter_cfg = adams_cfg.get("linter") or {}
+
+    # Capture values before update so we can detect changes
+    old_scan = _scan_workspace_macros
+    old_patterns = list(_macro_patterns)
+    old_ignore = list(_macro_ignore_patterns)
+
+    if "scanWorkspaceMacros" in linter_cfg:
+        _scan_workspace_macros = bool(linter_cfg["scanWorkspaceMacros"])
+    if "macroPaths" in linter_cfg:
+        paths = linter_cfg["macroPaths"]
+        if isinstance(paths, list):
+            _macro_patterns = paths if paths else DEFAULT_MACRO_PATTERNS
+    if "macroIgnorePaths" in linter_cfg:
+        ignore = linter_cfg["macroIgnorePaths"]
+        if isinstance(ignore, list):
+            _macro_ignore_patterns = ignore
+    if "showMacroHint" in linter_cfg:
+        _macro_show_hint = bool(linter_cfg["showMacroHint"])
+
+    # Re-scan workspace macros if scanning was enabled or patterns changed
+    scan_changed = _scan_workspace_macros and (
+        not old_scan
+        or _macro_patterns != old_patterns
+        or _macro_ignore_patterns != old_ignore
+    )
+    if scan_changed and _macro_registry is not None and _workspace_roots:
+        try:
+            scan_macro_files(
+                _workspace_roots,
+                patterns=_macro_patterns,
+                ignore_patterns=_macro_ignore_patterns or None,
+                registry=_macro_registry,
+            )
+        except Exception:  # noqa: BLE001
+            pass
+
+    # Re-lint all open documents so diagnostics reflect the updated settings
+    if server.workspace:
+        for uri, doc in list(server.workspace.text_documents.items()):
+            _validate_document(uri, doc.source)
+
+
+@server.feature(types.WORKSPACE_DID_CHANGE_WATCHED_FILES)
+def did_change_watched_files(params: types.DidChangeWatchedFilesParams):
+    """Update the macro registry when watched .mac files are created, changed, or deleted."""
+    if _macro_registry is None:
+        return
+
+    changed = False
+    for event in params.changes:
+        path = _uri_to_path(event.uri)
+        if not path:
+            continue
+        if event.type == types.FileChangeType.Deleted:
+            _macro_registry.unregister_by_file(path)
+            changed = True
+        else:
+            # Created or Changed — remove any stale entry then re-parse.
+            # Set changed=True now (before the OSError check) so that a failed
+            # read still triggers re-validation of open documents; the
+            # unregister itself already modified the registry.
+            _macro_registry.unregister_by_file(path)
+            changed = True
+            try:
+                text = Path(path).read_text(encoding="utf-8", errors="replace")
+            except OSError:
+                continue
+            macro_def = parse_macro_file(text, source_file=path)
+            if macro_def is not None:
+                _macro_registry.register(macro_def)
+                _macro_registry._record_mtime(path)
+
+    # Re-lint open documents so diagnostics reflect registry changes
+    if changed and server.workspace:
+        for uri, doc in list(server.workspace.text_documents.items()):
+            _validate_document(uri, doc.source)
 
 
 @server.feature(types.INITIALIZED)
