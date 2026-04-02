@@ -1,10 +1,9 @@
 """Tests for adams_cmd_lsp.schema module."""
 
+from adams_cmd_lsp.schema import Schema
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from adams_cmd_lsp.schema import Schema
 
 
 def _make_schema(commands=None, command_tree=None):
@@ -193,3 +192,44 @@ def test_resolve_arg_wrong_command():
     # part_name is not an argument for model create
     result = schema.resolve_argument_name("model create", "part_name")
     assert result is None
+
+
+# ---------------------------------------------------------------------------
+# command_server — schema entries
+# ---------------------------------------------------------------------------
+
+def test_has_command_command_server_show():
+    schema = Schema.load()
+    assert schema.has_command("command_server show")
+
+
+def test_has_command_command_server_start():
+    schema = Schema.load()
+    assert schema.has_command("command_server start")
+
+
+def test_has_command_command_server_stop():
+    schema = Schema.load()
+    assert schema.has_command("command_server stop")
+
+
+def test_resolve_command_server_exact():
+    schema = Schema.load()
+    key, err = schema.resolve_command_key(["command_server", "start"])
+    assert key == "command_server start"
+    assert err is None
+
+
+def test_resolve_command_server_abbreviated():
+    schema = Schema.load()
+    key, err = schema.resolve_command_key(["com", "sta"])
+    assert key == "command_server start"
+    assert err is None
+
+    key2, err2 = schema.resolve_command_key(["com", "sto"])
+    assert key2 == "command_server stop"
+    assert err2 is None
+
+    key3, err3 = schema.resolve_command_key(["com", "sh"])
+    assert key3 == "command_server show"
+    assert err3 is None
