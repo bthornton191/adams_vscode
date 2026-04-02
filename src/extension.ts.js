@@ -91,9 +91,24 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     // ---------------------------------------------------------------------------
     // Hover Provider
     // ---------------------------------------------------------------------------
+    const schema_json_path = context.asAbsolutePath(
+        "adams-cmd-lsp/adams_cmd_lsp/data/command_schema.json",
+    );
+    let command_tree = null;
+    let schema_commands = null;
+    if (fs.existsSync(schema_json_path)) {
+        try {
+            const schema = JSON.parse(fs.readFileSync(schema_json_path));
+            command_tree = schema.command_tree || null;
+            schema_commands = schema.commands || null;
+        } catch (_) {
+            // Schema unreadable — hover will fall back to exact-match
+        }
+    }
+
     vscode.languages.registerHoverProvider(
         "adams_cmd",
-        cmd_hover_provider(view_functions, view_commands, command_docs, reporter),
+        cmd_hover_provider(view_functions, view_commands, command_docs, reporter, command_tree, schema_commands),
     );
 
     vscode.languages.registerCompletionItemProvider(
