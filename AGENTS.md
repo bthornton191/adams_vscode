@@ -90,3 +90,15 @@ These are areas worth paying attention to when writing or reviewing code — not
 - **Activation-time errors**: `fs.readdirSync()`, `fs.readFileSync()`, and `JSON.parse()` on resource files can throw if the file is missing or corrupted. A try-catch here prevents crashing activation.
 - **Provider disposables**: hover, completion, and link providers return a disposable — pushing it to `context.subscriptions` ensures proper cleanup on deactivation.
 - **Require paths**: use the full `.ts.js` extension in `require()` calls (e.g. `require("./aview.ts.js")`); the short `.ts` form may not resolve correctly.
+
+## Completion Protocol
+
+After completing a feature or bug fix, follow this protocol before declaring the task done:
+
+1. **Run tests** and confirm they pass for all changed files.
+2. **Delegate a code review** to an explore subagent or another appropriate read-only subagent. Instruct it to load the `code-reviewer` skill and review all changed files.
+3. **If the reviewer returns REQUEST CHANGES**, address every CRITICAL and WARNING finding. Report any INFO findings to the user but do not fix them unless asked.
+4. **Re-run the review** after making fixes until you receive an APPROVE verdict.
+5. Only declare the task complete after receiving an **APPROVE** verdict.
+
+Do not skip the review step. Do not declare completion without an APPROVE verdict.
