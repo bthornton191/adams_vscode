@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.11.0 (April 3rd 2026)](#1110-april-3rd-2026)
   - [1.10.4 (April 2nd 2026)](#1104-april-2nd-2026)
   - [1.10.3 (April 2nd 2026)](#1103-april-2nd-2026)
   - [1.10.2 (April 2nd 2026)](#1102-april-2nd-2026)
@@ -52,6 +53,12 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.11.0 (April 3rd 2026)
+
+- **Added** Hover documentation for macro command invocations in `.cmd` files. Hovering over a macro command now shows its name as a heading and the help string from `!HELP_STRING` (or legacy `!DESCRIPTION`) in the macro file header, or from the `help_string=` argument of an inline `macro create` statement. Multi-line descriptions are rendered as separate paragraphs.
+- **Added** `ObjectIndex` for workspace-level object definitions and references. Go-to-definition and find-references now resolve Adams object names (parts, markers, joints, etc.) across the workspace.
+- **Fixed** `$variable` navigation correctness — variable references in expressions are now resolved correctly.
 
 ## 1.10.4 (April 2nd 2026)
 

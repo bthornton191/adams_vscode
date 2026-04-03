@@ -25,6 +25,7 @@ test_output.txt
 AGENTS.md
 adams-cmd-lsp-plan.md
 adams-view-mcp-server-plan.md
+macro-hover-plan.md
 qa_lint_results.csv
 adams-cmd-lsp/**
 .pytest_cache/**
