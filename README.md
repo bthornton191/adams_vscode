@@ -42,6 +42,7 @@
 - Adams Function Completion Provider
 - Adams Function Documentation Hover Provider
 - Adams Command Documentation Hover Provider (hover over a command keyword to see its description, syntax, and argument details)
+- Adams Macro Documentation Hover Provider (hover over a user-defined macro invocation to see its help string)
 
 ![Example of Adams Function Documentation Hover Provider Example](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/autocomplete_function.gif)
 
@@ -113,6 +114,10 @@ It flags unknown commands, invalid arguments, and other syntax errors as you typ
 Enable `msc-adams.linter.scanWorkspaceMacros` to let the linter discover user-defined macro files
 (`.mac` by default) in the workspace. Once scanned, user-defined macros are recognised as valid
 commands and their declared parameters are validated when the macro is called.
+
+Go-to-definition, find-references, and hover documentation are also available for user-defined
+macros. Hover over a macro invocation to see its help string (sourced from `!HELP_STRING` in the
+macro file header or the `help_string=` argument of an inline `macro create` statement).
   
 # Extension Settings
 
