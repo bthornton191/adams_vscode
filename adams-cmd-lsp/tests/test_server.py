@@ -238,15 +238,49 @@ def test_refresh_macro_file_non_mac_ignored(tmp_path):
     assert len(srv._macro_registry) == 0
 
 
+def test_refresh_macro_file_returns_true_when_registered(tmp_path):
+    """_refresh_macro_file returns True when a macro was added to the registry."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    srv._macro_registry = MacroRegistry()
+    srv._macro_patterns = ["**/*.mac"]
+
+    mac_path = tmp_path / "tool.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND my tool\n", encoding="utf-8")
+    uri = mac_path.as_uri()
+
+    result = srv._refresh_macro_file(uri, mac_path.read_text(encoding="utf-8"))
+    assert result is True
+    assert srv._macro_registry.has_command("my tool")
+
+
+def test_refresh_macro_file_returns_false_when_no_match(tmp_path):
+    """_refresh_macro_file returns False when the file does not match macro patterns."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    srv._macro_registry = MacroRegistry()
+    srv._macro_patterns = ["**/*.mac"]
+
+    txt_path = tmp_path / "notes.txt"
+    txt_path.write_text("!USER_ENTERED_COMMAND my tool\n", encoding="utf-8")
+    uri = txt_path.as_uri()
+
+    result = srv._refresh_macro_file(uri, txt_path.read_text(encoding="utf-8"))
+    assert result is False
+
+
 def test_refresh_macro_file_no_registry():
     """_refresh_macro_file should be a no-op when _macro_registry is None."""
     srv._macro_registry = None
-    # Should not raise
-    srv._refresh_macro_file("file:///some/file.mac", "!USER_ENTERED_COMMAND foo\n")
+    # Should not raise and should return False
+    result = srv._refresh_macro_file("file:///some/file.mac", "!USER_ENTERED_COMMAND foo\n")
+    assert result is False
 
 
 def test_refresh_macro_file_no_command(tmp_path):
-    """A .mac file with no !USER_ENTERED_COMMAND should not add to registry."""
+    """A .mac file with no !USER_ENTERED_COMMAND should not add to registry.
+
+    Returns True (file matched pattern, processed without error) even when
+    no command is registered — callers may still re-lint speculatively.
+    """
     from adams_cmd_lsp.macros import MacroRegistry
     srv._macro_registry = MacroRegistry()
     srv._macro_patterns = ["**/*.mac"]
@@ -255,8 +289,9 @@ def test_refresh_macro_file_no_command(tmp_path):
     mac_path.write_text("! just a plain macro\npart create\n", encoding="utf-8")
     uri = mac_path.as_uri()
 
-    srv._refresh_macro_file(uri, mac_path.read_text(encoding="utf-8"))
+    result = srv._refresh_macro_file(uri, mac_path.read_text(encoding="utf-8"))
     assert len(srv._macro_registry) == 0
+    assert result is True  # matched pattern and processed without error
 
 
 # ---------------------------------------------------------------------------
@@ -449,6 +484,40 @@ def test_refresh_macro_file_parse_exception_swallowed(tmp_path, monkeypatch):
     assert len(srv._macro_registry) == 0
 
 
+def test_refresh_macro_file_parse_exception_unregisters_and_returns_true(tmp_path, monkeypatch):
+    """_refresh_macro_file returns True and removes the macro when parse_macro_file raises.
+
+    unregister_by_file runs before parse_macro_file; if parsing then throws the
+    macro is gone from the registry.  True is returned so callers still re-lint
+    other open documents (which need to reflect the removal).
+    """
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+
+    macros_dir = tmp_path / "macros"
+    macros_dir.mkdir()
+    mac_path = macros_dir / "tool.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND cdm boom\n", encoding="utf-8")
+
+    srv._macro_registry = MacroRegistry()
+    srv._macro_patterns = ["**/*.mac"]
+    srv._workspace_roots = [str(tmp_path)]
+
+    # Pre-register the macro so we can verify it is removed on parse failure
+    srv._macro_registry.register(MacroDefinition(command="cdm boom", parameters={}, source_file=str(mac_path)))
+    assert srv._macro_registry.has_command("cdm boom")
+
+    def exploding_parse(text, source_file=""):
+        raise RuntimeError("Simulated parse failure")
+
+    monkeypatch.setattr(srv, "parse_macro_file", exploding_parse)
+
+    result = srv._refresh_macro_file(mac_path.as_uri(), mac_path.read_text(encoding="utf-8"))
+    # Macro should be unregistered (unregister_by_file ran before parse failed)
+    assert not srv._macro_registry.has_command("cdm boom")
+    # True so callers know to re-lint
+    assert result is True
+
+
 # ---------------------------------------------------------------------------
 # _refresh_macro_file — command change documents design limitation (G9)
 # ---------------------------------------------------------------------------
@@ -482,6 +551,227 @@ def test_refresh_macro_file_old_command_removed_after_change(tmp_path):
     )
     assert not srv._macro_registry.has_command("cdm old_cmd"), (
         "Old command should be removed after re-save with a different command key"
+    )
+
+
+# ---------------------------------------------------------------------------
+# did_open — macro registration on open (regression: ref→def and E001)
+# ---------------------------------------------------------------------------
+
+def test_did_open_registers_macro_file(tmp_path, monkeypatch):
+    """did_open registers .mac file in registry and re-lints other open documents.
+
+    Regression: _refresh_macro_file was not called from did_open, so opening
+    test.mac in the editor did not populate the registry.  Ctrl+Click from a
+    call site (ref→def) would return nothing and E001 was raised for macro calls.
+    """
+    from adams_cmd_lsp.macros import MacroRegistry
+    import types as python_types
+
+    srv._macro_registry = MacroRegistry()
+    srv._macro_patterns = ["**/*.mac"]
+    srv._workspace_roots = []  # fallback filename-matching path
+    srv._schema = Schema.load()
+
+    mac_path = tmp_path / "custom.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND custom command\n", encoding="utf-8")
+    mac_uri = mac_path.as_uri()
+
+    caller_uri = "file:///caller.cmd"
+
+    # Track which URIs are validated via text_document_publish_diagnostics
+    validated_uris = []
+
+    mock_workspace = python_types.SimpleNamespace(
+        get_text_document=lambda u: python_types.SimpleNamespace(
+            source=mac_path.read_text(encoding="utf-8") if u == mac_uri else "custom command\n",
+            uri=u,
+        ),
+        text_documents={
+            mac_uri: python_types.SimpleNamespace(
+                source="!USER_ENTERED_COMMAND custom command\n", uri=mac_uri
+            ),
+            caller_uri: python_types.SimpleNamespace(
+                source="custom command\n", uri=caller_uri
+            ),
+        },
+        folders={},
+    )
+    mock_server = python_types.SimpleNamespace(
+        workspace=mock_workspace,
+        text_document_publish_diagnostics=lambda params: validated_uris.append(params.uri),
+    )
+    monkeypatch.setattr(srv, "server", mock_server)
+
+    params = types.DidOpenTextDocumentParams(
+        text_document=types.TextDocumentItem(
+            uri=mac_uri,
+            language_id="adams_cmd",
+            version=1,
+            text="!USER_ENTERED_COMMAND custom command\n",
+        )
+    )
+
+    srv.did_open(params)
+
+    # Registry must be updated because did_open now calls _refresh_macro_file
+    assert srv._macro_registry.has_command("custom command"), (
+        "did_open must register macro files so ref→def navigation and E001 suppression work"
+    )
+    # Caller file must be re-linted so its E001 clears immediately
+    assert caller_uri in validated_uris, (
+        "did_open must re-lint other open documents after registering a new macro"
+    )
+    # The mac file itself must not be re-linted by the loop (only once at the top)
+    assert validated_uris.count(mac_uri) == 1, (
+        "did_open must not re-lint the opened mac file a second time in the re-lint loop"
+    )
+
+
+# ---------------------------------------------------------------------------
+# did_save — macro registration re-lint (mirrors did_open behaviour)
+# ---------------------------------------------------------------------------
+
+def test_did_save_relints_other_documents(tmp_path, monkeypatch):
+    """did_save re-lints other open documents when a .mac file is saved.
+
+    Mirrors the did_open behaviour: saving a .mac file updates the registry
+    and re-lints callers so E001 clears immediately.
+    """
+    from adams_cmd_lsp.macros import MacroRegistry
+    import types as python_types
+
+    srv._macro_registry = MacroRegistry()
+    srv._macro_patterns = ["**/*.mac"]
+    srv._workspace_roots = []  # fallback filename-matching path
+    srv._schema = Schema.load()
+
+    mac_path = tmp_path / "custom.mac"
+    mac_path.write_text("!USER_ENTERED_COMMAND custom command\n", encoding="utf-8")
+    mac_uri = mac_path.as_uri()
+
+    caller_uri = "file:///caller.cmd"
+    validated_uris = []
+
+    mac_doc = python_types.SimpleNamespace(
+        source="!USER_ENTERED_COMMAND custom command\n", uri=mac_uri
+    )
+    caller_doc = python_types.SimpleNamespace(source="custom command\n", uri=caller_uri)
+
+    mock_workspace = python_types.SimpleNamespace(
+        get_text_document=lambda u: mac_doc if u == mac_uri else caller_doc,
+        text_documents={mac_uri: mac_doc, caller_uri: caller_doc},
+        folders={},
+    )
+    mock_server = python_types.SimpleNamespace(
+        workspace=mock_workspace,
+        text_document_publish_diagnostics=lambda params: validated_uris.append(params.uri),
+    )
+    monkeypatch.setattr(srv, "server", mock_server)
+
+    params = types.DidSaveTextDocumentParams(
+        text_document=types.TextDocumentIdentifier(uri=mac_uri),
+    )
+
+    srv.did_save(params)
+
+    assert srv._macro_registry.has_command("custom command"), (
+        "did_save must register macro files so ref→def navigation works"
+    )
+    assert caller_uri in validated_uris, (
+        "did_save must re-lint other open documents after registering a macro"
+    )
+    assert validated_uris.count(mac_uri) == 1, (
+        "did_save must not re-lint the saved mac file a second time in the re-lint loop"
+    )
+
+
+def test_did_open_nonmacro_does_not_relint_others(tmp_path, monkeypatch):
+    """did_open must not re-lint other documents when a non-macro file is opened."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    import types as python_types
+
+    srv._macro_registry = MacroRegistry()
+    srv._macro_patterns = ["**/*.mac"]
+    srv._workspace_roots = []
+    srv._schema = Schema.load()
+
+    cmd_path = tmp_path / "script.cmd"
+    cmd_path.write_text("model create model_name=.m\n", encoding="utf-8")
+    cmd_uri = cmd_path.as_uri()
+
+    caller_uri = "file:///other.cmd"
+    validated_uris = []
+
+    mock_workspace = python_types.SimpleNamespace(
+        get_text_document=lambda u: python_types.SimpleNamespace(
+            source=cmd_path.read_text(encoding="utf-8"), uri=u
+        ),
+        text_documents={
+            cmd_uri: python_types.SimpleNamespace(source="model create model_name=.m\n", uri=cmd_uri),
+            caller_uri: python_types.SimpleNamespace(source="model create model_name=.m\n", uri=caller_uri),
+        },
+        folders={},
+    )
+    monkeypatch.setattr(srv, "server", python_types.SimpleNamespace(
+        workspace=mock_workspace,
+        text_document_publish_diagnostics=lambda params: validated_uris.append(params.uri),
+    ))
+
+    params = types.DidOpenTextDocumentParams(
+        text_document=types.TextDocumentItem(
+            uri=cmd_uri,
+            language_id="adams_cmd",
+            version=1,
+            text="model create model_name=.m\n",
+        )
+    )
+
+    srv.did_open(params)
+
+    assert caller_uri not in validated_uris, (
+        "did_open must not re-lint other documents when the opened file is not a macro"
+    )
+
+
+def test_did_save_nonmacro_does_not_relint_others(tmp_path, monkeypatch):
+    """did_save must not re-lint other documents when a non-macro file is saved."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    import types as python_types
+
+    srv._macro_registry = MacroRegistry()
+    srv._macro_patterns = ["**/*.mac"]
+    srv._workspace_roots = []
+    srv._schema = Schema.load()
+
+    cmd_path = tmp_path / "script.cmd"
+    cmd_path.write_text("model create model_name=.m\n", encoding="utf-8")
+    cmd_uri = cmd_path.as_uri()
+
+    caller_uri = "file:///other.cmd"
+    validated_uris = []
+
+    cmd_doc = python_types.SimpleNamespace(source="model create model_name=.m\n", uri=cmd_uri)
+    caller_doc = python_types.SimpleNamespace(source="model create model_name=.m\n", uri=caller_uri)
+
+    mock_workspace = python_types.SimpleNamespace(
+        get_text_document=lambda u: cmd_doc,
+        text_documents={cmd_uri: cmd_doc, caller_uri: caller_doc},
+        folders={},
+    )
+    monkeypatch.setattr(srv, "server", python_types.SimpleNamespace(
+        workspace=mock_workspace,
+        text_document_publish_diagnostics=lambda params: validated_uris.append(params.uri),
+    ))
+
+    params = types.DidSaveTextDocumentParams(
+        text_document=types.TextDocumentIdentifier(uri=cmd_uri),
+    )
+
+    srv.did_save(params)
+
+    assert caller_uri not in validated_uris, (
+        "did_save must not re-lint other documents when the saved file is not a macro"
     )
 
 
@@ -692,14 +982,39 @@ def test_goto_definition_registry_macro(tmp_path, monkeypatch):
     assert link.origin_selection_range.end.character == len("cdm wear")
 
 
-def test_goto_definition_definition_site_returns_self(monkeypatch):
-    """goto_definition on a !USER_ENTERED_COMMAND line returns a LocationLink to itself."""
+def test_goto_definition_definition_site_no_refs_returns_none(monkeypatch):
+    """goto_definition on a !USER_ENTERED_COMMAND line with no refs returns None."""
     from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.references import MacroIndex
     uri = "file:///wear.mac"
     text = "!USER_ENTERED_COMMAND cdm wear\n"
     monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
     srv._schema = Schema.load()
     srv._macro_registry = MacroRegistry()
+    srv._macro_index = MacroIndex()  # empty — no call sites
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.goto_definition(params)
+    assert result is None
+
+
+def test_goto_definition_definition_site_returns_references(monkeypatch):
+    """goto_definition on a !USER_ENTERED_COMMAND line returns LocationLinks to call sites."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.references import MacroIndex, MacroReference
+    uri = "file:///wear.mac"
+    text = "!USER_ENTERED_COMMAND cdm wear\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._macro_index = MacroIndex()
+    # Seed a call site in an imaginary caller file
+    caller_path = "/caller.cmd"
+    srv._macro_index.update_file(caller_path, [
+        MacroReference(command_key="cdm wear", line=5, column=0, end_column=8),
+    ])
     params = types.DefinitionParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
         position=types.Position(line=0, character=0),
@@ -708,11 +1023,10 @@ def test_goto_definition_definition_site_returns_self(monkeypatch):
     assert result is not None
     assert len(result) == 1
     link = result[0]
-    assert link.target_uri == uri
-    assert link.target_selection_range.start.line == 0
+    assert "caller" in link.target_uri
+    assert link.target_range.start.line == 5
     # originSelectionRange covers "cdm wear" after "!USER_ENTERED_COMMAND "
     assert link.origin_selection_range.start.character == len("!USER_ENTERED_COMMAND ")
-    assert link.origin_selection_range.end.character == len("!USER_ENTERED_COMMAND cdm wear")
 
 
 def test_goto_definition_inline_macro(monkeypatch):
@@ -1560,3 +1874,973 @@ def test_main_reinitializes_macro_index(monkeypatch):
     assert srv._macro_index.total_references() == 0, (
         "main() should reset _macro_index to an empty state"
     )
+
+
+# ---------------------------------------------------------------------------
+# _update_doc_cache / _get_doc_cache
+# ---------------------------------------------------------------------------
+
+def test_update_doc_cache_populates_symbols():
+    """_update_doc_cache must populate the cache with a SymbolTable."""
+    from adams_cmd_lsp.symbols import SymbolTable
+    srv._schema = Schema.load()
+    uri = "file:///test_cache.cmd"
+    srv._doc_cache.pop(uri, None)
+    text = "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+    srv._update_doc_cache(uri, text)
+    cached = srv._doc_cache.get(uri)
+    assert cached is not None
+    statements, symbols = cached
+    assert isinstance(symbols, SymbolTable)
+    assert symbols.has(".m.p.mkr1")
+
+
+def test_update_doc_cache_noop_without_schema():
+    """_update_doc_cache must be a no-op when _schema is None."""
+    srv._schema = None
+    uri = "file:///nocache.cmd"
+    srv._doc_cache.pop(uri, None)
+    srv._update_doc_cache(uri, "model create model_name=m\n")
+    assert uri not in srv._doc_cache
+
+
+def test_get_doc_cache_builds_on_demand():
+    """_get_doc_cache must build and return the cache when text is supplied."""
+    srv._schema = Schema.load()
+    uri = "file:///demand.cmd"
+    srv._doc_cache.pop(uri, None)
+    text = "part create rigid_body name_and_position part_name = .m.P1\n"
+    statements, symbols = srv._get_doc_cache(uri, text)
+    assert statements is not None
+    assert symbols is not None
+    assert symbols.has(".m.P1")
+
+
+def test_get_doc_cache_returns_none_without_text():
+    """_get_doc_cache returns (None, None) when no text is supplied and cache is empty."""
+    srv._schema = Schema.load()
+    uri = "file:///no_text.cmd"
+    srv._doc_cache.pop(uri, None)
+    stmts, syms = srv._get_doc_cache(uri)
+    assert stmts is None
+    assert syms is None
+
+
+# ---------------------------------------------------------------------------
+# _get_object_at_position
+# ---------------------------------------------------------------------------
+
+def test_get_object_at_position_on_definition():
+    """Cursor on a new_object arg value must return 'definition'."""
+    srv._schema = Schema.load()
+    text = "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    from adams_cmd_lsp.symbols import build_symbol_table
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, srv._schema)
+    symbols = build_symbol_table(stmts, srv._schema)
+    # ".m.p.mkr1" appears at some column on line 0 — scan the text to find it
+    col = text.index(".m.p.mkr1")
+    result = srv._get_object_at_position(stmts, srv._schema, symbols, 0, col)
+    assert result is not None
+    kind, name, v_line, v_col, v_end_col = result
+    assert kind == "definition"
+    assert name == ".m.p.mkr1"
+
+
+def test_get_object_at_position_on_reference():
+    """Cursor on an existing_object arg value must return 'reference'."""
+    srv._schema = Schema.load()
+    text = "constraint create joint fixed joint_name=.m.f1 i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n"
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    from adams_cmd_lsp.symbols import build_symbol_table
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, srv._schema)
+    symbols = build_symbol_table(stmts, srv._schema)
+    col = text.index(".m.p.mkr1")
+    result = srv._get_object_at_position(stmts, srv._schema, symbols, 0, col)
+    assert result is not None
+    kind, name, v_line, v_col, v_end_col = result
+    assert kind == "reference"
+    assert name == ".m.p.mkr1"
+
+
+def test_get_object_at_position_out_of_range():
+    """Cursor not on any arg value must return None."""
+    srv._schema = Schema.load()
+    text = "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    from adams_cmd_lsp.symbols import build_symbol_table
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, srv._schema)
+    symbols = build_symbol_table(stmts, srv._schema)
+    # Column 0 is on "marker" — the command keyword, not a value
+    result = srv._get_object_at_position(stmts, srv._schema, symbols, 0, 0)
+    assert result is None
+
+
+def test_get_object_at_position_skips_eval():
+    """Cursor on an eval() value must return None."""
+    srv._schema = Schema.load()
+    text = "marker create marker_name = (eval(.m.p // '.cm')) location = 0,0,0\n"
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    from adams_cmd_lsp.symbols import build_symbol_table
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, srv._schema)
+    symbols = build_symbol_table(stmts, srv._schema)
+    col = text.index("(eval")
+    result = srv._get_object_at_position(stmts, srv._schema, symbols, 0, col)
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# goto_definition — Adams object navigation
+# ---------------------------------------------------------------------------
+
+def test_goto_definition_jumps_to_marker_definition(monkeypatch):
+    """Ctrl+clicking a marker reference must navigate to the create command."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.object_index import ObjectIndex
+    uri = "file:///model.cmd"
+    text = (
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._object_index = ObjectIndex()
+    srv._doc_cache.pop(uri, None)
+
+    # Cursor on ".m.p.mkr1" in the i_marker= argument on line 1
+    col = text.splitlines()[1].index(".m.p.mkr1")
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=1, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Should navigate to the marker definition"
+    assert len(result) == 1
+    link = result[0]
+    assert link.target_uri == uri
+    assert link.target_selection_range.start.line == 0  # marker create is on line 0
+    # originSelectionRange must cover the value text
+    assert link.origin_selection_range.start.line == 1
+    assert link.origin_selection_range.start.character == col
+
+
+def test_goto_definition_leaf_name_fallback(monkeypatch):
+    """Navigating from a leaf-only reference must resolve via leaf-name lookup."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.object_index import ObjectIndex
+    uri = "file:///model.cmd"
+    # leaf name "mkr1" is used as i_marker (without full path)
+    text = (
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=mkr1 j_marker=.m.ground.cm\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._object_index = ObjectIndex()
+    srv._doc_cache.pop(uri, None)
+
+    col = text.splitlines()[1].index("mkr1")
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=1, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Leaf-name lookup must resolve mkr1 to .m.p.mkr1 definition"
+    link = result[0]
+    assert link.target_selection_range.start.line == 0
+
+
+def test_goto_definition_on_definition_no_refs_returns_none(monkeypatch):
+    """Ctrl+clicking a definition with no references must return None."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.object_index import ObjectIndex
+    uri = "file:///model.cmd"
+    # Only a definition, no existing_object references to it
+    text = "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._object_index = ObjectIndex()
+    srv._doc_cache.pop(uri, None)
+
+    col = text.index(".m.p.mkr1")
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is None, "No references exist, so goto_definition should return None"
+
+
+def test_goto_definition_on_definition_returns_references(monkeypatch):
+    """Ctrl+clicking a definition with references must navigate to those references."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.object_index import ObjectIndex
+    uri = "file:///model.cmd"
+    text = (
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._object_index = ObjectIndex()
+    srv._doc_cache.pop(uri, None)
+
+    # Cursor on the definition value (marker_name= arg on line 0)
+    col = text.splitlines()[0].index(".m.p.mkr1")
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Definition with references should navigate to them"
+    target_lines = [link.target_range.start.line for link in result]
+    # The i_marker reference is on line 1; definition line (0) must not appear
+    assert 1 in target_lines, f"Expected reference on line 1, got: {target_lines}"
+    assert 0 not in target_lines, "Definition site must not appear in reference results"
+
+
+def test_goto_definition_on_definition_cross_file_references(monkeypatch, tmp_path):
+    """Ctrl+clicking a definition must include cross-file references from _object_index."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.object_index import ObjectIndex, IndexedReference
+
+    uri = "file:///file_a.cmd"
+    # Current file: only the definition
+    text_a = "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+
+    # Other file: references the marker
+    other_path = str(tmp_path / "file_b.cmd")
+    (tmp_path / "file_b.cmd").write_text(
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text_a, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._object_index = ObjectIndex()
+    srv._object_index.update_file(
+        other_path,
+        [],
+        [IndexedReference(
+            name=".m.p.mkr1", object_type="Marker",
+            line=0, column=0, end_column=10,
+            source_file=other_path,
+        )],
+    )
+    srv._doc_cache.pop(uri, None)
+
+    col = text_a.index(".m.p.mkr1")
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Expected cross-file reference LocationLink"
+    cross_uris = [link.target_uri for link in result if "file_b" in link.target_uri]
+    assert len(cross_uris) >= 1, f"Expected a LocationLink pointing to file_b, got: {[l.target_uri for l in result]}"
+
+
+# ---------------------------------------------------------------------------
+# find_references — Adams object navigation
+# ---------------------------------------------------------------------------
+
+def test_find_references_finds_marker_usages(monkeypatch):
+    """find_references on a marker create must return all usage sites."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.references import MacroIndex
+    from adams_cmd_lsp.object_index import ObjectIndex
+    uri = "file:///model.cmd"
+    text = (
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._macro_index = MacroIndex()
+    srv._object_index = ObjectIndex()
+    srv._doc_cache.pop(uri, None)
+
+    # Cursor on ".m.p.mkr1" in the marker_name= argument (definition site, line 0)
+    col = text.splitlines()[0].index(".m.p.mkr1")
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col),
+        context=types.ReferenceContext(include_declaration=False),
+    )
+    result = srv.find_references(params)
+    # Must include the i_marker reference on line 1
+    ref_lines = [loc.range.start.line for loc in result]
+    assert 1 in ref_lines, f"Expected reference on line 1, got lines: {ref_lines}"
+
+
+def test_find_references_include_declaration_for_object(monkeypatch):
+    """include_declaration=True must also return the object's definition location."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.references import MacroIndex
+    from adams_cmd_lsp.object_index import ObjectIndex
+    uri = "file:///model.cmd"
+    text = (
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._macro_index = MacroIndex()
+    srv._object_index = ObjectIndex()
+    srv._doc_cache.pop(uri, None)
+
+    col = text.splitlines()[0].index(".m.p.mkr1")
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result = srv.find_references(params)
+    ref_lines = [loc.range.start.line for loc in result]
+    # Must include both the definition (line 0) and the usage (line 1)
+    assert 0 in ref_lines, "include_declaration=True must add the definition location"
+    assert 1 in ref_lines, "Reference on line 1 must still be included"
+
+
+# ---------------------------------------------------------------------------
+# document_symbol
+# ---------------------------------------------------------------------------
+
+def test_document_symbol_returns_created_objects(monkeypatch):
+    """document_symbol must return a SymbolInformation for each created object."""
+    from lsprotocol import types as lsp_types
+    uri = "file:///model.cmd"
+    text = (
+        "model create model_name = my_model\n"
+        "part create rigid_body name_and_position part_name = my_model.PART_1\n"
+        "marker create marker_name = my_model.PART_1.CM location = 0,0,0\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._doc_cache.pop(uri, None)
+
+    params = types.DocumentSymbolParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+    )
+    result = srv.document_symbol(params)
+    assert len(result) > 0, "Expected at least one symbol"
+    names = [s.name for s in result]
+    assert any("PART_1" in n for n in names)
+    assert any("CM" in n for n in names)
+    # Builtins must be excluded
+    assert not any(n.lower().lstrip('.') == "ground" for n in names)
+
+
+def test_document_symbol_correct_kinds(monkeypatch):
+    """document_symbol must use correct SymbolKind for Part and Marker."""
+    uri = "file:///model.cmd"
+    text = (
+        "part create rigid_body name_and_position part_name = .m.P1\n"
+        "marker create marker_name = .m.P1.CM location = 0,0,0\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._doc_cache.pop(uri, None)
+
+    params = types.DocumentSymbolParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+    )
+    result = srv.document_symbol(params)
+    by_name = {s.name: s for s in result}
+
+    part_sym = by_name.get(".m.P1") or by_name.get("m.P1")
+    marker_sym = by_name.get(".m.P1.CM") or by_name.get("m.P1.CM")
+
+    if part_sym:
+        assert part_sym.kind == types.SymbolKind.Class
+    if marker_sym:
+        assert marker_sym.kind == types.SymbolKind.Field
+
+
+def test_document_symbol_empty_file(monkeypatch):
+    """document_symbol must return empty list for a comment-only file."""
+    uri = "file:///empty.cmd"
+    text = "! just a comment\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._doc_cache.pop(uri, None)
+
+    params = types.DocumentSymbolParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+    )
+    result = srv.document_symbol(params)
+    # Only builtins in the table — document_symbol must exclude them
+    assert result == []
+
+
+# ---------------------------------------------------------------------------
+# _refresh_object_index_for_file — direct tests
+# ---------------------------------------------------------------------------
+
+def test_refresh_object_index_for_file_indexes_definitions():
+    """_refresh_object_index_for_file must index definitions into _object_index."""
+    from adams_cmd_lsp.object_index import ObjectIndex
+    srv._schema = Schema.load()
+    srv._object_index = ObjectIndex()
+    text = "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+    # Use a synthetic path; no real file needed
+    srv._refresh_object_index_for_file("file:///synth.cmd", text)
+    defs = srv._object_index.get_definitions(".m.p.mkr1")
+    assert len(defs) == 1, f"Expected 1 definition, got {len(defs)}"
+    assert defs[0].object_type == "Marker"
+
+
+def test_refresh_object_index_for_file_indexes_references():
+    """_refresh_object_index_for_file must also index reference sites."""
+    from adams_cmd_lsp.object_index import ObjectIndex
+    srv._schema = Schema.load()
+    srv._object_index = ObjectIndex()
+    text = (
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n"
+    )
+    srv._refresh_object_index_for_file("file:///synth.cmd", text)
+    refs = srv._object_index.get_references(".m.p.mkr1")
+    assert len(refs) == 1, f"Expected 1 reference, got {len(refs)}"
+
+
+def test_refresh_object_index_for_file_noop_without_schema():
+    """_refresh_object_index_for_file must be a no-op when _schema is None."""
+    from adams_cmd_lsp.object_index import ObjectIndex
+    srv._schema = None
+    srv._object_index = ObjectIndex()
+    srv._refresh_object_index_for_file(
+        "file:///synth.cmd", "marker create marker_name = .m.p.mkr1\n"
+    )
+    assert srv._object_index.total_definitions() == 0
+
+
+# ---------------------------------------------------------------------------
+# Cross-file Go to Definition and Find All References
+# ---------------------------------------------------------------------------
+
+def test_goto_definition_cross_file(monkeypatch, tmp_path):
+    """goto_definition must navigate to a definition stored in _object_index (cross-file)."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.object_index import ObjectIndex, IndexedDefinition
+
+    # "current" file: only a reference to .m.p.mkr1
+    uri_a = "file:///file_a.cmd"
+    text_a = (
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n"
+    )
+
+    # "other" file where .m.p.mkr1 was defined (stored in the object index)
+    other_path = str(tmp_path / "file_b.cmd")
+    (tmp_path / "file_b.cmd").write_text(
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text_a, uri_a))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._object_index = ObjectIndex()
+    srv._object_index.update_file(
+        other_path,
+        [IndexedDefinition(name=".m.p.mkr1", object_type="Marker", line=0, source_file=other_path)],
+        [],
+    )
+    srv._doc_cache.pop(uri_a, None)
+
+    col = text_a.index(".m.p.mkr1")
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri_a),
+        position=types.Position(line=0, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Expected cross-file LocationLink"
+    assert len(result) == 1
+    link = result[0]
+    # target must point to the OTHER file, not the current one
+    assert "file_a" not in link.target_uri
+    assert "file_b" in link.target_uri
+    assert link.target_selection_range.start.line == 0
+
+
+def test_find_references_cross_file(monkeypatch, tmp_path):
+    """find_references must include references stored in _object_index (cross-file)."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    from adams_cmd_lsp.references import MacroIndex
+    from adams_cmd_lsp.object_index import ObjectIndex, IndexedReference
+
+    # "current" file: the definition site
+    uri_a = "file:///file_a.cmd"
+    text_a = "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+
+    # "other" file that references the marker (stored in object index)
+    other_path = str(tmp_path / "file_b.cmd")
+    (tmp_path / "file_b.cmd").write_text(
+        "constraint create joint fixed joint_name=.m.f1 "
+        "i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n",
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text_a, uri_a))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()
+    srv._macro_index = MacroIndex()
+    srv._object_index = ObjectIndex()
+    srv._object_index.update_file(
+        other_path,
+        [],
+        [IndexedReference(
+            name=".m.p.mkr1", object_type="Marker",
+            line=0, column=0, end_column=10,
+            source_file=other_path,
+        )],
+    )
+    srv._doc_cache.pop(uri_a, None)
+
+    # cursor on the definition (.m.p.mkr1 in marker_name=)
+    col = text_a.index(".m.p.mkr1")
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri_a),
+        position=types.Position(line=0, character=col),
+        context=types.ReferenceContext(include_declaration=False),
+    )
+    result = srv.find_references(params)
+    # Must include the cross-file reference from file_b
+    cross_uris = [loc.uri for loc in result if "file_b" in loc.uri]
+    assert len(cross_uris) >= 1, (
+        f"Expected at least one cross-file reference in file_b, got uris: {[l.uri for l in result]}"
+    )
+
+
+# ---------------------------------------------------------------------------
+# $variable navigation helpers (unit tests)
+# ---------------------------------------------------------------------------
+
+def test_get_dollar_var_at_position_basic():
+    """_get_dollar_var_at_position returns the $var token when cursor is within it."""
+    line_text = "var set var=$_self.model obj=.m"
+    result = srv._get_dollar_var_at_position(line_text, 12)  # cursor on '$'
+    assert result is not None
+    token, col, end_col = result
+    assert token == "$_self.model"
+    assert line_text[col:end_col] == "$_self.model"
+
+
+def test_get_dollar_var_at_position_mid_token():
+    """Cursor in the middle of the $var token is still matched."""
+    line_text = "var set var=$_self.model obj=.m"
+    # cursor at 'l' in 'model'
+    result = srv._get_dollar_var_at_position(line_text, 20)
+    assert result is not None
+    token, _, _ = result
+    assert token == "$_self.model"
+
+
+def test_get_dollar_var_at_position_with_attribute_chain():
+    """$var followed by attribute access still returns the full token."""
+    line_text = "(eval($_self.model.object_value.name))"
+    result = srv._get_dollar_var_at_position(line_text, 6)
+    assert result is not None
+    token, col, end_col = result
+    assert token == "$_self.model.object_value.name"
+
+
+def test_get_dollar_var_at_position_no_dollar():
+    """Returns None when cursor is not within a $variable token."""
+    result = srv._get_dollar_var_at_position("model create model_name=.m", 10)
+    assert result is None
+
+
+def test_find_variable_references_in_text():
+    """_find_variable_references_in_text finds all occurrences of the var."""
+    text = (
+        "var set var=$_self.model obj=.demo_model\n"
+        "\n"
+        "var set var=$_self.py_str str=(eval($_self.py_str)), (eval($_self.model.name))\n"
+    )
+    results = srv._find_variable_references_in_text(text, "$_self.model")
+    lines = [r[0] for r in results]
+    # Should appear on line 0 (definition) and line 2 (inside eval)
+    assert 0 in lines
+    assert 2 in lines
+
+
+def test_find_variable_references_no_false_positive_longer_name():
+    """$_self.model must not match $_self.model_name."""
+    text = "var set var=$_self.model_name str=x\nvar set var=$_self.model obj=.m\n"
+    results = srv._find_variable_references_in_text(text, "$_self.model")
+    cols_per_line = {r[0]: r[1] for r in results}
+    # Line 0 should NOT be a match (it's $_self.model_name)
+    assert 0 not in cols_per_line
+    # Line 1 IS a match
+    assert 1 in cols_per_line
+
+
+# ---------------------------------------------------------------------------
+# $variable goto_definition (integration tests)
+# ---------------------------------------------------------------------------
+
+def test_goto_definition_dollar_var_reference_jumps_to_def(monkeypatch):
+    """Ctrl+Click on $variable reference navigates to its var set definition."""
+    uri = "file:///test.cmd"
+    text = (
+        "var set var=$_self.model obj=.demo_model\n"
+        "\n"
+        "var set var=$_self.py_str str=(eval($_self.model.name))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    # Cursor on $_self.model in line 2 (inside the eval expression)
+    line2_text = text.splitlines()[2]
+    col = line2_text.index("$_self.model")  # first occurrence is inside str=(eval(...)
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=2, character=col + 3),  # middle of the token
+    )
+    result = srv.goto_definition(params)
+    assert result is not None and len(result) == 1, (
+        f"Expected exactly 1 LocationLink, got: {result}"
+    )
+    link = result[0]
+    # target should be line 0 (var set var=$_self.model)
+    assert link.target_range.start.line == 0, (
+        f"Expected target line 0 (definition), got line {link.target_range.start.line}"
+    )
+
+
+def test_goto_definition_dollar_var_definition_site_returns_references(monkeypatch):
+    """Ctrl+Click on var set var=$var definition site returns references."""
+    uri = "file:///test.cmd"
+    text = (
+        "var set var=$_self.model obj=.demo_model\n"
+        "\n"
+        "var set var=$_self.py_str str=(eval($_self.model.name))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    # Cursor on $_self.model in its var set definition (line 0)
+    col = text.splitlines()[0].index("$_self.model")
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col + 2),
+    )
+    result = srv.goto_definition(params)
+    # Should return the reference on line 2
+    assert result is not None and len(result) >= 1, (
+        f"Expected references from definition site, got: {result}"
+    )
+    target_lines = {link.target_range.start.line for link in result}
+    assert 2 in target_lines, f"Expected reference on line 2, got lines {target_lines}"
+
+
+def test_goto_definition_dollar_var_undefined_returns_none(monkeypatch):
+    """Ctrl+Click on undeclared $variable returns None."""
+    uri = "file:///test.cmd"
+    text = "var set var=$_self.py_str str=(eval($_self.undeclared))\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    col = text.index("$_self.undeclared")
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col + 3),
+    )
+    result = srv.goto_definition(params)
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
+# $variable find_references (integration tests)
+# ---------------------------------------------------------------------------
+
+def test_find_references_dollar_var_from_reference(monkeypatch):
+    """Shift+F12 on a $variable reference returns all occurrences."""
+    uri = "file:///test.cmd"
+    text = (
+        "var set var=$_self.model obj=.demo_model\n"
+        "\n"
+        "var set var=$_self.py_str str=(eval($_self.model.name))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    line2_text = text.splitlines()[2]
+    col = line2_text.index("$_self.model")
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=2, character=col + 2),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result = srv.find_references(params)
+    lines = [loc.range.start.line for loc in result]
+    assert 0 in lines, "Expected definition line 0 to be included with include_declaration=True"
+    assert 2 in lines, "Expected line 2 as a reference"
+
+
+def test_find_references_dollar_var_from_definition_site(monkeypatch):
+    """Shift+F12 on variable_name def site returns all references."""
+    uri = "file:///test.cmd"
+    text = (
+        "var set var=$_self.model obj=.demo_model\n"
+        "\n"
+        "var set var=$_self.py_str str=(eval($_self.model.name))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    col = text.splitlines()[0].index("$_self.model")
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col + 2),
+        context=types.ReferenceContext(include_declaration=False),
+    )
+    result = srv.find_references(params)
+    lines = [loc.range.start.line for loc in result]
+    assert 2 in lines, f"Expected reference on line 2, got {lines}"
+
+
+# ---------------------------------------------------------------------------
+# Boundary / edge-case tests (guard off-by-one, null arg.value, etc.)
+# ---------------------------------------------------------------------------
+
+def test_get_dollar_var_at_position_cursor_just_past_end():
+    """Cursor one character past the token end must NOT match."""
+    line_text = "var set var=$_self.model obj=.m"
+    # '$_self.model' starts at 12, len=12, so exclusive end = 24
+    result = srv._get_dollar_var_at_position(line_text, 24)
+    assert result is None, f"Should be None (cursor at exclusive end), got {result}"
+
+
+def test_get_dollar_var_at_position_cursor_at_last_char():
+    """Cursor on the last character of the token IS within the token."""
+    line_text = "var set var=$_self.model obj=.m"
+    # '$_self.model' occupies [12, 24), last char index = 23
+    result = srv._get_dollar_var_at_position(line_text, 23)
+    assert result is not None
+    token, _, _ = result
+    assert token == "$_self.model"
+
+
+def test_find_variable_def_at_position_cursor_just_past_end():
+    """Cursor one position past the variable_name arg end must return None."""
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    text = "var set var=$_self.model obj=.demo_model\n"
+    schema = Schema.load()
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    col = text.index("$_self.model")
+    val_len = len("$_self.model")
+    result = srv._find_variable_def_at_position(stmts, schema, 0, col + val_len)
+    assert result is None, f"Cursor past end should return None, got {result}"
+
+
+def test_find_variable_def_at_position_cursor_at_last_char():
+    """Cursor on the last character of the variable_name arg IS valid."""
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    text = "var set var=$_self.model obj=.demo_model\n"
+    schema = Schema.load()
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    col = text.index("$_self.model")
+    val_len = len("$_self.model")
+    result = srv._find_variable_def_at_position(stmts, schema, 0, col + val_len - 1)
+    assert result is not None
+    var_name, _, _, _ = result
+    assert var_name == "$_self.model"
+
+
+def test_find_variable_definition_null_arg_value():
+    """_find_variable_definition_in_statements handles None arg.value gracefully."""
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    text = "var set var=$_self.model obj=.demo_model\n"
+    schema = Schema.load()
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    # Inject a statement with a None-value argument to simulate malformed CMD
+    for stmt in stmts:
+        for arg in stmt.arguments:
+            original = arg.value
+            arg.value = None  # force the null path
+            try:
+                # Must not raise AttributeError; injected arg has None value so no match
+                result = srv._find_variable_definition_in_statements(stmts, schema, "$_self.model")
+                assert result is None, f"Null arg.value should cause a miss, got {result}"
+            finally:
+                arg.value = original  # restore
+            break
+        break
+
+
+def test_find_variable_definition_prefix_reduction_three_parts():
+    """_find_variable_definition_in_statements reduces a 3-part chain correctly."""
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    text = "var set var=$_self.model obj=.demo_model\n"
+    schema = Schema.load()
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    # Token '$_self.model.object_value.name' — only '$_self.model' is defined
+    result = srv._find_variable_definition_in_statements(stmts, schema, "$_self.model.object_value.name")
+    assert result is not None, "Should find definition via prefix reduction"
+    matched_name, def_line, _, _ = result
+    assert matched_name == "$_self.model"
+    assert def_line == 0
+
+
+# ---------------------------------------------------------------------------
+# include_declaration=True tests (no duplicate location)
+# ---------------------------------------------------------------------------
+
+def test_find_references_dollar_var_include_declaration_no_duplicates(monkeypatch):
+    """include_declaration=True must not produce duplicate locations."""
+    uri = "file:///test.cmd"
+    text = (
+        "var set var=$_self.model obj=.demo_model\n"
+        "\n"
+        "var set var=$_self.py_str str=(eval($_self.model.name))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    col = text.splitlines()[0].index("$_self.model")
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col + 2),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result = srv.find_references(params)
+    # All (line, char) pairs must be unique — no duplicates
+    positions = [(loc.range.start.line, loc.range.start.character) for loc in result]
+    assert len(positions) == len(set(positions)), (
+        f"Duplicate locations found: {positions}"
+    )
+    lines = [loc.range.start.line for loc in result]
+    assert 0 in lines  # declaration is included (it's an occurrence of $var)
+    assert 2 in lines  # reference in eval()
+
+
+def test_find_references_dollar_var_from_reference_include_declaration_no_duplicates(monkeypatch):
+    """include_declaration=True from a reference site must not duplicate any location."""
+    uri = "file:///test.cmd"
+    text = (
+        "var set var=$_self.model obj=.demo_model\n"
+        "\n"
+        "var set var=$_self.py_str str=(eval($_self.model.name))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    line2_text = text.splitlines()[2]
+    col = line2_text.index("$_self.model")
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=2, character=col + 2),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result = srv.find_references(params)
+    positions = [(loc.range.start.line, loc.range.start.character) for loc in result]
+    assert len(positions) == len(set(positions)), (
+        f"Duplicate locations found: {positions}"
+    )
+
+
+def test_find_references_dollar_var_exclude_declaration(monkeypatch):
+    """include_declaration=False excludes the definition; True includes it."""
+    uri = "file:///test.cmd"
+    text = (
+        "var set var=$_self.model obj=.demo_model\n"
+        "\n"
+        "var set var=$_self.py_str str=(eval($_self.model.name))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    col = text.splitlines()[0].index("$_self.model")
+
+    # include_declaration=False: definition (line 0) must not appear
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col + 2),
+        context=types.ReferenceContext(include_declaration=False),
+    )
+    result = srv.find_references(params)
+    lines = [loc.range.start.line for loc in result]
+    def_col = col
+    def_positions = [
+        (loc.range.start.line, loc.range.start.character)
+        for loc in result
+        if loc.range.start.line == 0 and loc.range.start.character == def_col
+    ]
+    assert def_positions == [], (
+        f"include_declaration=False: definition should be excluded, got {def_positions}"
+    )
+    assert 2 in lines, f"include_declaration=False: ref on line 2 missing from {lines}"
+
+    # include_declaration=True: definition (line 0) MUST appear, no duplicates
+    srv._doc_cache.pop(uri, None)
+    params_incl = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=col + 2),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result_incl = srv.find_references(params_incl)
+    lines_incl = [loc.range.start.line for loc in result_incl]
+    positions_incl = [
+        (loc.range.start.line, loc.range.start.character) for loc in result_incl
+    ]
+    assert len(positions_incl) == len(set(positions_incl)), (
+        f"include_declaration=True: duplicates found: {positions_incl}"
+    )
+    assert 0 in lines_incl, f"include_declaration=True: definition line 0 missing"
+    assert 2 in lines_incl, f"include_declaration=True: ref on line 2 missing"
+
