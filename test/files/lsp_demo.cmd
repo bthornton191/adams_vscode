@@ -376,6 +376,11 @@ model create model_name = .demo_model_b
 model create model_name = .demo_model_eof &
 
 
+var set var=$_self.model obj=.demo_model
+
+
 var set var=$_self.py_str str=(eval($_self.py_str)), (eval("mod = Adams.Models['" // $_self.model.object_value.name // "']"))
 
 command_server show
+
+custom command

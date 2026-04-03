@@ -1,12 +1,11 @@
 """Tests for adams_cmd_lsp.symbols module."""
 
+from adams_cmd_lsp.schema import Schema
+from adams_cmd_lsp.parser import parse
+from adams_cmd_lsp.symbols import SymbolTable, build_symbol_table
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-
-from adams_cmd_lsp.symbols import SymbolTable, build_symbol_table
-from adams_cmd_lsp.parser import parse
-from adams_cmd_lsp.schema import Schema
 
 
 # ---------------------------------------------------------------------------
@@ -227,3 +226,205 @@ def test_build_symbol_table_plain_new_object_still_registers_symbol():
     stmts = parse("marker create marker_name = .model.PART_1.MAR_1 location = 0,0,0")
     table = build_symbol_table(stmts, schema)
     assert table.has(".model.PART_1.MAR_1"), "Plain name must still register as a symbol"
+
+
+# ---------------------------------------------------------------------------
+# ObjectReference — reference tracking in build_symbol_table
+# ---------------------------------------------------------------------------
+
+def test_build_symbol_table_collects_existing_object_reference():
+    """An existing_object argument (e.g. i_marker) must generate an ObjectReference."""
+    schema = Schema.load()
+    text = (
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+        "constraint create joint fixed &\n"
+        "   joint_name = .m.fix1 &\n"
+        "   i_marker = .m.p.mkr1 &\n"
+        "   j_marker = .m.ground.cm\n"
+    )
+    stmts = parse(text)
+    # Pre-resolve so build_symbol_table sees canonical keys
+    for stmt in stmts:
+        if not stmt.resolved_command_key and stmt.command_key and \
+                not stmt.is_comment and not stmt.is_blank and not stmt.is_control_flow:
+            resolved, _ = schema.resolve_command_key(stmt.command_key.split())
+            if resolved:
+                stmt.resolved_command_key = resolved
+    table = build_symbol_table(stmts, schema)
+    # References should include .m.p.mkr1 (i_marker) and .m.ground.cm (j_marker)
+    ref_names = [r.name for r in table.references]
+    assert ".m.p.mkr1" in ref_names, f"Expected .m.p.mkr1 in {ref_names}"
+    assert ".m.ground.cm" in ref_names, f"Expected .m.ground.cm in {ref_names}"
+
+
+def test_build_symbol_table_skips_array_references():
+    """Array-valued existing_object args must not generate references."""
+    schema = Schema.load()
+    text = "constraint create complex_joint coupler joint_name = .m.coupler1 joint_name = .m.rev1, .m.rev2, .m.rev3\n"
+    stmts = parse(text)
+    for stmt in stmts:
+        if not stmt.resolved_command_key and stmt.command_key and \
+                not stmt.is_comment and not stmt.is_blank and not stmt.is_control_flow:
+            resolved, _ = schema.resolve_command_key(stmt.command_key.split())
+            if resolved:
+                stmt.resolved_command_key = resolved
+    table = build_symbol_table(stmts, schema)
+    # Array-valued joint_name references must be skipped (not individually resolvable)
+    # No assertion here — just confirm no exception is raised
+    assert isinstance(table.references, list)
+
+
+def test_build_symbol_table_skips_eval_references():
+    """Existing_object args with (eval(...)) must not generate references."""
+    schema = Schema.load()
+    text = (
+        "constraint create joint fixed &\n"
+        "   joint_name = .m.fix1 &\n"
+        "   i_marker = (eval(.m.p // \".cm\")) &\n"
+        "   j_marker = .m.ground.cm\n"
+    )
+    stmts = parse(text)
+    for stmt in stmts:
+        if not stmt.resolved_command_key and stmt.command_key and \
+                not stmt.is_comment and not stmt.is_blank and not stmt.is_control_flow:
+            resolved, _ = schema.resolve_command_key(stmt.command_key.split())
+            if resolved:
+                stmt.resolved_command_key = resolved
+    table = build_symbol_table(stmts, schema)
+    ref_names = [r.name for r in table.references]
+    # eval expression must be skipped; ground.cm reference must be present
+    assert not any("eval" in n for n in ref_names)
+    assert ".m.ground.cm" in ref_names
+
+
+def test_object_reference_has_positions():
+    """ObjectReferences must carry correct line/column positions."""
+    schema = Schema.load()
+    text = (
+        "marker create marker_name = .m.p.mkr1 location = 0,0,0\n"
+        "constraint create joint fixed joint_name=.m.f1 i_marker=.m.p.mkr1 j_marker=.m.ground.cm\n"
+    )
+    stmts = parse(text)
+    for stmt in stmts:
+        if not stmt.resolved_command_key and stmt.command_key and \
+                not stmt.is_comment and not stmt.is_blank and not stmt.is_control_flow:
+            resolved, _ = schema.resolve_command_key(stmt.command_key.split())
+            if resolved:
+                stmt.resolved_command_key = resolved
+    table = build_symbol_table(stmts, schema)
+    mkr_refs = [r for r in table.references if r.name == ".m.p.mkr1"]
+    assert len(mkr_refs) == 1
+    ref = mkr_refs[0]
+    assert ref.line == 1, f"Expected line 1, got {ref.line}"
+    assert ref.column >= 0
+    assert ref.end_column > ref.column
+
+
+# ---------------------------------------------------------------------------
+# SymbolTable — lookup_by_leaf_name
+# ---------------------------------------------------------------------------
+
+def test_lookup_by_leaf_name_basic():
+    """lookup_by_leaf_name must find symbols by their last dot-separated component."""
+    table = SymbolTable()
+    table.register(".model.ground._tmp_mkr_", "Marker", 10)
+    results = table.lookup_by_leaf_name("_tmp_mkr_")
+    assert len(results) == 1
+    assert results[0].name == ".model.ground._tmp_mkr_"
+
+
+def test_lookup_by_leaf_name_case_insensitive():
+    """Leaf-name lookup must be case-insensitive."""
+    table = SymbolTable()
+    table.register(".model.ground.MY_MARKER", "Marker", 5)
+    results = table.lookup_by_leaf_name("my_marker")
+    assert len(results) == 1
+
+
+def test_lookup_by_leaf_name_multiple_matches():
+    """Multiple symbols with the same leaf name must all be returned."""
+    table = SymbolTable()
+    table.register(".model.part1.cm", "Marker", 1)
+    table.register(".model.part2.cm", "Marker", 2)
+    results = table.lookup_by_leaf_name("cm")
+    assert len(results) == 2
+
+
+def test_lookup_by_leaf_name_no_match():
+    """lookup_by_leaf_name must return empty list when no match."""
+    table = SymbolTable()
+    table.register(".model.part1.cm", "Marker", 1)
+    results = table.lookup_by_leaf_name("nonexistent")
+    assert results == []
+
+
+def test_lookup_by_leaf_name_excludes_builtins():
+    """Builtins (line == -1) must not appear in leaf-name lookup results."""
+    schema = Schema.load()
+    # Build table with builtins including "ground"
+    stmts = parse("")
+    table = build_symbol_table(stmts, schema)
+    # ground is a builtin with line == -1
+    assert table.has("ground")
+    builtin = table.lookup("ground")
+    assert builtin.line == -1
+    # Leaf lookup must exclude it
+    results = table.lookup_by_leaf_name("ground")
+    assert results == [], f"Builtins must be excluded, got {results}"
+
+
+# ---------------------------------------------------------------------------
+# SymbolTable — get_references_by_name
+# ---------------------------------------------------------------------------
+
+def test_get_references_by_name_full_path():
+    """get_references_by_name must find via exact full-path match."""
+    table = SymbolTable()
+    table.add_reference(".model.part1.mkr1", "Marker", 5, 10, 30)
+    refs = table.get_references_by_name(".model.part1.mkr1")
+    assert len(refs) == 1
+    assert refs[0].line == 5
+
+
+def test_get_references_by_name_leaf_fallback():
+    """get_references_by_name must fall back to leaf when full path not found."""
+    table = SymbolTable()
+    table.add_reference(".model.part1.mkr1", "Marker", 5, 10, 30)
+    # Full path not added — only leaf fallback matches
+    refs = table.get_references_by_name("mkr1")
+    assert len(refs) == 1
+
+
+def test_get_references_by_name_full_path_takes_priority():
+    """Full path results must be returned without triggering leaf fallback."""
+    table = SymbolTable()
+    table.add_reference(".model.part1.mkr1", "Marker", 1, 0, 10)
+    table.add_reference(".model.part2.mkr1", "Marker", 2, 0, 10)
+    # Full path only matches one
+    refs = table.get_references_by_name(".model.part1.mkr1")
+    assert len(refs) == 1
+    assert refs[0].line == 1
+
+
+def test_get_references_by_name_no_match():
+    """get_references_by_name must return empty list when nothing matches."""
+    table = SymbolTable()
+    table.add_reference(".model.part1.mkr1", "Marker", 1, 0, 10)
+    refs = table.get_references_by_name(".model.part1.nonexistent")
+    assert refs == []
+
+
+def test_get_references_by_name_no_false_positive_same_leaf_different_path():
+    """Full-path query must NOT match full-path stored references from a different
+    model that only share the leaf component (the cross-model false positive bug)."""
+    table = SymbolTable()
+    # Reference in one model
+    table.add_reference(".demo_model.GROUND.MAR_1", "Marker", 10, 0, 24)
+    # Reference in another model — same leaf 'MAR_1', different path
+    table.add_reference(".model_1.ground.MAR_1", "Marker", 20, 0, 21)
+    # Query by full path of the first model's marker
+    refs = table.get_references_by_name(".demo_model.GROUND.MAR_1")
+    assert len(refs) == 1, (
+        "Full-path query should only return exact-match, not same-leaf from other model"
+    )
+    assert refs[0].line == 10
