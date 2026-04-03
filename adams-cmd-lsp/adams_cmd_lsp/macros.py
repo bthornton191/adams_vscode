@@ -49,6 +49,7 @@ class MacroDefinition:
     parameters: Dict[str, MacroParameter]           # keyed by lower-case param name
     source_file: str = ""                           # absolute path to defining file
     line: int = 0                                   # 0-based line of !USER_ENTERED_COMMAND
+    description: Optional[str] = None              # help string from header or help_string= arg
 
 
 def _compute_min_prefixes(names):
@@ -147,6 +148,112 @@ _END_OF_PARAMETERS = re.compile(r"^\s*!?\s*END_OF_PARAMETERS\b", re.IGNORECASE)
 _USER_ENTERED_COMMAND_RE = re.compile(
     r"^\s*!\s*USER_ENTERED_COMMAND\s+(.+?)\s*$", re.IGNORECASE
 )
+
+# Matches !HELP_STRING or !DESCRIPTION lines in macro headers.
+# Colon after keyword is optional; at least one space must separate value text.
+_HELP_STRING_RE = re.compile(
+    r"^\s*!\s*(?:HELP_STRING|DESCRIPTION):?\s+(.+)$",
+    re.IGNORECASE,
+)
+
+# Header keywords that terminate multi-line help string collection.
+_HEADER_KEYWORD_TERM_RE = re.compile(
+    r"^\s*!\s*(?:USER_ENTERED_COMMAND|MACRO[\s_]?NAME|HELP_STRING|DESCRIPTION|"
+    r"AUTHOR|DATE|CREATE_PANEL|WRAP_IN_UNDO|HELP_FILE)\b",
+    re.IGNORECASE,
+)
+
+# Horizontal separator comment lines: ! ----- or ! ===== etc.
+_SEPARATOR_RE = re.compile(r"^\s*!\s*[-=*]{3,}\s*$")
+
+# Comma-separated quoted string pieces in an Adams argument value.
+_QUOTED_PIECES_RE = re.compile(r'"([^"]*)"' + r"|" + r"'([^']*)'")
+
+
+def _parse_str_value(raw: str) -> Optional[str]:
+    """Parse a raw Adams CMD string argument value into plain text.
+
+    Handles single quoted strings (``"text"``) and comma-separated
+    multi-part strings (``"Line 1", "Line 2"``), joining parts with
+    newlines.  Falls back to bare-stripping for unquoted values.
+
+    Returns ``None`` if the resulting text is blank.
+    """
+    raw = raw.strip()
+    if not raw:
+        return None
+    parts = []
+    for m in _QUOTED_PIECES_RE.finditer(raw):
+        # group(1) = double-quoted content, group(2) = single-quoted content
+        piece = m.group(1) if m.group(1) is not None else m.group(2)
+        parts.append(piece)
+    if parts:
+        result = "\n".join(parts).strip()
+        return result if result else None
+    # Fallback: bare unquoted value
+    result = raw.strip()
+    return result if result else None
+
+
+def _extract_description(lines: list, start_line: int) -> Optional[str]:
+    """Scan header lines starting at *start_line* for a help/description string.
+
+    Looks for a ``!HELP_STRING`` or ``!DESCRIPTION`` line (with optional
+    colon) and collects subsequent continuation comment lines until a
+    terminator is reached.
+
+    Termination conditions (when collecting continuation lines):
+    - Blank line
+    - Non-comment line (doesn't start with ``!``)
+    - ``!END_OF_PARAMETERS``
+    - ``!$param`` (parameter definition)
+    - A recognised header keyword line (``!AUTHOR``, ``!CREATE_PANEL``, etc.)
+    - A separator line (``! -----``, ``! =====``, etc.)
+
+    Returns the stripped description text, or ``None`` if absent/empty.
+    """
+    collected: List[str] = []
+    in_help = False
+
+    for i in range(start_line, len(lines)):
+        stripped = lines[i].strip()
+
+        if not in_help:
+            # Stop scanning if we leave the header block entirely
+            if _END_OF_PARAMETERS.match(stripped):
+                break
+            if stripped and not stripped.startswith("!"):
+                break
+            # Try to match the initial HELP_STRING / DESCRIPTION line
+            m = _HELP_STRING_RE.match(stripped)
+            if m:
+                text = m.group(1).strip()
+                if text:
+                    collected.append(text)
+                in_help = True
+        else:
+            # Collecting continuation lines
+            if not stripped:
+                break  # blank line terminates
+            if not stripped.startswith("!"):
+                break  # non-comment terminates
+            if _END_OF_PARAMETERS.match(stripped):
+                break
+            if re.match(r"^\s*!\s*\$", stripped):
+                break  # parameter definition terminates
+            if _SEPARATOR_RE.match(stripped):
+                break
+            if _HEADER_KEYWORD_TERM_RE.match(stripped):
+                break
+            # Continuation comment line — strip leading ! and whitespace
+            cont_text = stripped[1:].strip()
+            if cont_text:
+                collected.append(cont_text)
+
+    if not collected:
+        return None
+    result = "\n".join(collected).strip()
+    return result if result else None
 
 
 def _parse_qualifiers(qualifier_str: str) -> MacroParameter:
@@ -268,11 +375,15 @@ def parse_macro_file(text: str, source_file: str = "") -> Optional[MacroDefiniti
     - If !END_OF_PARAMETERS is absent, scans the entire file.
     - First occurrence of each parameter wins (qualifiers on later occurrences
       are ignored, per Adams docs).
+    - Extracts a description from ``!HELP_STRING`` or ``!DESCRIPTION`` header
+      lines (with optional continuation lines) between USER_ENTERED_COMMAND
+      and END_OF_PARAMETERS.
     """
     command = None
     command_line = 0
+    lines = text.splitlines()
 
-    for i, line in enumerate(text.splitlines()):
+    for i, line in enumerate(lines):
         m = _USER_ENTERED_COMMAND_RE.match(line)
         if m:
             command = m.group(1).strip().lower()
@@ -282,6 +393,7 @@ def parse_macro_file(text: str, source_file: str = "") -> Optional[MacroDefiniti
     if command is None:
         return None
 
+    description = _extract_description(lines, command_line + 1)
     parameters = _extract_params_from_text(text)
 
     return MacroDefinition(
@@ -289,6 +401,7 @@ def parse_macro_file(text: str, source_file: str = "") -> Optional[MacroDefiniti
         parameters=parameters,
         source_file=source_file,
         line=command_line,
+        description=description,
     )
 
 
@@ -541,6 +654,8 @@ def extract_macros_from_statements(
 
         macro_name = arg_map.get("macro_name", "").strip().strip('"').strip("'")
         user_cmd = arg_map.get("user_entered_command", "").strip().strip('"').strip("'")
+        raw_help = arg_map.get("help_string", "").strip()
+        description = _parse_str_value(raw_help) if raw_help else None
 
         command = user_cmd if user_cmd else macro_name
         if not command:
@@ -551,6 +666,7 @@ def extract_macros_from_statements(
             parameters={},          # inline macro create doesn't expose parameters
             source_file=source_file,
             line=stmt.line_start,
+            description=description,
         ))
 
     return results

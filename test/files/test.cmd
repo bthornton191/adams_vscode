@@ -1,7 +1,7 @@
 !USER_ENTERED_COMMAND command
 ! -----------------------------------------------------------------
 ! MACRO NAME:  test.cmd
-! DESCRIPTION: description   
+! HELP_STRING: description   
 ! AUTHOR:      Ben Thornton (ben.thornton@hexagon.com)
 !END_OF_PARAMETERS
 

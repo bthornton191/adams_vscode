@@ -1,7 +1,17 @@
 !USER_ENTERED_COMMAND  custom command
 ! -----------------------------------------------------------------
 ! MACRO NAME:  test.mac
-! DESCRIPTION:  description   
+! HELP_STRING:  This is a long and helpful description of what this macro does. 
+!               It can be as long as you like and should provide enough information 
+!               for the user to understand how to use the macro and what it does.  
+!                
+!               ### And it supports markdown formatting!
+!               - Bullet points
+!               - **Bold text**
+!               - *Italic text*
+!               Numbered lists
+!               1. First item
+!               2. Second item
 ! AUTHOR:       Ben Thornton (ben.thornton@hexagon.com)
 !$param1:t=int:d=100
 !$part_name:t=str:d="part"

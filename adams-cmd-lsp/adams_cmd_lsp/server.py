@@ -894,6 +894,55 @@ def goto_definition(params: types.DefinitionParams):
     return None
 
 
+@server.feature(types.TEXT_DOCUMENT_HOVER)
+def hover(params: types.HoverParams):
+    """Show hover documentation for macro command invocations.
+
+    Returns Markdown with the macro name and (when available) its help
+    string for ``"registry"`` and ``"inline"`` origins.  Returns ``None``
+    for built-in commands (handled by the JS hover provider) and for the
+    ``!USER_ENTERED_COMMAND`` definition site.
+    """
+    uri = params.text_document.uri
+    line = params.position.line
+    try:
+        doc = server.workspace.get_text_document(uri)
+        text = doc.source
+    except Exception:  # noqa: BLE001
+        return None
+
+    result = _get_command_key_at_position(text, line, uri)
+    if result is None:
+        return None
+
+    origin, command_key, macro_def, origin_range = result
+    if origin not in ("registry", "inline"):
+        return None
+
+    src_line, src_col_start, src_col_end = origin_range
+    hover_range = types.Range(
+        start=types.Position(line=src_line, character=src_col_start),
+        end=types.Position(line=src_line, character=src_col_end),
+    )
+
+    description = macro_def.description if macro_def is not None else None
+    if description:
+        # Replace newlines with double-newlines so each line renders as a
+        # separate paragraph in Markdown (single \n is treated as a space).
+        formatted_desc = description.replace("\n", "\n\n")
+        md = f"# {command_key}\n\n{formatted_desc}"
+    else:
+        md = f"# {command_key}"
+
+    return types.Hover(
+        contents=types.MarkupContent(
+            kind=types.MarkupKind.Markdown,
+            value=md,
+        ),
+        range=hover_range,
+    )
+
+
 @server.feature(types.TEXT_DOCUMENT_REFERENCES)
 def find_references(params: types.ReferenceParams):
     """Return all invocations of the macro or Adams object at the cursor.
