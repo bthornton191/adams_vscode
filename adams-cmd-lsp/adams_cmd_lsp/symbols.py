@@ -1,7 +1,8 @@
 """Single-file symbol table for semantic analysis of Adams CMD files."""
 
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List
 
 # Matches the first string literal inside an Adams (eval(...)) expression.
 # Example: (eval(".model.mass_" // RTOI(i) // ".cm"))
@@ -66,12 +67,24 @@ class Symbol:
     line: int         # 0-based line where created
 
 
+@dataclass
+class ObjectReference:
+    """One reference to an Adams object in a file (existing_object argument value)."""
+    name: str         # object path as written (may or may not have leading dot)
+    object_type: str  # expected type per schema arg_def (e.g. "Marker")
+    line: int         # 0-based line of the value
+    column: int       # 0-based column of the value start
+    end_column: int   # 0-based column one past the last char of the value
+
+
 class SymbolTable:
     def __init__(self, macro_registry=None, show_macro_hint=True):
         self.symbols = {}          # lower-cased normalised name → Symbol
         self.dynamic_prefixes = []  # lower-cased normalised prefixes from eval expressions
         self.macro_registry = macro_registry  # MacroRegistry | None
         self.show_macro_hint = show_macro_hint  # bool — include hint in E001 message
+        self.references: List[ObjectReference] = []   # all existing_object arg values
+        self._leaf_index = {}      # lowercase leaf name → List[Symbol]
 
     @staticmethod
     def _normalize(name: str) -> str:
@@ -87,7 +100,15 @@ class SymbolTable:
     def register(self, name, object_type, line):
         """Register a newly created object."""
         normalized = self._normalize(name)
-        self.symbols[normalized.lower()] = Symbol(normalized, object_type, line)
+        sym = Symbol(normalized, object_type, line)
+        self.symbols[normalized.lower()] = sym
+        # Also index by leaf name (last dot-separated component) for leaf-name lookups
+        leaf = normalized.lower().rsplit('.', 1)[-1]
+        # Replace existing entry with the same full name before appending
+        self._leaf_index[leaf] = [
+            s for s in self._leaf_index.get(leaf, []) if s.name.lower() != normalized.lower()
+        ]
+        self._leaf_index[leaf].append(sym)
 
     def register_dynamic_prefix(self, prefix):
         """Register a name prefix derived from a runtime eval expression.
@@ -118,6 +139,60 @@ class SymbolTable:
         """
         normalized = self._normalize(name).lower()
         return any(normalized.startswith(p) for p in self.dynamic_prefixes)
+
+    def lookup_by_leaf_name(self, leaf: str) -> List[Symbol]:
+        """Return all Symbols whose leaf name matches (case-insensitive).
+
+        The "leaf" is the last dot-separated component of the object path,
+        e.g. the leaf of '.model.ground._tmp_ss_fj_mkr_' is '_tmp_ss_fj_mkr_'.
+        Useful as a fallback when only the short name is available.
+        Builtin symbols (line == -1) are excluded from the results.
+        """
+        return [
+            s for s in self._leaf_index.get(leaf.lower(), [])
+            if s.line >= 0
+        ]
+
+    def add_reference(self, name, object_type, line, column, end_column):
+        """Record a reference to an Adams object (existing_object argument value)."""
+        self.references.append(ObjectReference(
+            name=name,
+            object_type=object_type,
+            line=line,
+            column=column,
+            end_column=end_column,
+        ))
+
+    def get_references_by_name(self, name: str) -> List[ObjectReference]:
+        """Return all ObjectReferences matching name.
+
+        Uses full-path match first; falls back to leaf-name match when the
+        full path is not found (handles cases where a partial name like
+        '_tmp_ss_fj_mkr_' was used in the reference instead of the full path).
+        """
+        normalized = self._normalize(name).lower()
+        matches = [
+            r for r in self.references
+            if self._normalize(r.name).lower() == normalized
+        ]
+        if matches:
+            return matches
+        # Leaf fallback: match references whose last path component equals the query leaf.
+        #
+        # If the QUERY is a full path (has dots), only match stored references that are
+        # themselves leaf-only names (e.g. someone wrote just 'MAR_1' without a full path).
+        # This prevents '.demo_model.GROUND.MAR_1' from matching '.model_1.ground.MAR_1'
+        # just because both share the leaf 'MAR_1'.
+        #
+        # If the QUERY is already a leaf-only name (no dots), match any stored reference
+        # with the same leaf regardless of how it was written.
+        leaf = normalized.rsplit('.', 1)[-1]
+        query_is_leaf_only = '.' not in normalized.lstrip('.')
+        return [
+            r for r in self.references
+            if self._normalize(r.name).lower().rsplit('.', 1)[-1] == leaf
+            and (query_is_leaf_only or '.' not in self._normalize(r.name).lower().lstrip('.'))
+        ]
 
 
 def _populate_builtins(table):
@@ -168,8 +243,11 @@ def build_symbol_table(statements, schema, macro_registry=None, show_macro_hint=
             # Resolve abbreviated argument names
             canonical = schema.resolve_argument_name(cmd_key, arg.name)
             arg_def = cmd["args"].get(canonical or arg.name)
-            if arg_def and arg_def.get("type") == "new_object":
-                val = arg.value
+            if not arg_def:
+                continue
+            arg_type = arg_def.get("type")
+            val = arg.value
+            if arg_type == "new_object":
                 if val.startswith("(") or "$" in val:
                     # Runtime expression — extract the leading string literal as
                     # a dynamic prefix so I202 can suppress references to names
@@ -182,5 +260,21 @@ def build_symbol_table(statements, schema, macro_registry=None, show_macro_hint=
                         val,
                         arg_def.get("object_type", "unknown"),
                         arg.name_line,
+                    )
+            elif arg_type == "existing_object":
+                # Skip array-valued args — individual elements cannot be isolated
+                if arg_def.get("array"):
+                    continue
+                # Skip runtime expressions
+                if "$" in val or val.lower().startswith("(") or "eval(" in val.lower():
+                    continue
+                lookup_val = val.strip('"\'')
+                if lookup_val:
+                    table.add_reference(
+                        lookup_val,
+                        arg_def.get("object_type", ""),
+                        arg.value_line,
+                        arg.value_column,
+                        arg.value_column + len(val),
                     )
     return table
