@@ -1081,6 +1081,141 @@ def test_goto_definition_indented_command(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# hover
+# ---------------------------------------------------------------------------
+
+def test_hover_registry_macro_with_description(monkeypatch):
+    """Hover on a registry macro invocation returns Markdown with description."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={},
+        source_file="/wear.mac",
+        line=0,
+        description="Compute wear on a contact pair",
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm wear part_name=p1\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.hover(params)
+    assert result is not None
+    assert result.contents.kind == types.MarkupKind.Markdown
+    assert "# cdm wear" in result.contents.value
+    assert "Compute wear on a contact pair" in result.contents.value
+    # Range should cover the "cdm wear" span
+    assert result.range.start.character == 0
+    assert result.range.end.character == len("cdm wear")
+
+
+def test_hover_registry_macro_no_description(monkeypatch):
+    """Hover on a registry macro with no description returns command name only."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm tool",
+        parameters={},
+        source_file="/tool.mac",
+        line=0,
+        description=None,
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm tool\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.hover(params)
+    assert result is not None
+    assert result.contents.value == "# cdm tool"
+
+
+def test_hover_builtin_command_returns_none(monkeypatch):
+    """Hover on a built-in command returns None (defers to JS hover provider)."""
+    uri = "file:///test.cmd"
+    text = "model create model_name=m\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.hover(params)
+    assert result is None
+
+
+def test_hover_non_command_line_returns_none(monkeypatch):
+    """Hover on a comment or blank line returns None."""
+    uri = "file:///test.cmd"
+    text = "! this is a comment\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.hover(params)
+    assert result is None
+
+
+def test_hover_definition_site_returns_none(monkeypatch):
+    """Hover on a !USER_ENTERED_COMMAND line returns None."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={},
+        source_file="/wear.mac",
+        line=0,
+        description="Some description",
+    ))
+    uri = "file:///wear.mac"
+    text = "!USER_ENTERED_COMMAND cdm wear\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.hover(params)
+    assert result is None
+
+
+def test_hover_inline_macro_with_description(monkeypatch):
+    """Hover on an inline macro invocation returns its description."""
+    from adams_cmd_lsp.macros import MacroRegistry
+    uri = "file:///setup.cmd"
+    text = (
+        'macro create macro_name=cdm_wear user_entered_command="cdm wear" '
+        'help_string="Inline help text"\n'
+        "cdm wear part_name=p1\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = MacroRegistry()  # empty — inline only
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=1, character=0),  # cursor on "cdm wear" invocation
+    )
+    result = srv.hover(params)
+    assert result is not None
+    assert "# cdm wear" in result.contents.value
+    assert "Inline help text" in result.contents.value
+
+
+# ---------------------------------------------------------------------------
 # find_references
 # ---------------------------------------------------------------------------
 

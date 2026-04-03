@@ -891,3 +891,171 @@ def test_resolve_case_insensitive_prefix():
     macro = _make_macro_def("cdm tool", ["model_name", "iterations"])
     assert resolve_macro_argument_name(macro, "MOD") == "model_name"
     assert resolve_macro_argument_name(macro, "ITER") == "iterations"
+
+
+# ---------------------------------------------------------------------------
+# parse_macro_file — description / help string extraction
+# ---------------------------------------------------------------------------
+
+def test_description_help_string_no_colon_no_space():
+    """!HELP_STRING text (no colon, no space after !) — example_macro style."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!HELP_STRING           Export a simulation request to a text file\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "Export a simulation request to a text file"
+
+
+def test_description_help_string_colon_space():
+    """! HELP_STRING: text (colon, space after !) — snippet template style."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! HELP_STRING: Resize icons for all parts\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "Resize icons for all parts"
+
+
+def test_description_legacy_description_keyword():
+    """! DESCRIPTION: text — legacy keyword is still supported."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! DESCRIPTION: Some legacy description\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "Some legacy description"
+
+
+def test_description_empty_help_string_returns_none():
+    """! HELP_STRING: with no value after it should return None."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! HELP_STRING:\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description is None
+
+
+def test_description_missing_help_string_returns_none():
+    """No HELP_STRING or DESCRIPTION line at all should return None."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! AUTHOR: Ben Thornton\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description is None
+
+
+def test_description_whitespace_stripped():
+    """Leading/trailing whitespace in the description value is stripped."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! HELP_STRING:  description with spaces   \n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "description with spaces"
+
+
+def test_description_multiline():
+    """Continuation comment lines are collected and joined with newlines."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! HELP_STRING: First line of description\n"
+        "!              Second line continues here\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "First line of description\nSecond line continues here"
+
+
+def test_description_multiline_terminated_by_keyword():
+    """A recognised header keyword stops continuation collection."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! HELP_STRING: First line\n"
+        "! AUTHOR: Ben Thornton\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "First line"
+
+
+def test_description_multiline_terminated_by_separator():
+    """A separator line (! -----) stops continuation collection."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! HELP_STRING: First line\n"
+        "! -----------------------------------------\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "First line"
+
+
+def test_description_multiline_terminated_by_parameter():
+    """A !$param line stops continuation collection."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! HELP_STRING: First line\n"
+        "!$param1:t=integer\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "First line"
+
+
+def test_description_header_before_end_of_parameters():
+    """Description is extracted even when other header lines precede it."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "! -----------------------------------------------------------------\n"
+        "! MACRO NAME:  test.mac\n"
+        "! HELP_STRING: Does something useful\n"
+        "! AUTHOR:      Ben Thornton\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.description == "Does something useful"
+
+
+# ---------------------------------------------------------------------------
+# extract_macros_from_statements — help_string argument
+# ---------------------------------------------------------------------------
+
+def test_extract_macro_create_with_help_string():
+    """macro create with help_string= extracts description."""
+    stmts = _parse_stmts(
+        'macro create macro_name=foo user_entered_command="cdm tool" '
+        'help_string="Does something useful"\n'
+    )
+    macros = extract_macros_from_statements(stmts, _SCHEMA)
+    assert len(macros) == 1
+    assert macros[0].description == "Does something useful"
+
+
+def test_extract_macro_create_multiline_help_string():
+    """Comma-separated quoted strings in help_string= are joined with newlines."""
+    stmts = _parse_stmts(
+        'macro create macro_name=foo user_entered_command="cdm tool" &\n'
+        '    help_string="Line one", "Line two"\n'
+    )
+    macros = extract_macros_from_statements(stmts, _SCHEMA)
+    assert len(macros) == 1
+    assert macros[0].description == "Line one\nLine two"
+
+
+def test_extract_macro_create_no_help_string():
+    """macro create without help_string= has description=None."""
+    stmts = _parse_stmts(
+        'macro create macro_name=foo user_entered_command="cdm tool"\n'
+    )
+    macros = extract_macros_from_statements(stmts, _SCHEMA)
+    assert len(macros) == 1
+    assert macros[0].description is None
