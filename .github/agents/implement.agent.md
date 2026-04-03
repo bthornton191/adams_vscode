@@ -1,6 +1,7 @@
 ---
 description: "Implement features, fix bugs, and write code for the Adams VS Code extension. Use when: writing new code, modifying existing code, implementing a feature, fixing a bug, adding tests, or any general coding task."
 agents: [review]
+model: Claude Sonnet 4.6 (copilot)
 ---
 You are an expert coding agent for the MSC Adams VS Code extension. You implement features, fix bugs, write tests, and perform any coding task requested.
 
