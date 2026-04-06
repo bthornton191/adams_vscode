@@ -78,11 +78,12 @@ class ObjectReference:
 
 
 class SymbolTable:
-    def __init__(self, macro_registry=None, show_macro_hint=True):
+    def __init__(self, macro_registry=None, show_macro_hint=True, ude_registry=None):
         self.symbols = {}          # lower-cased normalised name → Symbol
         self.dynamic_prefixes = []  # lower-cased normalised prefixes from eval expressions
         self.macro_registry = macro_registry  # MacroRegistry | None
         self.show_macro_hint = show_macro_hint  # bool — include hint in E001 message
+        self.ude_registry = ude_registry         # UdeRegistry | None
         self.references: List[ObjectReference] = []   # all existing_object arg values
         self._leaf_index = {}      # lowercase leaf name → List[Symbol]
 
@@ -217,7 +218,8 @@ def _populate_builtins(table):
         table.register(name, obj_type, -1)
 
 
-def build_symbol_table(statements, schema, macro_registry=None, show_macro_hint=True):
+def build_symbol_table(statements, schema, macro_registry=None, show_macro_hint=True,
+                       ude_registry=None):
     """Walk parsed statements top-to-bottom and collect created objects.
 
     Args:
@@ -225,11 +227,14 @@ def build_symbol_table(statements, schema, macro_registry=None, show_macro_hint=
         schema: Schema object
         macro_registry: optional MacroRegistry for workspace-wide macro lookup
         show_macro_hint: if True, E001 messages include a hint about scanWorkspaceMacros
+        ude_registry: optional UdeRegistry for user-defined element lookup
 
     Returns:
         SymbolTable populated with all objects created in the file
     """
-    table = SymbolTable(macro_registry=macro_registry, show_macro_hint=show_macro_hint)
+    table = SymbolTable(
+        macro_registry=macro_registry, show_macro_hint=show_macro_hint, ude_registry=ude_registry
+    )
     _populate_builtins(table)
 
     for stmt in statements:
@@ -277,4 +282,30 @@ def build_symbol_table(statements, schema, macro_registry=None, show_macro_hint=
                         arg.value_column,
                         arg.value_column + len(val),
                     )
+        # -- UDE instance child registration --
+        # When 'assembly create instance' or 'ude create instance' is encountered
+        # and a ude_registry is present, register {instance_name}.{param_name} as
+        # known symbols so that I202 can resolve references to UDE instance children.
+        if table.ude_registry and cmd_key in (
+            "assembly create instance", "ude create instance"
+        ):
+            inst_name = None
+            def_name = None
+            for arg in stmt.arguments:
+                canonical = schema.resolve_argument_name(cmd_key, arg.name)
+                aname = canonical or arg.name.lower()
+                val_stripped = arg.value.strip().strip('"\'')
+                if aname == "instance_name":
+                    if not val_stripped.startswith('(') and '$' not in val_stripped:
+                        inst_name = val_stripped
+                elif aname == "definition_name":
+                    if not val_stripped.startswith('(') and '$' not in val_stripped:
+                        def_name = val_stripped
+            if inst_name and def_name:
+                ude_def = table.ude_registry.lookup(def_name)
+                if ude_def:
+                    for param in ude_def.parameters.values():
+                        table.register(
+                            inst_name + '.' + param.name, "Vvar", stmt.line_start
+                        )
     return table

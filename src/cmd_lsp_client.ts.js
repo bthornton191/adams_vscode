@@ -99,6 +99,16 @@ function cmd_lsp_client(output_channel, reporter) {
             server_args.push("--no-show-macro-hint");
         }
 
+        const ude_paths = config.get("linter.udePaths");
+        if (Array.isArray(ude_paths) && ude_paths.length > 0) {
+            server_args.push("--ude-paths", ...ude_paths);
+        }
+
+        const ude_ignore_paths = config.get("linter.udeIgnorePaths");
+        if (Array.isArray(ude_ignore_paths) && ude_ignore_paths.length > 0) {
+            server_args.push("--ude-ignore-paths", ...ude_ignore_paths);
+        }
+
         const server_options = {
             command: python_path,
             args: server_args,

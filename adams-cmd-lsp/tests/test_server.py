@@ -303,7 +303,7 @@ def test_validate_document_passes_macro_registry(monkeypatch):
     from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
     received_registry = []
 
-    def mock_lint_text(text, schema=None, min_severity=None, macro_registry=None, show_macro_hint=True):
+    def mock_lint_text(text, schema=None, min_severity=None, macro_registry=None, show_macro_hint=True, ude_registry=None):
         received_registry.append(macro_registry)
         return []
 
@@ -333,7 +333,7 @@ def test_validate_document_passes_none_registry_when_scan_disabled(monkeypatch):
     from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
     received_registry = []
 
-    def mock_lint_text(text, schema=None, min_severity=None, macro_registry=None, show_macro_hint=True):
+    def mock_lint_text(text, schema=None, min_severity=None, macro_registry=None, show_macro_hint=True, ude_registry=None):
         received_registry.append(macro_registry)
         return []
 
@@ -555,6 +555,192 @@ def test_refresh_macro_file_old_command_removed_after_change(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# _refresh_ude_file
+# ---------------------------------------------------------------------------
+
+_UDE_CMD_TEXT = (
+    "ude create definition "
+    "definition_name=.lib.my_ude "
+    "parameters=$model.damprat\n"
+)
+
+
+def test_refresh_ude_file_registers_ude(tmp_path):
+    """Saving a .cmd file with a ude create definition updates the registry."""
+    from adams_cmd_lsp.ude import UdeRegistry
+    srv._ude_registry = UdeRegistry()
+    srv._ude_patterns = ["**/*.cmd"]
+    srv._workspace_roots = []  # fallback filename-matching, mirrors macro test pattern
+    srv._scan_workspace_macros = True
+    srv._schema = Schema.load()
+
+    cmd_path = tmp_path / "defs.cmd"
+    cmd_path.write_text(_UDE_CMD_TEXT, encoding="utf-8")
+
+    srv._refresh_ude_file(cmd_path.as_uri(), _UDE_CMD_TEXT)
+    assert srv._ude_registry.lookup(".lib.my_ude") is not None
+
+
+def test_refresh_ude_file_non_cmd_ignored(tmp_path):
+    """A file that does not match UDE patterns leaves the registry untouched."""
+    from adams_cmd_lsp.ude import UdeRegistry
+    srv._ude_registry = UdeRegistry()
+    srv._ude_patterns = ["**/*.cmd"]
+    srv._workspace_roots = []
+    srv._scan_workspace_macros = True
+    srv._schema = Schema.load()
+
+    txt_path = tmp_path / "notes.txt"
+    txt_path.write_text(_UDE_CMD_TEXT, encoding="utf-8")
+
+    srv._refresh_ude_file(txt_path.as_uri(), _UDE_CMD_TEXT)
+    assert len(srv._ude_registry) == 0
+
+
+def test_refresh_ude_file_returns_true_when_registered(tmp_path):
+    """_refresh_ude_file returns True when a UDE was added to the registry."""
+    from adams_cmd_lsp.ude import UdeRegistry
+    srv._ude_registry = UdeRegistry()
+    srv._ude_patterns = ["**/*.cmd"]
+    srv._workspace_roots = []  # empty roots → fallback filename-only matching
+    srv._scan_workspace_macros = True
+    srv._schema = Schema.load()
+
+    cmd_path = tmp_path / "defs.cmd"
+    cmd_path.write_text(_UDE_CMD_TEXT, encoding="utf-8")
+
+    result = srv._refresh_ude_file(cmd_path.as_uri(), _UDE_CMD_TEXT)
+    assert result is True
+
+
+def test_refresh_ude_file_returns_false_when_no_match(tmp_path):
+    """_refresh_ude_file returns False when the file doesn't match UDE patterns."""
+    from adams_cmd_lsp.ude import UdeRegistry
+    srv._ude_registry = UdeRegistry()
+    srv._ude_patterns = ["**/*.cmd"]
+    srv._workspace_roots = []
+    srv._scan_workspace_macros = True
+    srv._schema = Schema.load()
+
+    txt_path = tmp_path / "notes.txt"
+    txt_path.write_text(_UDE_CMD_TEXT, encoding="utf-8")
+
+    result = srv._refresh_ude_file(txt_path.as_uri(), _UDE_CMD_TEXT)
+    assert result is False
+
+
+def test_refresh_ude_file_no_registry():
+    """_refresh_ude_file must be a no-op when _ude_registry is None."""
+    srv._ude_registry = None
+    srv._scan_workspace_macros = True
+    srv._schema = Schema.load()
+
+    result = srv._refresh_ude_file("file:///some/defs.cmd", _UDE_CMD_TEXT)
+    assert result is False
+
+
+def test_refresh_ude_file_scanning_disabled(tmp_path):
+    """_refresh_ude_file must be a no-op when _scan_workspace_macros is False."""
+    from adams_cmd_lsp.ude import UdeRegistry
+    srv._ude_registry = UdeRegistry()
+    srv._ude_patterns = ["**/*.cmd"]
+    srv._workspace_roots = []
+    srv._scan_workspace_macros = False
+    srv._schema = Schema.load()
+
+    cmd_path = tmp_path / "defs.cmd"
+    cmd_path.write_text(_UDE_CMD_TEXT, encoding="utf-8")
+
+    result = srv._refresh_ude_file(cmd_path.as_uri(), _UDE_CMD_TEXT)
+    assert result is False
+    assert len(srv._ude_registry) == 0
+
+
+def test_refresh_ude_file_old_definition_removed_after_change(tmp_path):
+    """When a .cmd file's UDE definition changes, the old entry is removed."""
+    from adams_cmd_lsp.ude import UdeRegistry
+    srv._ude_registry = UdeRegistry()
+    srv._ude_patterns = ["**/*.cmd"]
+    srv._workspace_roots = []  # empty roots → fallback filename-only matching
+    srv._scan_workspace_macros = True
+    srv._schema = Schema.load()
+
+    cmd_path = tmp_path / "defs.cmd"
+    cmd_path.write_text(_UDE_CMD_TEXT, encoding="utf-8")
+
+    srv._refresh_ude_file(cmd_path.as_uri(), _UDE_CMD_TEXT)
+    assert srv._ude_registry.lookup(".lib.my_ude") is not None
+
+    # Simulate re-save with a different definition name
+    new_text = (
+        "ude create definition "
+        "definition_name=.lib.new_ude "
+        "parameters=$model.stiffness\n"
+    )
+    srv._refresh_ude_file(cmd_path.as_uri(), new_text)
+
+    assert srv._ude_registry.lookup(".lib.new_ude") is not None, (
+        "New definition should be registered after re-save"
+    )
+    assert srv._ude_registry.lookup(".lib.my_ude") is None, (
+        "Old definition should be removed after re-save"
+    )
+
+
+def test_refresh_ude_file_path_normalization(tmp_path):
+    """_refresh_ude_file must use resolved paths so unregister works after initial scan.
+
+    scan_ude_files stores resolved paths (str(path.resolve())); _refresh_ude_file
+    receives a URI which may produce a non-resolved string.  The resolved path
+    step ensures the unregister lookup doesn't miss a stale entry.
+    """
+    from adams_cmd_lsp.ude import UdeRegistry, UdeDefinition, UdeParameter
+    # Use a subdirectory so **/*.cmd matches via workspace-root relative path
+    subdir = tmp_path / "udes"
+    subdir.mkdir()
+    srv._ude_registry = UdeRegistry()
+    srv._ude_patterns = ["**/*.cmd"]
+    srv._workspace_roots = [str(tmp_path)]
+    srv._scan_workspace_macros = True
+    srv._schema = Schema.load()
+
+    cmd_path = subdir / "defs.cmd"
+    cmd_path.write_text(_UDE_CMD_TEXT, encoding="utf-8")
+
+    # Pre-register with the resolved path (as scan_ude_files would)
+    resolved_path = str(cmd_path.resolve())
+    defn = UdeDefinition(
+        definition_name=".lib.my_ude",
+        parameters={"damprat": UdeParameter(name="damprat", category="parameter")},
+        source_file=resolved_path,
+        line=1,
+    )
+    srv._ude_registry.register(defn)
+    assert srv._ude_registry.lookup(".lib.my_ude") is not None
+
+    # Simulate a re-save (URI-based, may not be pre-resolved) with empty content
+    srv._refresh_ude_file(cmd_path.as_uri(), "! no UDE definitions here\n")
+    # Must have been unregistered despite potential path format difference
+    assert srv._ude_registry.lookup(".lib.my_ude") is None
+
+
+def test_refresh_ude_file_no_workspace_roots_fallback(tmp_path):
+    """When workspace roots are empty, **/*.cmd pattern falls back to filename matching."""
+    from adams_cmd_lsp.ude import UdeRegistry
+    srv._ude_registry = UdeRegistry()
+    srv._ude_patterns = ["**/*.cmd"]
+    srv._workspace_roots = []
+    srv._scan_workspace_macros = True
+    srv._schema = Schema.load()
+
+    cmd_path = tmp_path / "defs.cmd"
+    cmd_path.write_text(_UDE_CMD_TEXT, encoding="utf-8")
+
+    srv._refresh_ude_file(cmd_path.as_uri(), _UDE_CMD_TEXT)
+    assert srv._ude_registry.lookup(".lib.my_ude") is not None
+
+
+# ---------------------------------------------------------------------------
 # did_open — macro registration on open (regression: ref→def and E001)
 # ---------------------------------------------------------------------------
 
@@ -693,6 +879,7 @@ def test_did_open_nonmacro_does_not_relint_others(tmp_path, monkeypatch):
 
     srv._macro_registry = MacroRegistry()
     srv._macro_patterns = ["**/*.mac"]
+    srv._ude_registry = None  # disable UDE refresh so only macro logic is exercised
     srv._workspace_roots = []
     srv._schema = Schema.load()
 
@@ -741,6 +928,7 @@ def test_did_save_nonmacro_does_not_relint_others(tmp_path, monkeypatch):
 
     srv._macro_registry = MacroRegistry()
     srv._macro_patterns = ["**/*.mac"]
+    srv._ude_registry = None  # disable UDE refresh so only macro logic is exercised
     srv._workspace_roots = []
     srv._schema = Schema.load()
 
@@ -1891,7 +2079,7 @@ def test_validate_document_forwards_show_macro_hint(monkeypatch):
     """_validate_document must forward _macro_show_hint=False to lint_text."""
     received_hints = []
 
-    def mock_lint_text(text, schema=None, min_severity=None, macro_registry=None, show_macro_hint=True):
+    def mock_lint_text(text, schema=None, min_severity=None, macro_registry=None, show_macro_hint=True, ude_registry=None):
         received_hints.append(show_macro_hint)
         return []
 

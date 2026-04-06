@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "1.11.1",
+    "version": "1.12.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -355,6 +355,18 @@
                          "type": "boolean",
                          "default": true,
                          "description": "Append a hint about 'msc-adams.linter.scanWorkspaceMacros' to E001 'Unknown command' diagnostics when workspace macro scanning is not enabled. Set to false to silence the hint."
+                     },
+                     "msc-adams.linter.udePaths": {
+                         "type": "array",
+                         "items": { "type": "string" },
+                         "default": ["**/*.cmd"],
+                         "description": "Glob patterns for UDE definition file discovery, resolved relative to each workspace folder. Only used when 'msc-adams.linter.scanWorkspaceMacros' is true."
+                     },
+                     "msc-adams.linter.udeIgnorePaths": {
+                         "type": "array",
+                         "items": { "type": "string" },
+                         "default": [],
+                         "description": "Glob patterns (relative to each scanned directory) for UDE definition files to exclude from scanning."
                      }
                  }
             }

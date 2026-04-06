@@ -142,6 +142,10 @@ This extension contributes the following settings:
     scanning. Defaults to `[]`.
   * `msc-adams.linter.showMacroHint`: When a user-defined macro call triggers an E001 error, show
     a hint suggesting that `scanWorkspaceMacros` can be enabled. Defaults to `true`.
+  * `msc-adams.linter.udePaths`: Glob patterns used to discover UDE definition files when
+    `scanWorkspaceMacros` is enabled. Defaults to `["**/*.cmd"]`.
+  * `msc-adams.linter.udeIgnorePaths`: Glob patterns for files or folders to exclude from UDE
+    definition scanning. Defaults to `[]`.
 
 ## Customizing Syntax Colors
 
