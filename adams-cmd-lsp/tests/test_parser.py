@@ -741,3 +741,66 @@ def test_no_duplicate_args_from_escaped_quotes_in_commands_array():
         assert leaked not in arg_names, (
             f"Arg '{leaked}' leaked from inside quoted string content"
         )
+
+
+# ---------------------------------------------------------------------------
+# is_property_assignment detection
+# ---------------------------------------------------------------------------
+
+def test_parse_property_assignment_bare_name():
+    """VarName=value must be flagged as is_property_assignment."""
+    stmts = parse("VarName=5\n")
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    assert real[0].is_property_assignment
+    assert real[0].command_key == ""
+
+
+def test_parse_property_assignment_spaces_around_equals():
+    """VarName = value (spaces) must be flagged as is_property_assignment."""
+    stmts = parse("VarName = 5\n")
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    assert real[0].is_property_assignment
+
+
+def test_parse_property_assignment_dot_path():
+    """.model.MyVar=value must be flagged as is_property_assignment."""
+    stmts = parse(".model.MyVar=5\n")
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    assert real[0].is_property_assignment
+
+
+def test_parse_property_assignment_dollar_macro_param():
+    """$model.$name.prop=$value (macro param substitution) must be flagged."""
+    stmts = parse("$model.$name.youngs_modulus=$youngs_modulus\n")
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    assert real[0].is_property_assignment
+
+
+def test_parse_property_assignment_object_reference():
+    """VarName=.model.Part_1.Marker_1 (object reference rhs) must be flagged."""
+    stmts = parse("VarName=.model.Part_1.Marker_1\n")
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    assert real[0].is_property_assignment
+
+
+def test_parse_property_assignment_not_fired_on_normal_command():
+    """part create part_name=.m.p must NOT be flagged as is_property_assignment."""
+    stmts = parse("part create part_name=.m.p\n")
+    real = [s for s in stmts if not s.is_blank and not s.is_comment]
+    assert len(real) == 1
+    assert not real[0].is_property_assignment
+    assert real[0].command_key == "part create"
+
+
+def test_parse_property_assignment_not_fired_on_continuation():
+    """A continuation command with arg=value must NOT be flagged as is_property_assignment."""
+    text = "marker create &\n    marker_name=.m.M1\n"
+    stmts = [s for s in parse(text) if not s.is_blank]
+    assert len(stmts) == 1
+    assert not stmts[0].is_property_assignment
+    assert stmts[0].command_key == "marker create"

@@ -21,7 +21,7 @@ class Argument:
     name_line: int    # 0-based line of the argument name token
     name_column: int  # 0-based column of the argument name token
     value_line: int   # 0-based line of the value start
-    value_column: int # 0-based column of the value start
+    value_column: int  # 0-based column of the value start
 
 
 @dataclass
@@ -37,6 +37,7 @@ class Statement:
     is_blank: bool = False
     is_control_flow: bool = False
     control_flow_keyword: Optional[str] = None
+    is_property_assignment: bool = False
 
 
 # Control-flow keywords (first word only triggers control-flow detection)
@@ -546,6 +547,22 @@ def parse(text: str) -> List[Statement]:
         # Extract the command key (strip arg=value pairs)
         cmd_key_raw = _extract_command_key(stripped)
         cmd_key = cmd_key_raw.lower()
+
+        # Detect shorthand variable/property assignment: VarName=value,
+        # .model.Var=value, $model.$name.prop=value, etc.
+        # No valid Adams command key ever contains '='; the '=' always
+        # belongs to argument-assignment syntax.  Continuation support is
+        # intentionally not provided for this syntax.
+        if '=' in cmd_key:
+            statements.append(Statement(
+                command_key="",
+                resolved_command_key=None,
+                line_start=line_start,
+                line_end=line_end,
+                raw_text=joined,
+                is_property_assignment=True,
+            ))
+            continue
 
         # Detect control flow keywords (only first word matters)
         first_word = cmd_key.split()[0] if cmd_key.split() else ""
