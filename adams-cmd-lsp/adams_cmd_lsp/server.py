@@ -1506,6 +1506,27 @@ def on_initialized(params: types.InitializedParams):
                 message="\n".join(lines),
             )
         )
+    # Log discovered UDE definitions
+    if _ude_registry is not None:
+        ude_count = len(_ude_registry)
+        if ude_count == 0:
+            server.window_log_message(
+                types.LogMessageParams(
+                    type=types.MessageType.Info,
+                    message="Adams UDE scan complete: no UDE definitions found.",
+                )
+            )
+        else:
+            ude_lines = [f"Adams UDE scan complete: {ude_count} UDE definition(s) discovered."]
+            for def_name, ude_def in sorted(_ude_registry._definitions.items()):
+                src = ude_def.source_file or "<unknown>"
+                ude_lines.append(f"  {def_name}  ({src})")
+            server.window_log_message(
+                types.LogMessageParams(
+                    type=types.MessageType.Info,
+                    message="\n".join(ude_lines),
+                )
+            )
 
 
 def _build_index_for_workspace(workspace_paths):
