@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.12.0 (April 6th 2026)](#1120-april-6th-2026)
   - [1.11.1 (April 6th 2026)](#1111-april-6th-2026)
   - [1.11.0 (April 3rd 2026)](#1110-april-3rd-2026)
   - [1.10.4 (April 2nd 2026)](#1104-april-2nd-2026)
@@ -54,6 +55,11 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.12.0 (April 6th 2026)
+
+- **Added** UDE (User-Defined Element) definition scanner. When `msc-adams.linter.scanWorkspaceMacros` is enabled, the linter now scans workspace CMD files for `ude create definition`, `ude copy`, and `ude modify definition` commands. UDE instance child parameters (e.g. `my_ude_instance.damprat`) are registered as known symbols, eliminating false I202/E001 errors on those references.
+- **Added** Two new settings: `msc-adams.linter.udePaths` (glob patterns for UDE definition files, default `["**/*.cmd"]`) and `msc-adams.linter.udeIgnorePaths` (patterns to exclude).
 
 ## 1.11.1 (April 6th 2026)
 

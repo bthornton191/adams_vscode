@@ -29,6 +29,7 @@ from .macros import (
     _USER_ENTERED_COMMAND_RE,
 )
 from .references import MacroIndex, index_file_text
+from .ude import UdeRegistry, scan_ude_files, DEFAULT_UDE_PATTERNS
 
 
 server = LanguageServer("adams-cmd-lsp", "v0.1.0")
@@ -52,6 +53,9 @@ _doc_cache = {}                      # uri -> (statements, symbol_table)
 _macro_patterns = DEFAULT_MACRO_PATTERNS
 _macro_ignore_patterns: list = []
 _scan_workspace_macros = False
+_ude_registry = None
+_ude_patterns = DEFAULT_UDE_PATTERNS
+_ude_ignore_patterns: list = []
 _macro_show_hint: bool = True
 _workspace_roots: list = []
 _index_cmd_extensions = {".cmd", ".mac"}
@@ -332,6 +336,7 @@ def _validate_document(uri, text):
             schema=_schema,
             macro_registry=_macro_registry if _scan_workspace_macros else None,
             show_macro_hint=_macro_show_hint,
+            ude_registry=_ude_registry if _scan_workspace_macros else None,
         )
     except Exception as exc:  # noqa: BLE001
         # Never let a lint crash kill the server
@@ -359,7 +364,8 @@ def did_open(params: types.DidOpenTextDocumentParams):
     # (same as did_save) so callers in other open files get def-navigation
     # and E001 suppression without having to save the file first.
     changed = _refresh_macro_file(doc.uri, doc.text)
-    if changed and server.workspace:
+    changed_ude = _refresh_ude_file(doc.uri, doc.text)
+    if (changed or changed_ude) and server.workspace:
         for open_uri, open_doc in list(server.workspace.text_documents.items()):
             if open_uri != doc.uri:
                 _validate_document(open_uri, open_doc.source)
@@ -391,7 +397,8 @@ def did_save(params: types.DidSaveTextDocumentParams):
     # If the saved file is a macro file, refresh that entry in the registry
     # and re-lint other open documents so E001 clears immediately.
     changed = _refresh_macro_file(params.text_document.uri, doc.source)
-    if changed and server.workspace:
+    changed_ude = _refresh_ude_file(params.text_document.uri, doc.source)
+    if (changed or changed_ude) and server.workspace:
         for open_uri, open_doc in list(server.workspace.text_documents.items()):
             if open_uri != params.text_document.uri:
                 _validate_document(open_uri, open_doc.source)
@@ -582,8 +589,48 @@ def _refresh_macro_file(uri: str, text: str) -> bool:
         if macro_def is not None:
             _macro_registry.register(macro_def)
     except Exception:  # noqa: BLE001
-        # Parse failed — macro was removed but not re-added.  Return True so
-        # callers re-lint other documents; they now need to reflect the removal.
+        return True
+    return True
+
+
+def _refresh_ude_file(uri: str, text: str) -> bool:
+    """Re-parse *uri* and update _ude_registry if it matches a UDE pattern.
+
+    Returns True if the file matched a UDE pattern and was processed.
+    """
+    if _ude_registry is None or _schema is None or not _scan_workspace_macros:
+        return False
+    path = _uri_to_path(uri)
+    if not path:
+        return False
+
+    matched = False
+    for root in _workspace_roots:
+        try:
+            rel = Path(path).relative_to(root).as_posix()
+            if any(fnmatch.fnmatch(rel, pat) for pat in _ude_patterns):
+                matched = True
+                break
+        except (ValueError, Exception):  # noqa: BLE001
+            continue
+    if not matched and not _workspace_roots:
+        filename = Path(path).name
+        for pat in _ude_patterns:
+            last = Path(pat).name
+            if last != "*" and fnmatch.fnmatch(filename, last):
+                matched = True
+                break
+    if not matched:
+        return False
+
+    from .ude import parse_ude_file as _parse_ude_file
+    path = str(Path(path).resolve())
+    _ude_registry.unregister_by_file(path)
+    try:
+        defs = _parse_ude_file(text, _schema, source_file=path)
+        for d in defs:
+            _ude_registry.register(d)
+    except Exception:  # noqa: BLE001
         return True
     return True
 
@@ -608,7 +655,7 @@ def _refresh_object_index_for_file(uri: str, text: str) -> None:
 
 def main():
     """Entry point for the adams-cmd-lsp LSP server."""
-    global _schema, _macro_registry, _macro_patterns, _macro_ignore_patterns, _scan_workspace_macros, _macro_show_hint, _workspace_roots, _macro_index, _object_index, _doc_cache  # noqa: PLW0603
+    global _schema, _macro_registry, _macro_patterns, _macro_ignore_patterns, _scan_workspace_macros, _macro_show_hint, _workspace_roots, _macro_index, _object_index, _doc_cache, _ude_registry, _ude_patterns, _ude_ignore_patterns  # noqa: PLW0603
 
     parser = argparse.ArgumentParser(
         prog="adams-cmd-lsp",
@@ -661,6 +708,20 @@ def main():
     )
     # vscode-languageclient passes --stdio automatically; accept and ignore it.
     parser.add_argument(
+        "--ude-paths",
+        nargs="+",
+        metavar="GLOB",
+        default=[],
+        help="Glob patterns for UDE definition file discovery (resolved relative to workspace roots)",
+    )
+    parser.add_argument(
+        "--ude-ignore-paths",
+        nargs="+",
+        metavar="GLOB",
+        default=[],
+        help="Glob patterns to exclude from UDE scanning",
+    )
+    parser.add_argument(
         "--stdio",
         action="store_true",
         help="Use stdio transport (default, passed automatically by VS Code)",
@@ -672,10 +733,13 @@ def main():
     _macro_ignore_patterns = args.macro_ignore_paths or []
     _scan_workspace_macros = args.scan_workspace_macros
     _macro_show_hint = args.show_macro_hint
+    _ude_patterns = args.ude_paths if args.ude_paths else DEFAULT_UDE_PATTERNS
+    _ude_ignore_patterns = args.ude_ignore_paths or []
 
     # Build initial registry and index — always created so did_save can
     # refresh them later. Workspace folders are merged after client connects.
     _macro_registry = MacroRegistry()
+    _ude_registry = UdeRegistry()
     _macro_index = MacroIndex()    # reset in case main() is called more than once
     _object_index = ObjectIndex()  # reset cross-file object navigation index
     _doc_cache.clear()             # reset per-document parse cache
@@ -1365,7 +1429,7 @@ def did_change_watched_files(params: types.DidChangeWatchedFilesParams):
 @server.feature(types.INITIALIZED)
 def on_initialized(params: types.InitializedParams):
     """Scan workspace folders for macro files and build the reference index."""
-    global _macro_registry, _workspace_roots  # noqa: PLW0603
+    global _macro_registry, _ude_registry, _workspace_roots  # noqa: PLW0603
     workspace = server.workspace
     if not workspace:
         return
@@ -1405,6 +1469,23 @@ def on_initialized(params: types.InitializedParams):
             )
         )
         return
+    # Scan for UDE definitions in parallel with macro scanning
+    if _ude_registry is not None and _schema is not None:
+        try:
+            scan_ude_files(
+                workspace_paths,
+                _schema,
+                patterns=_ude_patterns,
+                ignore_patterns=_ude_ignore_patterns or None,
+                registry=_ude_registry,
+            )
+        except Exception as exc:  # noqa: BLE001
+            server.window_log_message(
+                types.LogMessageParams(
+                    type=types.MessageType.Warning,
+                    message=f"Adams UDE scan failed: {exc}",
+                )
+            )
     # Log all discovered macros to the VS Code output panel
     count = len(_macro_registry)
     if count == 0:

@@ -31,10 +31,12 @@ from .diagnostics import Severity
 from .linter import lint_text
 from .macros import MacroRegistry, scan_macro_files, DEFAULT_MACRO_PATTERNS
 from .schema import Schema
+from .ude import UdeRegistry, scan_ude_files, DEFAULT_UDE_PATTERNS
 
 # Module-level singletons initialised by main() before the server loop starts.
 _schema: Schema | None = None
 _macro_registry: MacroRegistry | None = None
+_ude_registry: UdeRegistry | None = None
 _show_macro_hint: bool = True
 
 
@@ -125,6 +127,7 @@ async def adams_lint_cmd_text(text: str, min_severity: str = "info") -> str:
         min_severity=min_severity,
         macro_registry=_macro_registry,
         show_macro_hint=_show_macro_hint,
+        ude_registry=_ude_registry,
     )
     return json.dumps(_serialise_diagnostics(diagnostics), indent=2)
 
@@ -180,6 +183,7 @@ async def adams_lint_cmd_file(file_path: str, min_severity: str = "info") -> str
         min_severity=min_severity,
         macro_registry=_macro_registry,
         show_macro_hint=_show_macro_hint,
+        ude_registry=_ude_registry,
     )
     return json.dumps(_serialise_diagnostics(diagnostics, file_path=resolved), indent=2)
 
@@ -466,7 +470,7 @@ def _run_stdio_loop() -> None:
 
 def main():
     """Start the Adams CMD Lint MCP server via stdio."""
-    global _schema, _macro_registry, _show_macro_hint  # noqa: PLW0603
+    global _schema, _macro_registry, _ude_registry, _show_macro_hint  # noqa: PLW0603
 
     parser = argparse.ArgumentParser(
         prog="adams-cmd-mcp",
@@ -512,6 +516,20 @@ def main():
         default=False,
         help="Suppress the E001 hint about scanWorkspaceMacros.",
     )
+    parser.add_argument(
+        "--ude-paths",
+        nargs="+",
+        metavar="GLOB",
+        default=[],
+        help="Glob patterns for UDE definition file discovery, resolved relative to --macro-base-dir.",
+    )
+    parser.add_argument(
+        "--ude-ignore-paths",
+        nargs="+",
+        metavar="GLOB",
+        default=[],
+        help="Glob patterns to exclude from UDE scanning.",
+    )
     args = parser.parse_args()
 
     # Reconfigure stdin/stdout to UTF-8 so that multi-byte characters in CMD
@@ -532,30 +550,50 @@ def main():
     # Once the scan completes the global is replaced atomically (safe under
     # CPython's GIL); subsequent tool calls will use the populated registry.
     _macro_registry = MacroRegistry()
+    _ude_registry = UdeRegistry()
 
     if args.scan_workspace_macros:
         base_dir = args.macro_base_dir or os.getcwd()
         patterns = args.macro_paths if args.macro_paths else DEFAULT_MACRO_PATTERNS
         ignore_patterns = args.macro_ignore_paths or None
+        ude_patterns = args.ude_paths if args.ude_paths else DEFAULT_UDE_PATTERNS
+        ude_ignore = args.ude_ignore_paths or None
 
-        def _scan_worker(root, pats, ignore):
-            global _macro_registry  # noqa: PLW0603
-            new_registry = MacroRegistry()
+        def _scan_worker(root, pats, ignore, upats, uignore):
+            global _macro_registry, _ude_registry  # noqa: PLW0603
+            new_macro_registry = MacroRegistry()
+            new_ude_registry = UdeRegistry()
+            macro_ok = False
+            ude_ok = False
             try:
                 scan_macro_files(
                     roots=[root],
                     patterns=pats,
                     ignore_patterns=ignore,
-                    registry=new_registry,
+                    registry=new_macro_registry,
                 )
+                macro_ok = True
             except Exception as exc:  # noqa: BLE001
                 print(f"[adams-cmd-mcp] macro scan failed: {exc}", file=sys.stderr)
-                return  # keep the empty registry assigned before the thread started
-            _macro_registry = new_registry
+            try:
+                scan_ude_files(
+                    roots=[root],
+                    schema=_schema,
+                    patterns=upats,
+                    ignore_patterns=uignore,
+                    registry=new_ude_registry,
+                )
+                ude_ok = True
+            except Exception as exc:  # noqa: BLE001
+                print(f"[adams-cmd-mcp] UDE scan failed: {exc}", file=sys.stderr)
+            if macro_ok:
+                _macro_registry = new_macro_registry
+            if ude_ok:
+                _ude_registry = new_ude_registry
 
         threading.Thread(
             target=_scan_worker,
-            args=(base_dir, patterns, ignore_patterns),
+            args=(base_dir, patterns, ignore_patterns, ude_patterns, ude_ignore),
             daemon=True,
             name="adams-cmd-mcp-scan",
         ).start()
