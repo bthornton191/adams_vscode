@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.12.1 (April 6th 2026)](#1121-april-6th-2026)
   - [1.12.0 (April 6th 2026)](#1120-april-6th-2026)
   - [1.11.1 (April 6th 2026)](#1111-april-6th-2026)
   - [1.11.0 (April 3rd 2026)](#1110-april-3rd-2026)
@@ -55,6 +56,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.12.1 (April 6th 2026)
+
+- **Improved** On language server startup, discovered UDE definitions are now listed in the output panel alongside the existing macro scan summary.
 
 ## 1.12.0 (April 6th 2026)
 
