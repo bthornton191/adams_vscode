@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.11.1 (April 6th 2026)](#1111-april-6th-2026)
   - [1.11.0 (April 3rd 2026)](#1110-april-3rd-2026)
   - [1.10.4 (April 2nd 2026)](#1104-april-2nd-2026)
   - [1.10.3 (April 2nd 2026)](#1103-april-2nd-2026)
@@ -53,6 +54,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.11.1 (April 6th 2026)
+
+- **Fixed** Linter no longer fires false E001 errors for Adams CMD shorthand variable/property assignment syntax (`VarName=value`, `.model.Var=value`, `$model.$name.prop=$val`). The parser now classifies these as `is_property_assignment` statements and skips command-key validation for them.
 
 ## 1.11.0 (April 3rd 2026)
 

@@ -87,7 +87,7 @@ def rule_unknown_command(statements, schema, symbols):
     """
     diagnostics = []
     for stmt in statements:
-        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
+        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow or stmt.is_property_assignment:
             continue
         if not stmt.command_key:
             continue

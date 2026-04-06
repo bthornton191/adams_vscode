@@ -156,6 +156,7 @@ def _find_variable_references_in_text(text: str, var_name: str):
 # SymbolKind mapping for Adams object types
 # ---------------------------------------------------------------------------
 
+
 _ADAMS_SYMBOL_KIND = {
     "Part": types.SymbolKind.Class,
     "Body": types.SymbolKind.Class,
@@ -1186,7 +1187,7 @@ def _compute_semantic_tokens(text, uri):
     raw_tokens = []
 
     for stmt in statements:
-        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
+        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow or stmt.is_property_assignment:
             continue
         if not stmt.command_key:
             continue

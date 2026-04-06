@@ -2907,3 +2907,39 @@ def test_e001_no_false_positive_command_server_show():
     assert len(e001) == 0, (
         f"E001 must not fire for 'command_server show', got: {e001}"
     )
+
+
+# ---------------------------------------------------------------------------
+# E001 - shorthand variable/property assignment suppression
+# ---------------------------------------------------------------------------
+
+def test_e001_no_false_positive_shorthand_bare_name():
+    """VarName=5 (shorthand variable set) must NOT fire E001."""
+    diags = _lint("VarName=5\n", rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, f"E001 must not fire for 'VarName=5', got: {e001}"
+
+
+def test_e001_no_false_positive_shorthand_bare_name_spaces():
+    """VarName = 5 (with spaces around =) must NOT fire E001."""
+    diags = _lint("VarName = 5\n", rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, f"E001 must not fire for 'VarName = 5', got: {e001}"
+
+
+def test_e001_no_false_positive_shorthand_dollar_macro_param():
+    """$model.$name.prop=$value (macro param in shorthand set) must NOT fire E001."""
+    diags = _lint("$model.$name.youngs_modulus=$youngs_modulus\n", rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, (
+        f"E001 must not fire for shorthand macro-param property assignment, got: {e001}"
+    )
+
+
+def test_e001_no_false_positive_shorthand_object_ref_rhs():
+    """VarName=.model.Part_1.Marker_1 (object-ref rhs) must NOT fire E001."""
+    diags = _lint("VarName=.model.Part_1.Marker_1\n", rule_fn=rule_unknown_command)
+    e001 = [d for d in diags if d.code == "E001"]
+    assert len(e001) == 0, (
+        f"E001 must not fire for 'VarName=.model.Part_1.Marker_1', got: {e001}"
+    )
