@@ -567,6 +567,7 @@ def parse(text: str) -> List[Statement]:
         # Detect control flow keywords (only first word matters)
         first_word = cmd_key.split()[0] if cmd_key.split() else ""
         if first_word in _CONTROL_FLOW_KEYWORDS:
+            cf_tokens = _extract_command_key_tokens(joined, offsets)
             statements.append(Statement(
                 command_key=cmd_key,
                 resolved_command_key=None,
@@ -575,6 +576,7 @@ def parse(text: str) -> List[Statement]:
                 raw_text=joined,
                 is_control_flow=True,
                 control_flow_keyword=first_word,
+                command_key_tokens=cf_tokens,
             ))
             continue
 

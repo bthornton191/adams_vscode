@@ -97,6 +97,17 @@ def test_e001_sets_resolved_key():
     assert cmd_stmts[0].resolved_command_key == "marker create"
 
 
+def test_e001_indented_command_column_reflects_indent():
+    """Diagnostic column for an indented unknown command must start at the indent, not column 0."""
+    indent = "    "  # 4 spaces
+    diags = _lint(f"{indent}xyz create something = value", rule_fn=rule_unknown_command)
+    assert "E001" in _codes(diags)
+    e001 = next(d for d in diags if d.code == "E001")
+    assert e001.column == len(indent), (
+        f"Expected column {len(indent)}, got {e001.column}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # E002 — Invalid argument
 # ---------------------------------------------------------------------------
