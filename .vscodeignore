@@ -28,6 +28,7 @@ adams-view-mcp-server-plan.md
 macro-hover-plan.md
 doc/presentations/**
 qa_lint_results.csv
+skills-lock.json
 adams-cmd-lsp/**
 .pytest_cache/**
 tsconfig.json
