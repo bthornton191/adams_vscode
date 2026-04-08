@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.13.0 (April 8th 2026)](#1130-april-8th-2026)
   - [1.12.2 (April 8th 2026)](#1122-april-8th-2026)
   - [1.12.1 (April 6th 2026)](#1121-april-6th-2026)
   - [1.12.0 (April 6th 2026)](#1120-april-6th-2026)
@@ -57,6 +58,11 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.13.0 (April 8th 2026)
+
+- **Improved** Telemetry instrumentation across all extension features. Completion events now include match count, completion type, and trigger kind. Hover events now track miss rate and abbreviation resolution. New events for LSP lifecycle (`lsp_disabled`, `lsp_start_failed`, `lsp_restarted`, `lsp_python_path_resolved`), MCP server registration, and document link detection. Activation event replaced with structured flags instead of a raw config dump. Error paths in debug attachment and resource loading are now instrumented with categorized error types.
+- **Fixed** `msc-adams.runInAdams.substituteSelf` config setting was cached at extension startup; it is now read at call time so changes take effect without restarting VS Code.
 
 ## 1.12.2 (April 8th 2026)
 

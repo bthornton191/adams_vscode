@@ -12,15 +12,41 @@ function debug_in_adams(output_channel, reporter = null, done = () => {}) {
 
         // If the operating system is windows
         if (process.platform === "win32") {
-            var plist = child_process
-                .execSync('tasklist /fi "imagename eq aview.exe" /fo csv /nh /v')
-                .toString()
-                .split("\r\n"); // Get a list of running processes
+            try {
+                var plist = child_process
+                    .execSync('tasklist /fi "imagename eq aview.exe" /fo csv /nh /v')
+                    .toString()
+                    .split("\r\n"); // Get a list of running processes
+            } catch (err) {
+                output_channel.appendLine(
+                    `[${new Date().toLocaleTimeString()}]: Error listing processes: ${err.message}`,
+                );
+                if (reporter) {
+                    reporter.sendTelemetryErrorEvent("aview_process_list_failed", {
+                        error_message: err.message,
+                        platform: process.platform,
+                    });
+                }
+                return;
+            }
         }
 
         // If the operating system is linux or mac
         else {
-            var plist = child_process.execSync("ps -A | grep aview").toString().split("\r"); // Get a list of running processes
+            try {
+                var plist = child_process.execSync("ps -A | grep aview").toString().split("\r"); // Get a list of running processes
+            } catch (err) {
+                output_channel.appendLine(
+                    `[${new Date().toLocaleTimeString()}]: Error listing processes: ${err.message}`,
+                );
+                if (reporter) {
+                    reporter.sendTelemetryErrorEvent("aview_process_list_failed", {
+                        error_message: err.message,
+                        platform: process.platform,
+                    });
+                }
+                return;
+            }
         }
         for (let i = 0; i < plist.length; i++) {
             // Loop through the list of processes
@@ -40,10 +66,10 @@ function debug_in_adams(output_channel, reporter = null, done = () => {}) {
         if (aview_pids.length == 0) {
             vscode.window.showErrorMessage("No aview Processes Found!");
             output_channel.appendLine(
-                `[${new Date().toLocaleTimeString()}]: No aview Processes Found!`
+                `[${new Date().toLocaleTimeString()}]: No aview Processes Found!`,
             );
             if (reporter) {
-                reporter.sendTelemetryEvent("No aview Processes Found");
+                reporter.sendTelemetryEvent("aview_no_processes_found");
             }
             return;
         }
@@ -72,7 +98,7 @@ function debug_in_adams(output_channel, reporter = null, done = () => {}) {
             var aview_version = 0;
             console.log(`Could not find aview version in ${aview_ptitle}`);
             output_channel.appendLine(
-                `[${new Date().toLocaleTimeString()}]: Could not find aview version in process title ${aview_ptitle}. Skipping version check.`
+                `[${new Date().toLocaleTimeString()}]: Could not find aview version in process title ${aview_ptitle}. Skipping version check.`,
             );
         }
 
@@ -84,7 +110,7 @@ function debug_in_adams(output_channel, reporter = null, done = () => {}) {
             vscode.window
                 .showInformationMessage(
                     "You may need to import the threading module before attaching the debugger. [More Info](https://github.com/bthornton191/adams_vscode/issues/6#issuecomment-2192053891)",
-                    "Don't show this message again."
+                    "Don't show this message again.",
                 )
                 .then((selection) => {
                     if (selection === "Don't show this message again.") {
@@ -93,7 +119,7 @@ function debug_in_adams(output_channel, reporter = null, done = () => {}) {
                             .update(
                                 "showDebuggerWarning",
                                 false,
-                                vscode.ConfigurationTarget.Global
+                                vscode.ConfigurationTarget.Global,
                             );
                     }
                 });
@@ -101,42 +127,55 @@ function debug_in_adams(output_channel, reporter = null, done = () => {}) {
 
         // Log the process
         console.log(
-            `Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`
+            `Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`,
         );
         output_channel.appendLine(
-            `[${new Date().toLocaleTimeString()}]: Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`
+            `[${new Date().toLocaleTimeString()}]: Attaching Python Debugger to aview.exe Process: ${aview_ptitle} (${aview_pid})`,
         );
         if (reporter) {
-            reporter.sendTelemetryEvent("Attaching Python Debugger", {
-                aview_version: aview_version,
+            reporter.sendTelemetryEvent("aview_debugger_attaching", {
+                aview_version: String(aview_version),
             });
         }
 
         // Attach python debugger to selected process
-        await vscode.debug.startDebugging(
-            undefined,
-            Object.assign(
-                {},
-                {
-                    name: "Attach to aview.exe",
-                    type: "python",
-                    request: "attach",
-                    processId: aview_pid,
-                },
-                vscode.workspace.getConfiguration("msc-adams").get("debugOptions")
-            )
-        );
+        try {
+            await vscode.debug.startDebugging(
+                undefined,
+                Object.assign(
+                    {},
+                    {
+                        name: "Attach to aview.exe",
+                        type: "python",
+                        request: "attach",
+                        processId: aview_pid,
+                    },
+                    vscode.workspace.getConfiguration("msc-adams").get("debugOptions"),
+                ),
+            );
+        } catch (err) {
+            output_channel.appendLine(
+                `[${new Date().toLocaleTimeString()}]: Failed to attach debugger: ${err.message}`,
+            );
+            if (reporter) {
+                reporter.sendTelemetryErrorEvent("debugger_attach_failed", {
+                    error_message: err.message,
+                    aview_version: String(aview_version),
+                });
+            }
+            return;
+        }
 
         vscode.window.showInformationMessage(
-            "The debugger has been attached. Set a breakpoint, then run the python script in Adams"
+            "The debugger has been attached. Set a breakpoint, then run the python script in Adams",
         );
-        
+
         if (reporter) {
-            reporter.sendTelemetryEvent("Python Debugger Attached", {
-                aview_version: aview_version,
+            reporter.sendTelemetryEvent("aview_debugger_attached", {
+                aview_version: String(aview_version),
             });
         }
-        
+
         done();
     };
 }

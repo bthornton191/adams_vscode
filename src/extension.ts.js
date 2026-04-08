@@ -36,35 +36,62 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
 
     const view_functions = new Map();
     const func_dir = context.asAbsolutePath("resources/adams_design_functions");
-    const func_files = fs.readdirSync(func_dir);
-
-    for (var file of func_files) {
-        if (fs.lstatSync([func_dir, file].join("/")).isFile()) {
-            let text = fs.readFileSync([func_dir, file].join("/"), "utf8");
-            let function_name = path.parse(file).name;
-            view_functions.set(function_name, text);
+    try {
+        const func_files = fs.readdirSync(func_dir);
+        for (var file of func_files) {
+            if (fs.lstatSync([func_dir, file].join("/")).isFile()) {
+                let text = fs.readFileSync([func_dir, file].join("/"), "utf8");
+                let function_name = path.parse(file).name;
+                view_functions.set(function_name, text);
+            }
+        }
+    } catch (err) {
+        output_channel.appendLine(
+            `[${new Date().toLocaleTimeString()}]: Failed to load function docs: ${err.message}`,
+        );
+        if (reporter) {
+            reporter.sendTelemetryErrorEvent("resource_load_failed", {
+                resource_type: "function_docs",
+                error_message: err.message,
+            });
         }
     }
 
     // ---------------------------------------------------------------------------
     // Link Provider
     // ---------------------------------------------------------------------------
-    vscode.languages.registerDocumentLinkProvider("adams_cmd", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_adm", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_acf", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_msg", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_log", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_to", link_provider());
+    vscode.languages.registerDocumentLinkProvider("adams_cmd", link_provider(reporter));
+    vscode.languages.registerDocumentLinkProvider("adams_adm", link_provider(reporter));
+    vscode.languages.registerDocumentLinkProvider("adams_acf", link_provider(reporter));
+    vscode.languages.registerDocumentLinkProvider("adams_msg", link_provider(reporter));
+    vscode.languages.registerDocumentLinkProvider("adams_log", link_provider(reporter));
+    vscode.languages.registerDocumentLinkProvider("adams_to", link_provider(reporter));
 
     // ---------------------------------------------------------------------------
     // Completion Provider
     // ---------------------------------------------------------------------------
-    const cmd_files_json = context.asAbsolutePath("resources/adams_view_commands/structured.json");
-    const view_commands = JSON.parse(fs.readFileSync(cmd_files_json));
-    const arg_options_json = context.asAbsolutePath(
-        "resources/adams_view_commands/argument_options.json",
-    );
-    const arg_options = JSON.parse(fs.readFileSync(arg_options_json));
+    let view_commands = {};
+    let arg_options = {};
+    try {
+        const cmd_files_json = context.asAbsolutePath(
+            "resources/adams_view_commands/structured.json",
+        );
+        view_commands = JSON.parse(fs.readFileSync(cmd_files_json));
+        const arg_options_json = context.asAbsolutePath(
+            "resources/adams_view_commands/argument_options.json",
+        );
+        arg_options = JSON.parse(fs.readFileSync(arg_options_json));
+    } catch (err) {
+        output_channel.appendLine(
+            `[${new Date().toLocaleTimeString()}]: Failed to load command definitions: ${err.message}`,
+        );
+        if (reporter) {
+            reporter.sendTelemetryErrorEvent("resource_load_failed", {
+                resource_type: "command_definitions",
+                error_message: err.message,
+            });
+        }
+    }
 
     const command_docs = new Map();
     const cmd_docs_dir = context.asAbsolutePath("resources/adams_view_commands/command_docs");
@@ -112,7 +139,14 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
 
     vscode.languages.registerHoverProvider(
         "adams_cmd",
-        cmd_hover_provider(view_functions, view_commands, command_docs, reporter, command_tree, schema_commands),
+        cmd_hover_provider(
+            view_functions,
+            view_commands,
+            command_docs,
+            reporter,
+            command_tree,
+            schema_commands,
+        ),
     );
 
     vscode.languages.registerCompletionItemProvider(
@@ -209,7 +243,7 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     context.subscriptions.push(configChangeListener);
 
     const { registerMcpServerProvider } = require("./mcp_server_provider.ts.js");
-    registerMcpServerProvider(context);
+    registerMcpServerProvider(context, reporter);
 
     if (
         vscode.workspace.getConfiguration("msc-adams").get("runInAdams.autoLoadAdamsSitePackages")
@@ -220,9 +254,22 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     vscode.window.showInformationMessage("MSC Adams Extension Activated");
     output_channel.appendLine(`[${new Date().toLocaleTimeString()}] MSC Adams Extension Activated`);
     if (enableTelemetry) {
+        const config = vscode.workspace.getConfiguration("msc-adams");
         reporter.sendTelemetryEvent(
-            "MSC Adams Extension Activated",
-            vscode.workspace.getConfiguration().get("msc-adams"),
+            "extension_activated",
+            {
+                schema_loaded: String(!!command_tree),
+                lsp_enabled: String(!!config.get("linter.enabled")),
+                has_custom_launch_command: String(!!config.get("adamsLaunchCommand")),
+                auto_load_stubfiles: String(!!config.get("runInAdams.autoLoadAdamspyStubs")),
+                auto_load_site_packages: String(
+                    !!config.get("runInAdams.autoLoadAdamsSitePackages"),
+                ),
+            },
+            {
+                function_doc_count: view_functions.size,
+                command_doc_count: command_docs.size,
+            },
         );
     }
 }

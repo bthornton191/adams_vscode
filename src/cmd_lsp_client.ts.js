@@ -76,15 +76,29 @@ function cmd_lsp_client(output_channel, reporter) {
             output_channel.appendLine(
                 `[${new Date().toLocaleTimeString()}] Adams CMD linter disabled (msc-adams.linter.enabled=false)`,
             );
+            if (reporter) {
+                reporter.sendTelemetryEvent("lsp_disabled");
+            }
             return;
         }
 
         // Find Python interpreter — prefer the extension setting, fall back to
         // the Python extension's default, then bare "python".
-        const python_path =
-            config.get("linter.pythonPath") ||
-            vscode.workspace.getConfiguration("python").get("defaultInterpreterPath") ||
-            "python";
+        const explicit_python = config.get("linter.pythonPath");
+        const extension_python = vscode.workspace
+            .getConfiguration("python")
+            .get("defaultInterpreterPath");
+        const python_path = explicit_python || extension_python || "python";
+        const python_path_source = explicit_python
+            ? "explicit"
+            : extension_python
+              ? "python_extension"
+              : "default";
+        if (reporter) {
+            reporter.sendTelemetryEvent("lsp_python_path_resolved", {
+                source: python_path_source,
+            });
+        }
 
         // Launch the bundled wrapper script — no user pip-install required.
         const server_script = path.join(context.extensionPath, "bundled", "tool", "lsp_server.py");
@@ -165,6 +179,12 @@ function cmd_lsp_client(output_channel, reporter) {
                 output_channel.appendLine(
                     `[${new Date().toLocaleTimeString()}] Failed to start Adams CMD Language Server: ${err.message}`,
                 );
+                if (reporter) {
+                    reporter.sendTelemetryErrorEvent("lsp_start_failed", {
+                        error_message: err.message,
+                        python_path_source,
+                    });
+                }
             },
         );
 
@@ -195,6 +215,9 @@ function cmd_lsp_client(output_channel, reporter) {
                 output_channel.appendLine(
                     `[${new Date().toLocaleTimeString()}] Adams CMD linter settings changed — restarting language server`,
                 );
+                if (reporter) {
+                    reporter.sendTelemetryEvent("lsp_restarted", { reason: "config_change" });
+                }
                 _restart(context);
             }
         });

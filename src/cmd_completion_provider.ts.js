@@ -128,7 +128,36 @@ function cmd_completion_provider(
 
             // Report telemetry
             if (reporter) {
-                reporter.sendTelemetryEvent("cmd_completion_provider");
+                const function_count = completions.filter(
+                    (c) => c.kind === vscode.CompletionItemKind.Function,
+                ).length;
+                const argument_count = completions.filter(
+                    (c) => c.kind === vscode.CompletionItemKind.Field,
+                ).length;
+                const command_count = completions.filter(
+                    (c) => c.kind === vscode.CompletionItemKind.Interface,
+                ).length;
+                const completion_type =
+                    function_count > 0
+                        ? "function"
+                        : argument_count > 0
+                          ? "argument"
+                          : command_count > 0
+                            ? "command"
+                            : "none";
+                reporter.sendTelemetryEvent(
+                    "cmd_completion_provider",
+                    {
+                        trigger_kind: String(context.triggerKind),
+                        completion_type,
+                    },
+                    {
+                        match_count: completions.length,
+                        function_count,
+                        argument_count,
+                        command_count,
+                    },
+                );
             }
 
             return completions;

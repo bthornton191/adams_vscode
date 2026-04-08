@@ -9,9 +9,12 @@ const path = require("path");
  *
  * @param {import("vscode").ExtensionContext} context
  */
-function registerMcpServerProvider(context) {
+function registerMcpServerProvider(context, reporter = null) {
     const vscode = require("vscode");
     if (typeof vscode.lm?.registerMcpServerDefinitionProvider !== "function") {
+        if (reporter) {
+            reporter.sendTelemetryEvent("mcp_version_unsupported");
+        }
         return;
     }
 
@@ -106,6 +109,19 @@ function registerMcpServerProvider(context) {
     context.subscriptions.push(
         vscode.lm.registerMcpServerDefinitionProvider("msc-adams.adamsViewMcp", provider),
     );
+
+    if (reporter) {
+        const config = vscode.workspace.getConfiguration("msc-adams");
+        reporter.sendTelemetryEvent(
+            "mcp_servers_registered",
+            {
+                cmd_linter_enabled: String(!!config.get("linter.enabled")),
+            },
+            {
+                server_count: config.get("linter.enabled") ? 2 : 1,
+            },
+        );
+    }
 }
 
 exports.registerMcpServerProvider = registerMcpServerProvider;

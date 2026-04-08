@@ -164,14 +164,16 @@ suite("cmd_hover_provider — function hover", () => {
         assert.strictEqual(reporter.calls.telemetry[0][1].type, "function");
     });
 
-    test("does not send telemetry when word does not match", () => {
+    test("sends cmd_hover_miss telemetry when word does not match", () => {
         const view_functions = new Map([["abs", "**abs**(x)"]]);
         const reporter = makeMockReporter();
         const provider = cmd_hover_provider(view_functions, {}, new Map(), reporter);
 
         provider.provideHover(makeDocument("noop", "noop"), pos0, null);
 
-        assert.strictEqual(reporter.calls.telemetry.length, 0);
+        assert.strictEqual(reporter.calls.telemetry.length, 1);
+        assert.strictEqual(reporter.calls.telemetry[0][0], "cmd_hover_miss");
+        assert.strictEqual(reporter.calls.telemetry[0][1].word, "noop");
     });
 });
 
@@ -363,8 +365,14 @@ suite("cmd_hover_provider — abbreviation resolution", () => {
         // "ma" matches both "marker" (min_prefix 2) and "macro" (min_prefix 2) → ambiguous
         const ambig_tree = {
             children: {
-                marker: { min_prefix: 2, children: { create: { min_prefix: 2, children: {}, is_leaf: true } } },
-                macro: { min_prefix: 2, children: { create: { min_prefix: 2, children: {}, is_leaf: true } } },
+                marker: {
+                    min_prefix: 2,
+                    children: { create: { min_prefix: 2, children: {}, is_leaf: true } },
+                },
+                macro: {
+                    min_prefix: 2,
+                    children: { create: { min_prefix: 2, children: {}, is_leaf: true } },
+                },
             },
         };
         const ambig_cmds = { "marker create": {}, "macro create": {} };
@@ -372,7 +380,14 @@ suite("cmd_hover_provider — abbreviation resolution", () => {
             ["marker create", "# marker create"],
             ["macro create", "# macro create"],
         ]);
-        const provider = cmd_hover_provider(new Map(), {}, ambig_docs, null, ambig_tree, ambig_cmds);
+        const provider = cmd_hover_provider(
+            new Map(),
+            {},
+            ambig_docs,
+            null,
+            ambig_tree,
+            ambig_cmds,
+        );
         // "ma" is ambiguous between marker and macro
         const doc = makeDocument("ma create", "create");
         const result = provider.provideHover(doc, pos0, null);
