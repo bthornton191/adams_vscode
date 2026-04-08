@@ -2200,6 +2200,68 @@ def test_main_reinitializes_macro_index(monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# main() — cancel-warning logging filter
+# ---------------------------------------------------------------------------
+
+@pytest.fixture
+def _main_with_stubbed_startup(monkeypatch):
+    """Call main() with server startup stubbed out and restore logger filters afterward."""
+    import logging
+    monkeypatch.setattr(sys, "argv", ["adams-cmd-lsp"])
+    monkeypatch.setattr(srv.server, "start_io", lambda: None)
+    srv.main()
+    logger = logging.getLogger("pygls.protocol.json_rpc")
+    yield logger
+    logger.filters = [f for f in logger.filters if type(f).__name__ != "_SuppressCancelWarning"]
+
+
+def test_cancel_warning_filter_suppresses_matching_message(_main_with_stubbed_startup):
+    """_SuppressCancelWarning.filter() must return False for cancel-notification messages."""
+    import logging
+    logger = _main_with_stubbed_startup
+
+    cancel_filters = [f for f in logger.filters if type(f).__name__ == "_SuppressCancelWarning"]
+    assert cancel_filters, "main() should have installed a _SuppressCancelWarning filter"
+
+    flt = cancel_filters[0]
+    record = logging.LogRecord(
+        name="pygls.protocol.json_rpc",
+        level=logging.WARNING,
+        pathname="",
+        lineno=0,
+        msg='Cancel notification for unknown message id "%s"',
+        args=("42",),
+        exc_info=None,
+    )
+    assert flt.filter(record) is False, (
+        "filter() should suppress 'Cancel notification for unknown message id' warnings"
+    )
+
+
+def test_cancel_warning_filter_passes_other_messages(_main_with_stubbed_startup):
+    """_SuppressCancelWarning.filter() must return True for unrelated log records."""
+    import logging
+    logger = _main_with_stubbed_startup
+
+    cancel_filters = [f for f in logger.filters if type(f).__name__ == "_SuppressCancelWarning"]
+    assert cancel_filters, "Precondition: filter must be installed"
+
+    flt = cancel_filters[0]
+    record = logging.LogRecord(
+        name="pygls.protocol.json_rpc",
+        level=logging.WARNING,
+        pathname="",
+        lineno=0,
+        msg="Ignoring notification for unknown method %r",
+        args=("someMethod",),
+        exc_info=None,
+    )
+    assert flt.filter(record) is True, (
+        "filter() should pass through unrelated log records"
+    )
+
+
+# ---------------------------------------------------------------------------
 # _update_doc_cache / _get_doc_cache
 # ---------------------------------------------------------------------------
 
@@ -3166,4 +3228,3 @@ def test_find_references_dollar_var_exclude_declaration(monkeypatch):
     )
     assert 0 in lines_incl, f"include_declaration=True: definition line 0 missing"
     assert 2 in lines_incl, f"include_declaration=True: ref on line 2 missing"
-

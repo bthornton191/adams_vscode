@@ -23,9 +23,12 @@ function cmd_lsp_client(output_channel, reporter) {
     let config_listener = null;
     /** @type {boolean} */
     let initial_start = true;
+    /** @type {number} Incremented on every restart. Lets earlier stop callbacks bail out
+     *  when a newer restart has already taken over. */
+    let restart_generation = 0;
 
     function _create_macro_watchers(macro_paths) {
-        macro_watchers.forEach(w => w.dispose());
+        macro_watchers.forEach((w) => w.dispose());
         macro_watchers = [];
         if (!Array.isArray(macro_paths) || macro_paths.length === 0) {
             return;
@@ -50,12 +53,20 @@ function cmd_lsp_client(output_channel, reporter) {
     }
 
     function _restart(context) {
-        const stop_promise = client ? client.stop() : Promise.resolve();
+        // Claim ownership of this restart. Any earlier stop callback that resolves
+        // later will see its generation is stale and skip starting a new client.
+        const generation = ++restart_generation;
+        const prev_client = client;
+        client = null;
+
+        const stop_promise = prev_client ? prev_client.stop() : Promise.resolve();
         stop_promise
-            .catch(function () {})  // absorb stop errors; restart regardless
+            .catch(function () {}) // absorb stop errors; restart regardless
             .then(function () {
-                client = null;
-                _start_client(context);
+                // Only start if no newer restart has been requested since.
+                if (generation === restart_generation) {
+                    _start_client(context);
+                }
             });
     }
 
@@ -118,9 +129,9 @@ function cmd_lsp_client(output_channel, reporter) {
         // Create file-system watchers from the same patterns used for scanning.
         // The vscode-languageclient library picks these up and sends
         // workspace/didChangeWatchedFiles notifications to the server automatically.
-        _create_macro_watchers(Array.isArray(macro_paths) && macro_paths.length > 0
-            ? macro_paths
-            : ["**/*.mac"]);
+        _create_macro_watchers(
+            Array.isArray(macro_paths) && macro_paths.length > 0 ? macro_paths : ["**/*.mac"],
+        );
 
         const client_options = {
             documentSelector: [{ scheme: "file", language: "adams_cmd" }],
@@ -180,7 +191,7 @@ function cmd_lsp_client(output_channel, reporter) {
             "msc-adams.linter.pythonPath",
         ];
         config_listener = vscode.workspace.onDidChangeConfiguration(function (event) {
-            if (MACRO_RESTART_KEYS.some(k => event.affectsConfiguration(k))) {
+            if (MACRO_RESTART_KEYS.some((k) => event.affectsConfiguration(k))) {
                 output_channel.appendLine(
                     `[${new Date().toLocaleTimeString()}] Adams CMD linter settings changed — restarting language server`,
                 );
@@ -191,7 +202,7 @@ function cmd_lsp_client(output_channel, reporter) {
     }
 
     function stop() {
-        macro_watchers.forEach(w => w.dispose());
+        macro_watchers.forEach((w) => w.dispose());
         macro_watchers = [];
         if (config_listener) {
             config_listener.dispose();
@@ -206,4 +217,3 @@ function cmd_lsp_client(output_channel, reporter) {
 }
 
 exports.cmd_lsp_client = cmd_lsp_client;
-

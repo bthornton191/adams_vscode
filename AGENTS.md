@@ -30,6 +30,16 @@ This is a VS Code extension for MSC Adams multi-body dynamics simulation softwar
 - **Preferred way to run tests**: Use VS Code's built-in Test Explorer (the beaker icon). This runs tests through the full extension host with Adams available, and results are visible both in the Test Explorer UI and via the `test_failure` tool (which Copilot can query to read results automatically).
 - **Copilot test workflow**: After making changes, use `runTests` with specific test file paths to trigger a VS Code test run and get immediate pass/fail results. Use `test_failure` to read detailed failure info. Iterate until all tests pass. This is the **required** workflow — do not use the terminal to run tests.
 
+### Test failure: "test process exited unexpectedly"
+
+When **every** test in a run (including unrelated ones) fails with `Test process exited unexpectedly` and no assertion message, this is **not a code problem**. There are two common causes:
+
+1. **A VS Code update is waiting to be installed.** VS Code will restart the extension host mid-run and kill the test process. The fix is to install the pending update and restart VS Code before running tests again. Tell the user: *"It looks like there's a pending VS Code update. Please install it and restart VS Code, then re-run the tests."*
+
+2. **Adams View is not running.** The global fixture (`test/global_fixture.cjs`) kills the test process if it cannot connect to Adams. Tell the user: *"Adams View does not appear to be running. Please start it and re-run the tests."*
+
+If only a **subset** of tests fail with real assertion messages, that is a genuine code failure — investigate and fix normally.
+
 ## Resources
 - `resources/adams_design_functions/*.md` — documentation for Adams functions, one file per function. These can be edited manually when documentation needs updating.
 - `resources/adams_view_commands/` — Adams command definitions (`structured.json`, `unstructured.json`). Loaded at activation.
