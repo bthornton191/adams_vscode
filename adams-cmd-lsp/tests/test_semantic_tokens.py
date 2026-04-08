@@ -97,10 +97,10 @@ def test_parse_blank_has_no_tokens():
     assert stmts[0].command_key_tokens == []
 
 
-def test_parse_control_flow_has_no_tokens():
+def test_parse_control_flow_has_tokens():
     stmts = parse("if condition(1)\n")
     assert stmts[0].is_control_flow
-    assert stmts[0].command_key_tokens == []
+    assert stmts[0].command_key_tokens[0][0] == "if"
 
 
 def test_parse_token_positions_are_correct():

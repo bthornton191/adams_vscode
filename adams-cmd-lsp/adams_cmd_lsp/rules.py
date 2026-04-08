@@ -20,6 +20,14 @@ def _canonical_key(stmt):
     return stmt.resolved_command_key or stmt.command_key
 
 
+def _stmt_start_col(stmt):
+    """Return the 0-based column of the first token of the statement.
+
+    Falls back to 0 if command_key_tokens is empty (e.g. blank/comment stmts).
+    """
+    return stmt.command_key_tokens[0][2] if stmt.command_key_tokens else 0
+
+
 # ---------------------------------------------------------------------------
 # Adams entity type names (used by type_filter / type= arguments, DB_ENT)
 #
@@ -152,11 +160,12 @@ def rule_unknown_command(statements, schema, symbols):
                 " If this is a user-defined macro, enable "
                 "'msc-adams.linter.scanWorkspaceMacros' to scan the workspace for macro definitions."
             )
+        start_col = _stmt_start_col(stmt)
         diagnostics.append(Diagnostic(
             line=stmt.line_start,
-            column=col,
+            column=start_col + col,
             end_line=stmt.line_start,
-            end_column=col + len(bad_token),
+            end_column=start_col + col + len(bad_token),
             code="E001",
             message=message,
             severity=Severity.ERROR,
@@ -178,11 +187,12 @@ def _check_merged_commands(stmt, tokens, schema):
         left_key, left_err = schema.resolve_command_key(left_tokens)
         right_key, right_err = schema.resolve_command_key(right_tokens)
         if left_key and right_key:
+            start_col = _stmt_start_col(stmt)
             return Diagnostic(
                 line=stmt.line_start,
-                column=0,
-                end_line=stmt.line_end,
-                end_column=0,
+                column=start_col,
+                end_line=stmt.line_start,
+                end_column=start_col + len(stmt.command_key),
                 code="W103",
                 message=(
                     f"Commands appear merged by trailing '&': "
@@ -419,11 +429,12 @@ def rule_missing_required(statements, schema, symbols):
                 code, sev = "E005", Severity.ERROR
                 msg = f"Missing required argument: '{arg_name}'"
 
+            start_col = _stmt_start_col(stmt)
             diagnostics.append(Diagnostic(
                 line=stmt.line_start,
-                column=0,
+                column=start_col,
                 end_line=stmt.line_start,
-                end_column=len(stmt.command_key),
+                end_column=start_col + len(stmt.command_key),
                 code=code,
                 message=msg,
                 severity=sev,
@@ -589,7 +600,7 @@ def rule_control_flow_balance(statements, schema, symbols):
     different semantics and no explicit ``end`` statement.
     """
     diagnostics = []
-    stack = []  # list of (keyword, line)
+    stack = []  # list of (keyword, line, col)
     in_python = False  # True while inside a Python scripting section
 
     for stmt in statements:
@@ -610,15 +621,16 @@ def rule_control_flow_balance(statements, schema, symbols):
 
         kw = stmt.control_flow_keyword
 
+        start_col = _stmt_start_col(stmt)
         if kw in ("if", "for", "while"):
-            stack.append((kw, stmt.line_start))
+            stack.append((kw, stmt.line_start, start_col))
         elif kw == "elseif":
             if not stack or stack[-1][0] not in ("if",):
                 diagnostics.append(Diagnostic(
                     line=stmt.line_start,
-                    column=0,
+                    column=start_col,
                     end_line=stmt.line_start,
-                    end_column=len(kw),
+                    end_column=start_col + len(kw),
                     code="E104",
                     message="'elseif' without matching 'if'",
                     severity=Severity.ERROR,
@@ -627,9 +639,9 @@ def rule_control_flow_balance(statements, schema, symbols):
             if not stack or stack[-1][0] != "if":
                 diagnostics.append(Diagnostic(
                     line=stmt.line_start,
-                    column=0,
+                    column=start_col,
                     end_line=stmt.line_start,
-                    end_column=len(kw),
+                    end_column=start_col + len(kw),
                     code="E104",
                     message="'else' without matching 'if'",
                     severity=Severity.ERROR,
@@ -638,9 +650,9 @@ def rule_control_flow_balance(statements, schema, symbols):
             if not stack:
                 diagnostics.append(Diagnostic(
                     line=stmt.line_start,
-                    column=0,
+                    column=start_col,
                     end_line=stmt.line_start,
-                    end_column=len(kw),
+                    end_column=start_col + len(kw),
                     code="E104",
                     message="'end' without matching 'if', 'for', or 'while'",
                     severity=Severity.ERROR,
@@ -649,12 +661,12 @@ def rule_control_flow_balance(statements, schema, symbols):
                 stack.pop()
 
     # Any unclosed blocks remaining in the stack
-    for kw, line in stack:
+    for kw, line, col in stack:
         diagnostics.append(Diagnostic(
             line=line,
-            column=0,
+            column=col,
             end_line=line,
-            end_column=len(kw),
+            end_column=col + len(kw),
             code="E104",
             message=f"'{kw}' block not closed with 'end'",
             severity=Severity.ERROR,
