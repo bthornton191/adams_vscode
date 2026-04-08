@@ -9,6 +9,7 @@ Start via:
 
 import argparse
 import fnmatch
+import logging
 import os
 import re
 from pathlib import Path
@@ -743,6 +744,15 @@ def main():
     _macro_index = MacroIndex()    # reset in case main() is called more than once
     _object_index = ObjectIndex()  # reset cross-file object navigation index
     _doc_cache.clear()             # reset per-document parse cache
+
+    # Suppress the harmless "Cancel notification for unknown message id" warning
+    # that pygls logs when VS Code sends $/cancelRequest after the hover response
+    # has already been sent (race condition that is normal per the LSP spec).
+    class _SuppressCancelWarning(logging.Filter):
+        def filter(self, record):
+            return "Cancel notification for unknown message id" not in record.getMessage()
+
+    logging.getLogger("pygls.protocol.json_rpc").addFilter(_SuppressCancelWarning())
 
     if args.tcp:
         server.start_tcp("localhost", args.port)
