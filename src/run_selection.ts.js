@@ -54,6 +54,9 @@ function run_selection(output_channel, entire_file = false, reporter = null, don
  * @returns {Object}
  */
 function getAviewCommand(editor, text, entire_file, reporter = null) {
+    const sub_lib_name = vscode.workspace
+        .getConfiguration("msc-adams")
+        .get("runInAdams.substituteSelf");
     if (editor.document.languageId == "adams_cmd") {
         // If the current file is an Adams command file, do some formatting
         text = format_adams_cmd(text, editor.document.getText(), sub_lib_name);
@@ -62,9 +65,15 @@ function getAviewCommand(editor, text, entire_file, reporter = null) {
         fs.closeSync(temp_file.fd);
         var cmd = `file command read file_name = "${temp_file.path}"`;
         if (entire_file && reporter) {
-            reporter.sendTelemetryEvent("run_file", { language: "adams_cmd" });
+            reporter.sendTelemetryEvent("run_file", {
+                language: "adams_cmd",
+                has_self_substitution: String(text.includes("$_self")),
+            });
         } else if (reporter) {
-            reporter.sendTelemetryEvent("run_selection", { language: "adams_cmd" });
+            reporter.sendTelemetryEvent("run_selection", {
+                language: "adams_cmd",
+                has_self_substitution: String(text.includes("$_self")),
+            });
         }
     } else if (editor.document.languageId == "python" && entire_file) {
         // If the current file is a Python file
@@ -129,7 +138,10 @@ function sendAviewCommands(output_channel, cmd, done, reporter = null) {
                 "You can start the command server in Adams View by going to Tools>Command Server.",
         );
         if (reporter)
-            reporter.sendTelemetryErrorEvent("sendAviewCommands", { error: err.toString() });
+            reporter.sendTelemetryErrorEvent("sendAviewCommands", {
+                error_type: "connection",
+                error_message: err.toString(),
+            });
         done();
     });
 }
@@ -216,6 +228,9 @@ function format_adams_cmd(selected_text, full_text, lib_name) {
 }
 
 function createLibIfNotExist(done) {
+    const sub_lib_name = vscode.workspace
+        .getConfiguration("msc-adams")
+        .get("runInAdams.substituteSelf");
     checkIfLibExists(function (exists) {
         if (exists) {
             done();
@@ -227,6 +242,9 @@ function createLibIfNotExist(done) {
 }
 
 function checkIfLibExists(done) {
+    const sub_lib_name = vscode.workspace
+        .getConfiguration("msc-adams")
+        .get("runInAdams.substituteSelf");
     // Create a tcp/ip socket and connect to Adams View on configured port
     const client = new net.Socket();
     client.on("error", function (err) {

@@ -120,6 +120,7 @@ function cmd_hover_provider(
             const context_words = command_context.trim().split(/\s+/).filter(Boolean);
 
             let matched_key = null;
+            let matched_was_abbreviation = false;
 
             if (command_tree && schema_commands) {
                 // --- Abbreviation-aware resolution via command_tree ---
@@ -134,6 +135,11 @@ function cmd_hover_provider(
                         // check, which would false-positive on canonical prefixes).
                         if (tokens.includes(word)) {
                             matched_key = key;
+                            const canonical_words = key.split(" ");
+                            matched_was_abbreviation = tokens.some(
+                                (t, i) =>
+                                    canonical_words[i] !== undefined && t !== canonical_words[i],
+                            );
                         }
                         break; // Stop at the longest resolved key regardless
                     }
@@ -158,6 +164,7 @@ function cmd_hover_provider(
                         reporter.sendTelemetryEvent("cmd_hover_provider", {
                             word: matched_key,
                             type: "command",
+                            was_abbreviation: String(matched_was_abbreviation),
                         });
                     }
                     return new vscode.Hover(new vscode.MarkdownString(doc_text), range);
@@ -173,11 +180,15 @@ function cmd_hover_provider(
                     reporter.sendTelemetryEvent("cmd_hover_provider", {
                         word: word,
                         type: "function",
+                        was_abbreviation: "false",
                     });
                 }
                 return new vscode.Hover(new vscode.MarkdownString(text), range);
             }
 
+            if (reporter) {
+                reporter.sendTelemetryEvent("cmd_hover_miss", { word });
+            }
             return undefined;
         },
     };
