@@ -3,6 +3,34 @@
 	"tasks": [
 		{
 			"type": "shell",
+			"label": "Presentation: Dev Server",
+			"command": "npm run dev",
+			"isBackground": true,
+			"group": "build",
+			"options": {
+				"cwd": "${workspaceFolder}/doc/presentations/adams-vscode-intro",
+				"shell": {
+					"executable": "cmd.exe",
+					"args": ["/c"]
+				}
+			},
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "^$"
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "starting",
+					"endsPattern": "localhost"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"type": "shell",
 			"label": "Publish",
 			"command": "echo Published!",
 			"group": {
