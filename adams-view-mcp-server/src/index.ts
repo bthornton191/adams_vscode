@@ -19,6 +19,7 @@ import { registerModelTools } from "./tools/model.js";
 import { registerLogTools } from "./tools/log.js";
 import { registerSimulationTools } from "./tools/simulation.js";
 import { registerSessionTools } from "./tools/session.js";
+import { registerBatchTools } from "./tools/batch.js";
 
 const server = new McpServer({
   name: "adams-view-mcp-server",
@@ -31,6 +32,7 @@ registerModelTools(server);
 registerLogTools(server);
 registerSimulationTools(server);
 registerSessionTools(server);
+registerBatchTools(server);
 
 async function main(): Promise<void> {
   const transport = new StdioServerTransport();

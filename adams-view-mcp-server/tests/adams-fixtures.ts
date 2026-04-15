@@ -2,11 +2,18 @@
  * tests/adams-fixtures.ts — Launch and teardown helpers for E2E tests.
  *
  * Provides a beforeAll/afterAll pair that:
- *   1. Checks if Adams View + Command Server is already running.
- *   2. If not, finds mdi.bat, writes aviewAS.cmd, and launches Adams View
- *      silently via wscript.exe + VBScript (same approach as adams_launch_view).
- *   3. Polls until the Command Server is reachable.
- *   4. Optionally kills the Adams process in afterAll if WE launched it.
+ *   1. Allocates a free TCP port so tests NEVER connect to an existing
+ *      Adams View session on the default port (5002).
+ *   2. Finds mdi.bat, writes aviewAS.cmd with 'command_server port=<N> start',
+ *      and launches Adams View silently via wscript.exe + VBScript.
+ *   3. Sets ADAMS_LISTENER_PORT in process.env so client.ts picks up the
+ *      isolated port for all subsequent calls in this test run.
+ *   4. Polls until the Command Server is reachable on the isolated port.
+ *   5. Kills the Adams process and restores aviewAS.cmd in afterAll.
+ *
+ * The e2e tests always launch their own Adams View process. They never
+ * attach to a pre-existing session, which prevents collateral damage to
+ * interactive sessions the user may have open on the default port.
  *
  * Usage:
  *   import { setupAdams, teardownAdams } from "./adams-fixtures.js";
@@ -18,11 +25,12 @@ import * as fs from "fs/promises";
 import * as net from "net";
 import * as os from "os";
 import * as path from "path";
+import { randomUUID } from "crypto";
 import { spawn, execSync } from "child_process";
-import { checkConnection, getPort } from "../src/client.js";
+import { checkConnection } from "../src/client.js";
+import { findMdi } from "../src/mdi.js";
 
 const AVIEW_AS_CMD = "aviewAS.cmd";
-const COMMAND_SERVER_LINE = "command_server start";
 const POLL_INTERVAL_MS = 2000;
 const DEFAULT_TIMEOUT_MS = 120_000;
 const E2E_WORK_DIR = path.join(import.meta.dirname, "e2e_working_directory");
@@ -33,48 +41,6 @@ let adamsWorkDir = E2E_WORK_DIR;
 let originalAviewAsContent: string | null = null;
 let aviewAsCmdPath = "";
 
-// ── mdi discovery ─────────────────────────────────────────────────────────────
-
-async function findLatestMdiUnder(parentDir: string, mdiName: string): Promise<string | null> {
-  let entries: string[];
-  try {
-    const dirents = await fs.readdir(parentDir, { withFileTypes: true });
-    entries = dirents.filter((d) => d.isDirectory()).map((d) => d.name);
-  } catch {
-    return null;
-  }
-  entries.sort((a, b) => b.localeCompare(a));
-  for (const entry of entries) {
-    const candidate = path.join(parentDir, entry, "common", mdiName);
-    try {
-      await fs.access(candidate);
-      return candidate;
-    } catch { /* try next */ }
-  }
-  return null;
-}
-
-async function findMdi(): Promise<string | null> {
-  const isWindows = process.platform === "win32";
-  const mdiName = isWindows ? "mdi.bat" : "mdi";
-
-  const envLaunch = process.env["ADAMS_LAUNCH_COMMAND"];
-  if (envLaunch) {
-    try { await fs.access(envLaunch); return envLaunch; } catch { /* fall through */ }
-  }
-  const envInstall = process.env["ADAMS_INSTALL_DIR"];
-  if (envInstall) {
-    const found = await findLatestMdiUnder(envInstall, mdiName);
-    if (found) return found;
-  }
-  if (isWindows) {
-    const found = await findLatestMdiUnder(
-      String.raw`C:\Program Files\MSC.Software\Adams`, mdiName
-    );
-    if (found) return found;
-  }
-  return null;
-}
 
 // ── poll ──────────────────────────────────────────────────────────────────────
 
@@ -91,10 +57,11 @@ async function waitForAdams(timeoutMs: number): Promise<boolean> {
 
 // ── launch ────────────────────────────────────────────────────────────────────
 
-async function launchAdams(mdiPath: string, workDir: string): Promise<void> {
+async function launchAdams(mdiPath: string, workDir: string, port: number): Promise<void> {
   await fs.mkdir(workDir, { recursive: true });
 
-  // Manage aviewAS.cmd so Command Server starts automatically
+  // Manage aviewAS.cmd so Command Server starts on our isolated port
+  const commandServerLine = `command_server port=${port} start`;
   aviewAsCmdPath = path.join(workDir, AVIEW_AS_CMD);
   try {
     originalAviewAsContent = await fs.readFile(aviewAsCmdPath, "utf8");
@@ -102,17 +69,13 @@ async function launchAdams(mdiPath: string, workDir: string): Promise<void> {
     originalAviewAsContent = null;
   }
 
-  const needsLine =
-    originalAviewAsContent === null ||
-    !originalAviewAsContent.trimEnd().endsWith(COMMAND_SERVER_LINE);
-
   if (originalAviewAsContent === null) {
-    await fs.writeFile(aviewAsCmdPath, `${COMMAND_SERVER_LINE}\n`, "utf8");
-  } else if (needsLine) {
+    await fs.writeFile(aviewAsCmdPath, `${commandServerLine}\n`, "utf8");
+  } else {
     const sep = originalAviewAsContent.endsWith("\n") ? "" : "\n";
     await fs.writeFile(
       aviewAsCmdPath,
-      `${originalAviewAsContent}${sep}${COMMAND_SERVER_LINE}\n`,
+      `${originalAviewAsContent}${sep}${commandServerLine}\n`,
       "utf8"
     );
   }
@@ -125,7 +88,7 @@ async function launchAdams(mdiPath: string, workDir: string): Promise<void> {
     const argsStr = mdiArgs.join(" ");
     const cmd = `""${mdiEscaped}"" ${argsStr}`;
     const vbs = `CreateObject("WScript.Shell").Run "${cmd}", 0, False`;
-    const vbsTmp = path.join(os.tmpdir(), `adams-e2e-${crypto.randomUUID()}.vbs`);
+    const vbsTmp = path.join(os.tmpdir(), `adams-e2e-${randomUUID()}.vbs`);
     await fs.writeFile(vbsTmp, vbs, "utf8");
     setTimeout(() => fs.unlink(vbsTmp).catch(() => undefined), 15_000);
     spawn("wscript.exe", ["/nologo", vbsTmp], {
@@ -142,21 +105,23 @@ async function launchAdams(mdiPath: string, workDir: string): Promise<void> {
   }
 }
 
-// Need crypto for UUID
-import { randomUUID as crypto_randomUUID } from "crypto";
-const crypto = { randomUUID: crypto_randomUUID };
+// ── port helpers ─────────────────────────────────────────────────────────────
 
-// ── port check ────────────────────────────────────────────────────────────────
-
-/** Returns true if something (anything) is listening on the given TCP port. */
-function isPortBound(port: number): Promise<boolean> {
-  return new Promise((resolve) => {
-    const s = new net.Socket();
-    s.setTimeout(1500);
-    s.once("connect", () => { s.destroy(); resolve(true); });
-    s.once("error", () => { s.destroy(); resolve(false); });
-    s.once("timeout", () => { s.destroy(); resolve(false); });
-    s.connect(port, "127.0.0.1");
+/**
+ * Ask the OS to assign a free TCP port by briefly binding to port 0,
+ * then immediately releasing it. Returns the port number.
+ */
+function getFreePort(): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.listen(0, "127.0.0.1", () => {
+      const addr = server.address();
+      const port = typeof addr === "object" && addr ? addr.port : 0;
+      server.close((err) => {
+        if (err) reject(err); else resolve(port);
+      });
+    });
+    server.once("error", reject);
   });
 }
 
@@ -203,70 +168,36 @@ async function restoreAviewAsCmd(): Promise<void> {
 
 export async function setupAdams(): Promise<void> {
   weStartedAdams = false;
-  const alreadyRunning = await checkConnection();
 
-  if (alreadyRunning) {
-    console.log("[e2e] Adams View already running — using existing session.");
-    return;
-  }
-
-  // The port may be bound by a stuck/broken Adams session that failed
-  // checkConnection() above. If so, kill it before launching a fresh one.
-  // Only kill if Adams (aview.exe) is actually the process holding the port —
-  // TIME_WAIT sockets from a recently closed connection also show as bound but
-  // don't need killing (the OS will release them shortly).
-  const port = getPort();
-  const portBound = await isPortBound(port);
-  if (portBound) {
-    const adamsHoldsPort = process.platform === "win32"
-      ? (() => {
-          try {
-            const out = execSync(
-              `for /f "tokens=5" %a in ('netstat -ano ^| findstr :${port}') do @tasklist /fi "PID eq %a" /fo csv /nh 2>nul | findstr /i aview`,
-              { encoding: "utf8", shell: "cmd.exe" }
-            );
-            return out.trim().length > 0;
-          } catch { return false; }
-        })()
-      : false;
-
-    if (adamsHoldsPort) {
-      console.log(
-        `[e2e] Adams is holding port ${port} but not responding — ` +
-        `killing before launching fresh.`
-      );
-      killAdamsInDir(adamsWorkDir);
-      await new Promise((r) => setTimeout(r, 2000));
-    } else {
-      console.log(
-        `[e2e] Port ${port} appears busy but Adams is not the owner ` +
-        `(may be TIME_WAIT) — proceeding with launch.`
-      );
-    }
-  }
-
+  // Always launch a fresh Adams View on an isolated port — never attach to
+  // a pre-existing session on the default port. This prevents collateral
+  // damage to interactive Adams sessions the user may have open.
   const mdi = await findMdi();
   if (!mdi) {
     console.log(
-      "[e2e] Adams View not running and mdi.bat not found — E2E tests will be skipped.\n" +
+      "[e2e] mdi.bat not found — E2E tests will be skipped.\n" +
       "  Set ADAMS_LAUNCH_COMMAND or ADAMS_INSTALL_DIR to enable auto-launch."
     );
     return;
   }
 
+  // Pick a free port and point the client at it for this process lifetime.
+  const port = await getFreePort();
+  process.env["ADAMS_LISTENER_PORT"] = String(port);
+
   adamsWorkDir = E2E_WORK_DIR;
-  console.log(`[e2e] Launching Adams View from ${mdi} in ${adamsWorkDir} ...`);
-  await launchAdams(mdi, adamsWorkDir);
+  console.log(`[e2e] Launching Adams View from ${mdi} in ${adamsWorkDir} on port ${port} ...`);
+  await launchAdams(mdi, adamsWorkDir, port);
   weStartedAdams = true;
 
   const ready = await waitForAdams(DEFAULT_TIMEOUT_MS);
   if (!ready) {
     throw new Error(
       `[e2e] Adams View launched but Command Server did not become reachable ` +
-      `on port ${getPort()} within ${DEFAULT_TIMEOUT_MS / 1000}s.`
+      `on port ${port} within ${DEFAULT_TIMEOUT_MS / 1000}s.`
     );
   }
-  console.log(`[e2e] Adams View ready on port ${getPort()}.`);
+  console.log(`[e2e] Adams View ready on port ${port}.`);
 }
 
 export async function teardownAdams(): Promise<void> {
