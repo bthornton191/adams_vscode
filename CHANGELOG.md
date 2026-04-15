@@ -1,7 +1,6 @@
 # Changelog
 
 - [Changelog](#changelog)
-  - [1.14.0 (April 15th 2026)](#1140-april-15th-2026)
   - [1.13.0 (April 8th 2026)](#1130-april-8th-2026)
   - [1.12.2 (April 8th 2026)](#1122-april-8th-2026)
   - [1.12.1 (April 6th 2026)](#1121-april-6th-2026)
@@ -59,10 +58,6 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
-
-## 1.14.0 (April 15th 2026)
-
-- **Added** Go to Definition and Find References for macro parameters in `.mac` files. Ctrl+Click on a `$param_name` reference in a macro body navigates to its `!$param_name` header definition, and vice versa. Shift+F12 from either location returns all references.
 
 ## 1.13.0 (April 8th 2026)
 
