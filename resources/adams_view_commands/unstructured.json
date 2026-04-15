@@ -1144,5 +1144,8 @@
   "xy_plots template modify",
   "xy_plots template replace_simulation",
   "xy_plots template restore",
-  "xy_plots template zoom"
+  "xy_plots template zoom",
+  "list_info executive_control",
+  "list_info memory_usage",
+  "list_info output_control"
 ]
