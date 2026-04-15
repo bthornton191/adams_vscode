@@ -30,3 +30,4 @@ test/.vscode/settings.json
 adams-view-mcp-server/tests/e2e_working_directory/mylog.log
 doc/presentations/adams-vscode-intro/node_modules
 .agents/skills/slidev/references
+.playwright-mcp
