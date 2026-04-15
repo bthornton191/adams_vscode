@@ -43,6 +43,7 @@
 - Adams Function Documentation Hover Provider
 - Adams Command Documentation Hover Provider (hover over a command keyword to see its description, syntax, and argument details)
 - Adams Macro Documentation Hover Provider (hover over a user-defined macro invocation to see its help string)
+- Adams Macro Parameter Navigation (Ctrl+Click on `$param_name` in a macro body to jump to its `!$param_name` definition; Shift+F12 for all references)
 
 ![Example of Adams Function Documentation Hover Provider Example](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/autocomplete_function.gif)
 

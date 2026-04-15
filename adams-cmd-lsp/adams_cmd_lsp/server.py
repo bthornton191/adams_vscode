@@ -27,7 +27,7 @@ from .object_index import ObjectIndex, index_file_objects, _resolve_command_keys
 from .macros import (
     scan_macro_files, parse_macro_file, MacroRegistry, DEFAULT_MACRO_PATTERNS,
     DEFAULT_IGNORE_DIRS, extract_macros_from_statements,
-    _USER_ENTERED_COMMAND_RE,
+    _USER_ENTERED_COMMAND_RE, _COMMENT_PARAM_RE, _END_OF_PARAMETERS,
 )
 from .references import MacroIndex, index_file_text
 from .ude import UdeRegistry, scan_ude_files, DEFAULT_UDE_PATTERNS
@@ -156,6 +156,94 @@ def _find_variable_references_in_text(text: str, var_name: str):
         for m in pattern.finditer(line_text):
             results.append((i, m.start(), m.start() + len(var_name)))
     return results
+
+
+def _find_macro_param_defs_in_text(text: str):
+    """Scan *text* for comment-style macro parameter definitions (``!$name``).
+
+    Returns a dict mapping the parameter token (``$name``, lowercased, with
+    leading ``$``) to ``(line, col_start, col_end)`` where *col_start* and
+    *col_end* span the ``$name`` token in the source line (excluding the
+    leading ``!`` and any ``:qualifier`` suffixes).
+
+    Scanning stops at the first ``!END_OF_PARAMETERS`` line.
+    ``$_self`` is excluded — it is the macro's own namespace variable,
+    not a user-declared parameter.
+    """
+    params = {}
+    for i, line_text in enumerate(text.splitlines()):
+        stripped = line_text.strip()
+        if _END_OF_PARAMETERS.match(stripped):
+            break
+        m = _COMMENT_PARAM_RE.match(stripped)
+        if m is None:
+            continue
+        # Group 1: quoted form  $'name'  (may include :qualifiers inside quotes)
+        # Group 2: bare form    $name    (qualifiers are in group 3)
+        if m.group(1) is not None:
+            raw_name = m.group(1).split(':')[0].strip()
+        else:
+            raw_name = m.group(2)
+        if not raw_name:
+            continue
+        param_token = '$' + raw_name
+        if param_token.lower() == '$_self':
+            continue
+        # Locate the '$' character in the original (non-stripped) line.
+        dollar_idx = line_text.find('$')
+        if dollar_idx == -1:
+            continue
+        col_start = dollar_idx
+        # For quoted form $'name:...' the source has '$' + "'" + raw_name;
+        # for bare form $name the source has '$' + raw_name.
+        if m.group(1) is not None:  # quoted form
+            col_end = dollar_idx + 2 + len(raw_name)  # span: $'name
+        else:  # bare form
+            col_end = dollar_idx + 1 + len(raw_name)  # span: $name
+        params[param_token.lower()] = (i, col_start, col_end)
+    return params
+
+
+def _find_macro_param_def_at_position(text: str, line: int, character: int):
+    """Return param info if cursor is on the ``$name`` part of a ``!$name`` definition.
+
+    Returns ``(param_token, line, col_start, col_end)`` where *param_token*
+    includes the leading ``$``, or ``None`` if the cursor is not on a macro
+    parameter definition.
+    """
+    lines_text = text.splitlines()
+    if not (0 <= line < len(lines_text)):
+        return None
+    line_text = lines_text[line]
+    stripped = line_text.strip()
+    if _END_OF_PARAMETERS.match(stripped):
+        return None
+    m = _COMMENT_PARAM_RE.match(stripped)
+    if m is None:
+        return None
+    if m.group(1) is not None:
+        raw_name = m.group(1).split(':')[0].strip()
+    else:
+        raw_name = m.group(2)
+    if not raw_name:
+        return None
+    param_token = '$' + raw_name
+    if param_token.lower() == '$_self':
+        return None
+    dollar_idx = line_text.find('$')
+    if dollar_idx == -1:
+        return None
+    col_start = dollar_idx
+    # For quoted form $'name:...' the source has '$' + "'" + raw_name;
+    # for bare form $name the source has '$' + raw_name.
+    if m.group(1) is not None:  # quoted form
+        col_end = dollar_idx + 2 + len(raw_name)  # span: $'name
+    else:  # bare form
+        col_end = dollar_idx + 1 + len(raw_name)  # span: $name
+    if col_start <= character < col_end:
+        return (param_token, line, col_start, col_end)
+    return None
+
 
 # ---------------------------------------------------------------------------
 # SymbolKind mapping for Adams object types
@@ -917,6 +1005,33 @@ def goto_definition(params: types.DefinitionParams):
     # --- 4. $variable navigation ---
     lines_text = text.splitlines()
     if 0 <= line < len(lines_text):
+        # Is the cursor on a !$param_name definition in a macro header? → inverse navigation
+        mac_param_def = _find_macro_param_def_at_position(text, line, character)
+        if mac_param_def is not None:
+            param_token, p_line, p_col, p_end_col = mac_param_def
+            origin_selection = types.Range(
+                start=types.Position(line=p_line, character=p_col),
+                end=types.Position(line=p_line, character=p_end_col),
+            )
+            ref_locs = _find_variable_references_in_text(text, param_token)
+            locations = [
+                types.LocationLink(
+                    target_uri=uri,
+                    target_range=types.Range(
+                        start=types.Position(line=rl, character=rc),
+                        end=types.Position(line=rl, character=re_),
+                    ),
+                    target_selection_range=types.Range(
+                        start=types.Position(line=rl, character=rc),
+                        end=types.Position(line=rl, character=re_),
+                    ),
+                    origin_selection_range=origin_selection,
+                )
+                for rl, rc, re_ in ref_locs
+                if not (rl == p_line and rc == p_col)  # exclude the definition itself
+            ]
+            return locations if locations else None
+
         # Is the cursor on the variable_name arg of 'variable set'? → definition site
         var_def = _find_variable_def_at_position(statements, _schema, line, character)
         if var_def is not None:
@@ -965,6 +1080,28 @@ def goto_definition(params: types.DefinitionParams):
                     target_selection_range=target_range,
                     origin_selection_range=origin_selection,
                 )]
+
+            # Fallback: check macro parameter definitions in this file
+            mac_param_defs = _find_macro_param_defs_in_text(text)
+            parts = full_token.split('.')
+            for i in range(len(parts), 0, -1):
+                candidate = '.'.join(parts[:i])
+                if candidate.lower() in mac_param_defs:
+                    p_line, p_col, p_end_col = mac_param_defs[candidate.lower()]
+                    origin_selection = types.Range(
+                        start=types.Position(line=line, character=tok_col),
+                        end=types.Position(line=line, character=tok_end_col),
+                    )
+                    target_range = types.Range(
+                        start=types.Position(line=p_line, character=p_col),
+                        end=types.Position(line=p_line, character=p_end_col),
+                    )
+                    return [types.LocationLink(
+                        target_uri=uri,
+                        target_range=target_range,
+                        target_selection_range=target_range,
+                        origin_selection_range=origin_selection,
+                    )]
 
     return None
 
@@ -1124,6 +1261,23 @@ def find_references(params: types.ReferenceParams):
     # --- 3. $variable references ---
     lines_text = text.splitlines()
     if 0 <= line < len(lines_text):
+        # Is the cursor on a !$param_name definition in a macro header? → return all references
+        mac_param_def = _find_macro_param_def_at_position(text, line, character)
+        if mac_param_def is not None:
+            param_token, p_line, p_col, p_end_col = mac_param_def
+            ref_locs = _find_variable_references_in_text(text, param_token)
+            return [
+                types.Location(
+                    uri=uri,
+                    range=types.Range(
+                        start=types.Position(line=rl, character=rc),
+                        end=types.Position(line=rl, character=re_),
+                    ),
+                )
+                for rl, rc, re_ in ref_locs
+                if include_declaration or not (rl == p_line and rc == p_col)
+            ]
+
         # Detect whether cursor is on the variable_name arg of 'variable set'
         var_def = _find_variable_def_at_position(statements, _schema, line, character)
         if var_def is None:
@@ -1147,6 +1301,26 @@ def find_references(params: types.ReferenceParams):
                         if include_declaration or not (rl == def_line and rc == def_col)
                     ]
                     return locations
+
+                # Fallback: check macro parameter definitions in this file
+                mac_param_defs = _find_macro_param_defs_in_text(text)
+                parts = full_token.split('.')
+                for i in range(len(parts), 0, -1):
+                    candidate = '.'.join(parts[:i])
+                    if candidate.lower() in mac_param_defs:
+                        p_line, p_col, p_end_col = mac_param_defs[candidate.lower()]
+                        ref_locs = _find_variable_references_in_text(text, candidate)
+                        return [
+                            types.Location(
+                                uri=uri,
+                                range=types.Range(
+                                    start=types.Position(line=rl, character=rc),
+                                    end=types.Position(line=rl, character=re_),
+                                ),
+                            )
+                            for rl, rc, re_ in ref_locs
+                            if include_declaration or not (rl == p_line and rc == p_col)
+                        ]
         else:
             # Cursor is on the definition site — return all references
             var_name, v_line, v_col, v_end_col = var_def
