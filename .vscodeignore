@@ -33,6 +33,10 @@ adams-cmd-lsp/**
 .pytest_cache/**
 tsconfig.json
 
+conference_snapshot.md
+skills-lock.json
+.playwright-mcp/**
+
 # Bundled Python libs: exclude pip metadata and unneeded packages
 bundled/libs/**/__pycache__/**
 bundled/libs/**/*.dist-info/**
