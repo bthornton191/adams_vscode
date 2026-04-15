@@ -9915,5 +9915,329 @@
     "axis_visibility",
     "axis_labels",
     "symbol"
+  ],
+  "list_info aggregate_mass": [
+    "part_names",
+    "model_name",
+    "relative_to",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info analysis": [
+    "analysis_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info constraint": [
+    "constraint_name",
+    "joint_name",
+    "gear_name",
+    "coupler_name",
+    "jprim_name",
+    "point_curve_name",
+    "curve_curve_name",
+    "motion_name",
+    "user_constraint_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info curves": [
+    "curve_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info data_element": [
+    "data_element_name",
+    "curve_name",
+    "spline_name",
+    "variable_name",
+    "array_name",
+    "matrix_name",
+    "plant_input_name",
+    "plant_output_name",
+    "plant_state_name",
+    "string_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info defaults": [
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info eigen_values": [
+    "eigen_solution_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info entity": [
+    "entity_name",
+    "type_filter",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info executive_control equilibrium_parameters": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info executive_control initial_conditions_parameters": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info executive_control integrator_parameters": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info executive_control kinematics_parameters": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info executive_control numeric_integration_parameters": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info executive_control sensor": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info executive_control solver_parameters": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info files": [
+    "analysis_name",
+    "graphics_file",
+    "request_file",
+    "results_file",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info force": [
+    "force_name",
+    "single_component_force_name",
+    "force_vector_name",
+    "torque_vector_name",
+    "general_force_name",
+    "multi_point_force_name",
+    "gravity_field_name",
+    "beam_name",
+    "bushing_name",
+    "field_name",
+    "spring_damper_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info geometry": [
+    "geometry_name",
+    "arc_name",
+    "block_name",
+    "circle_name",
+    "cylinder_name",
+    "frustum_name",
+    "force_name",
+    "outline_name",
+    "polyline_name",
+    "spring_damper_name",
+    "gstring_name",
+    "ellipsoid_name",
+    "torus_name",
+    "revolution_name",
+    "extrusion_name",
+    "plane_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info group": [
+    "group_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info linear_mode_shapes": [
+    "eigen_solution_name",
+    "accuracy",
+    "normalize",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info macro": [
+    "macro_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info marker": [
+    "marker_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info measure": [
+    "i_marker_name",
+    "j_marker_name",
+    "r_marker_name",
+    "model_name",
+    "analysis_name",
+    "configuration",
+    "time",
+    "frame_number",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info memory_usage parasolid": [
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info model": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info name_generation": [
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info names": [
+    "entity_name",
+    "type_filter",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info notes": [
+    "note_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info output_control debug": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info output_control femdata": [
+    "femdata_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info output_control madata": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info output_control mrequest": [
+    "mrequest_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info output_control output": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info output_control request": [
+    "request_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info output_control results": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info part": [
+    "part_name",
+    "flexible_body_name",
+    "point_mass_name",
+    "equation_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info plots": [
+    "plot_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info results": [
+    "model_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info statistics": [
+    "entity_name",
+    "type_filter",
+    "depth",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info topology": [
+    "model_name",
+    "output_by",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info triglue": [
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info undo": [
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info variable": [
+    "variable_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
+  ],
+  "list_info views": [
+    "view_name",
+    "view_layout_name",
+    "brief",
+    "write_to_terminal",
+    "file_name"
   ]
 }

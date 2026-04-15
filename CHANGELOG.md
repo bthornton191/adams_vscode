@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.13.1 (April 15th 2026)](#1131-april-15th-2026)
   - [1.13.0 (April 8th 2026)](#1130-april-8th-2026)
   - [1.12.2 (April 8th 2026)](#1122-april-8th-2026)
   - [1.12.1 (April 6th 2026)](#1121-april-6th-2026)
@@ -58,6 +59,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.13.1 (April 15th 2026)
+
+- **Added** Autocomplete and hover documentation support for all `list_info` command variants (`list_info marker`, `list_info part`, `list_info model`, `list_info constraint`, `list_info force`, `list_info geometry`, and 38 others).
 
 ## 1.13.0 (April 8th 2026)
 
