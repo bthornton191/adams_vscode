@@ -665,6 +665,123 @@ def test_w103_eof_no_false_positive_without_trailing_amp():
     assert "W103" not in codes, f"W103 must not fire without trailing & at EOF: {diags}"
 
 
+def test_w103_trailing_amp_before_blank_line_mid_file():
+    """A trailing '&' terminated by a blank line mid-file must produce W103."""
+    from adams_cmd_lsp.linter import lint_text
+    text = (
+        "part create rigid_body name_and_position &\n"
+        "    part_name = .model.PART_1 &\n"
+        "\n"
+        "model create model_name = .model2\n"
+    )
+    diags = lint_text(text)
+    codes = [d.code for d in diags]
+    assert "W103" in codes, f"Expected W103 for dangling & before blank line but got: {diags}"
+
+
+def test_w103_trailing_amp_before_blank_points_at_correct_line():
+    """W103 for blank-line termination must point at the line and column of '&'."""
+    from adams_cmd_lsp.linter import lint_text
+    text = (
+        "part create rigid_body name_and_position &\n"
+        "    part_name = .model.PART_1 &\n"
+        "\n"
+        "model create model_name = .model2\n"
+    )
+    diags = lint_text(text)
+    w103 = [d for d in diags if d.code == "W103"]
+    assert len(w103) >= 1
+    # The trailing '&' is on line index 1 (0-based)
+    assert w103[0].line == 1, f"Expected W103 at line 1, got line {w103[0].line}"
+    # Column must point at the '&' character, not past it or into a comment
+    line = "    part_name = .model.PART_1 &"
+    expected_col = line.rstrip().index('&')
+    assert w103[0].column == expected_col, (
+        f"Expected column {expected_col}, got {w103[0].column}"
+    )
+    assert w103[0].end_column == expected_col + 1
+
+
+def test_w103_no_false_positive_valid_continuation_before_blank():
+    """A valid continuation (last line has no '&') followed by a blank must NOT fire W103."""
+    from adams_cmd_lsp.linter import lint_text
+    text = (
+        "part create rigid_body name_and_position &\n"
+        "    part_name = .model.PART_1\n"
+        "\n"
+        "model create model_name = .model2\n"
+    )
+    diags = lint_text(text)
+    codes = [d.code for d in diags]
+    assert "W103" not in codes, f"W103 must not fire for valid continuation: {diags}"
+
+
+def test_w103_trailing_amp_inside_if_else_block():
+    """Trailing '&' before blank line inside an if/else block must produce W103.
+
+    Mirrors the user's real-world case in build.mac where the last argument
+    line of a command ends with '&' just before the 'else' keyword.
+    """
+    from adams_cmd_lsp.linter import lint_text
+    text = (
+        "if condition=($flag==\"yes\")\n"
+        "    model create model_name = .model1 &\n"
+        "        comment = \"a\" &\n"
+        "\n"
+        "else\n"
+        "    model create model_name = .model1 &\n"
+        "        comment = \"b\"\n"
+        "end\n"
+    )
+    diags = lint_text(text)
+    codes = [d.code for d in diags]
+    assert "W103" in codes, f"Expected W103 inside if/else block but got: {diags}"
+    w103 = [d for d in diags if d.code == "W103"]
+    # The '&' is on line index 2 (0-based)
+    assert any(d.line == 2 for d in w103), (
+        f"Expected W103 at line 2, got lines {[d.line for d in w103]}"
+    )
+
+
+def test_w103_trailing_amp_with_comment_after_amp():
+    """Column must point at '&' even when a comment follows it on the same line."""
+    from adams_cmd_lsp.linter import lint_text
+    # '&' is at column 26; the '! comment' must not shift the column reading
+    text = (
+        "part create rigid_body &\n"
+        "    part_name = .model.P & ! inline comment\n"
+        "\n"
+        "model create model_name = .model2\n"
+    )
+    diags = lint_text(text)
+    w103 = [d for d in diags if d.code == "W103"]
+    assert len(w103) >= 1, f"Expected W103 but got: {diags}"
+    assert w103[0].line == 1, f"Expected W103 at line 1, got {w103[0].line}"
+    # Column must be the '&' position, not in the comment region
+    line = "    part_name = .model.P & ! inline comment"
+    expected_col = line.index('&')
+    assert w103[0].column == expected_col, (
+        f"Expected column {expected_col} (the '&'), got {w103[0].column}"
+    )
+
+
+def test_w103_continuation_with_interleaved_comment_lines():
+    """Interleaved comment-only lines inside a continuation group must not prevent W103."""
+    from adams_cmd_lsp.linter import lint_text
+    text = (
+        "part create rigid_body name_and_position &\n"
+        "    ! this comment is inside the continuation group\n"
+        "    part_name = .model.PART_1 &\n"
+        "\n"
+        "model create model_name = .model2\n"
+    )
+    diags = lint_text(text)
+    w103 = [d for d in diags if d.code == "W103"]
+    assert len(w103) >= 1, f"Expected W103 with interleaved comments but got: {diags}"
+    # The trailing '&' is on line index 2 (0-based) — the line after the comment
+    assert w103[0].line == 2, f"Expected W103 at line 2, got {w103[0].line}"
+
+
 # ---------------------------------------------------------------------------
 # E005 — false positive: translational_spring_damper with markers only
 # ---------------------------------------------------------------------------
