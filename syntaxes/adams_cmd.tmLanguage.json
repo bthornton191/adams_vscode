@@ -36,6 +36,9 @@
 			"include": "#strings"
 		},
 		{
+			"include": "#expressions"
+		},
+		{
 			"include": "#comments"
 		}
 	],
@@ -95,10 +98,11 @@
 						{"include": "#functions"},
 						{"include": "#variables"},
 						{"include": "#strings"},
+						{"include": "#expressions"},
 						{"include": "#comments"}
 					]}
 				},
-			"patterns": [{"include": "#arguments"}, {"include": "#comments"}]
+			"patterns": [{"include": "#arguments"}, {"include": "#expressions"}, {"include": "#comments"}]
 		},
 		"continued-values": {
 			"name": "command.argument.continued.value",
@@ -204,9 +208,22 @@
                 }
             ]
         },
+        "expressions": {
+			"name": "meta.expression.adams_cmd",
+			"begin": "\\(",
+			"end": "\\)|$",
+			"patterns": [
+				{"include": "#expressions"},
+				{"include": "#numerics"},
+				{"include": "#keywords"},
+				{"include": "#functions"},
+				{"include": "#variables"},
+				{"include": "#strings"}
+			]
+		},
         "comments": {
 			"name": "comment",
-			"begin": "^\\s*!",
+			"begin": "!",
 			"end": "$",
 			"patterns": [
 				{

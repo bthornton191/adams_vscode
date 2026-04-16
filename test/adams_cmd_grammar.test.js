@@ -265,4 +265,103 @@ suite("adams_cmd grammar", () => {
             "line after concat expression should not carry single-string scope",
         );
     });
+
+    // -----------------------------------------------------------------------
+    // Inline comments — ! after code on the same line
+    // -----------------------------------------------------------------------
+
+    test("inline comment is tokenised as a comment", () => {
+        const line = "simulation single transient end_time = 1.0  ! run for 1 second";
+        const tokens = tokenizeLines(grammar, [line])[0];
+        const commentTokens = tokens.filter((t) => t.scopes.includes("comment"));
+        assert.ok(commentTokens.length > 0, "expected at least one token with comment scope");
+        assert.ok(
+            commentTokens.some((t) => t.text === "!"),
+            "the ! marker should be tokenised as a comment",
+        );
+        assert.ok(
+            commentTokens.some((t) => t.text.includes("run")),
+            "text after ! should be tokenised as a comment",
+        );
+    });
+
+    test("code before inline comment is not a comment", () => {
+        const line = "simulation single transient end_time = 1.0  ! run for 1 second";
+        const tokens = tokenizeLines(grammar, [line])[0];
+        const nonCommentTokens = tokens.filter((t) => !t.scopes.includes("comment"));
+        assert.ok(
+            nonCommentTokens.some((t) => t.text === "1.0"),
+            "numeric token before the comment should not carry comment scope",
+        );
+    });
+
+    test("full-line comment still tokenised as a comment (regression)", () => {
+        const line = "! this is a full-line comment";
+        const tokens = tokenizeLines(grammar, [line])[0];
+        assert.ok(lineHasScope(tokens, "comment"), "full-line ! comment should have comment scope");
+    });
+
+    test("! as NOT operator inside parens is not a comment", () => {
+        const line = "if condition = (!DB_EXISTS(.model.PART_1))";
+        const tokens = tokenizeLines(grammar, [line])[0];
+        assert.ok(
+            !lineHasScope(tokens, "comment"),
+            "no token on a line using ! as NOT operator should have comment scope",
+        );
+    });
+
+    test("! as NOT operator inside parens with leading space is not a comment", () => {
+        const line = "if condition = ( !DB_EXISTS(.model.PART_1))";
+        const tokens = tokenizeLines(grammar, [line])[0];
+        assert.ok(
+            !lineHasScope(tokens, "comment"),
+            "no token on a line using ! as NOT operator with leading space should have comment scope",
+        );
+    });
+
+    test("! inside a double-quoted string is not a comment", () => {
+        const line = 'variable set variable=foo string="hello ! world"';
+        const tokens = tokenizeLines(grammar, [line])[0];
+        const bangToken = tokens.find((t) => t.text.includes("!"));
+        assert.ok(bangToken !== undefined, "expected to find a token containing !");
+        assert.ok(
+            !bangToken.scopes.includes("comment"),
+            '! inside a double-quoted string must NOT be a comment',
+        );
+        assert.ok(
+            bangToken.scopes.includes("string.quoted.double.adams_cmd"),
+            '! inside a double-quoted string should retain string scope',
+        );
+    });
+
+    test("inline comment with no space after ! is still a comment", () => {
+        // !run — no whitespace between ! and the comment text
+        const line = "simulation single transient end_time = 1.0  !run for 1 second";
+        const tokens = tokenizeLines(grammar, [line])[0];
+        assert.ok(lineHasScope(tokens, "comment"), "!run should be tokenised as a comment");
+        const commentTokens = tokens.filter((t) => t.scopes.includes("comment"));
+        assert.ok(
+            commentTokens.some((t) => t.text.includes("run")),
+            "text after ! should be inside the comment scope",
+        );
+    });
+
+    test("! as NOT operator with spaces on both sides inside parens is not a comment", () => {
+        // ( ! DB_EXISTS(...)) — ! is inside parens so it is the NOT operator
+        const line = "if condition = ( ! DB_EXISTS(.model.PART_1))";
+        const tokens = tokenizeLines(grammar, [line])[0];
+        assert.ok(
+            !lineHasScope(tokens, "comment"),
+            "! as NOT operator with surrounding spaces inside parens must NOT be a comment",
+        );
+    });
+
+    test("!= inequality operator inside parens is not a comment", () => {
+        const line = "if condition = ($_self.var != 10)";
+        const tokens = tokenizeLines(grammar, [line])[0];
+        assert.ok(
+            !lineHasScope(tokens, "comment"),
+            "!= inequality operator inside parens must NOT be a comment",
+        );
+    });
 });
