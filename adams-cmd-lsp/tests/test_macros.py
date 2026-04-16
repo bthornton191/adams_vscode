@@ -1026,6 +1026,146 @@ def test_description_header_before_end_of_parameters():
 
 
 # ---------------------------------------------------------------------------
+# _extract_params_from_text — parameter docstrings
+# ---------------------------------------------------------------------------
+
+def test_param_docstring_single_line():
+    """Single comment line after !$param is captured as its docstring."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!$contact_obj:t=contact:c=1\n"
+        "! The contact object to analyse\n"
+        "!$analysis:t=analysis:c=1\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.parameters["contact_obj"].docstring == "The contact object to analyse"
+
+
+def test_param_docstring_multi_line():
+    """Consecutive comment lines after !$param are joined with newlines."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!$contact_obj:t=contact:c=1\n"
+        "! First line of description\n"
+        "! Second line continues here\n"
+        "!$analysis:t=analysis:c=1\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.parameters["contact_obj"].docstring == "First line of description\nSecond line continues here"
+
+
+def test_param_docstring_none_when_next_param_immediately_follows():
+    """No docstring when the next !$param immediately follows (no comments in between)."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!$contact_obj:t=contact:c=1\n"
+        "!$analysis:t=analysis:c=1\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.parameters["contact_obj"].docstring is None
+
+
+def test_param_docstring_none_when_blank_line_intervenes():
+    """Blank line between !$param and comment stops docstring collection."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!$contact_obj:t=contact:c=1\n"
+        "\n"
+        "! This is not a docstring\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.parameters["contact_obj"].docstring is None
+
+
+def test_param_docstring_none_when_separator_intervenes():
+    """Separator line (! -----) between !$param and comment stops collection."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!$contact_obj:t=contact:c=1\n"
+        "! ----------------------------\n"
+        "! This is not a docstring\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.parameters["contact_obj"].docstring is None
+
+
+def test_param_docstring_help_string_does_not_bleed():
+    """HELP_STRING continuation lines must NOT appear in a following param's docstring.
+
+    This is the key regression test for the bearing_plugin movement case:
+    the HELP_STRING continuation lines come before params; docstring collection
+    for !$parent should only see the comment lines that come after !$parent.
+    """
+    text = (
+        "!USER_ENTERED_COMMAND bearing_plugin movement\n"
+        "! HELP_STRING: Creates the movement topology for\n"
+        "! single-race or dual-race bearings.\n"
+        "!$parent:t=modeling:d=.bearing\n"
+        "! The parent bearing object\n"
+        "!$ground_connections:t=list(yes,no):d=yes\n"
+        "! Whether to create ground-connected joints\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.parameters["parent"].docstring == "The parent bearing object"
+    assert m.parameters["ground_connections"].docstring == "Whether to create ground-connected joints"
+    # Description should be the HELP_STRING, not the param comment
+    assert m.description == "Creates the movement topology for\nsingle-race or dual-race bearings."
+
+
+def test_param_docstring_header_keyword_terminates():
+    """Recognised header keyword (e.g. !AUTHOR) after !$param stops docstring collection."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!$contact_obj:t=contact:c=1\n"
+        "! AUTHOR: Ben Thornton\n"
+        "! Not a docstring\n"
+        "!END_OF_PARAMETERS\n"
+    )
+    m = _mac(text)
+    assert m.parameters["contact_obj"].docstring is None
+
+
+def test_param_docstring_end_of_parameters_terminates():
+    """!END_OF_PARAMETERS after !$param stops docstring collection."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!$contact_obj:t=contact:c=1\n"
+        "!END_OF_PARAMETERS\n"
+        "! Not a docstring\n"
+    )
+    m = _mac(text)
+    assert m.parameters["contact_obj"].docstring is None
+
+
+def test_param_docstring_bare_param_in_code_has_none():
+    """A bare $param in command text (not !$param) gets no docstring."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "marker create marker_name=$my_marker\n"
+        "! This is not a docstring\n"
+    )
+    m = _mac(text)
+    assert m.parameters["my_marker"].docstring is None
+
+
+def test_param_docstring_last_param_no_terminator():
+    """Last !$param in file (no !END_OF_PARAMETERS after) still collects docstring."""
+    text = (
+        "!USER_ENTERED_COMMAND cdm tool\n"
+        "!$contact_obj:t=contact:c=1\n"
+        "! The contact object\n"
+    )
+    m = _mac(text)
+    assert m.parameters["contact_obj"].docstring == "The contact object"
+
+
+# ---------------------------------------------------------------------------
 # extract_macros_from_statements — help_string argument
 # ---------------------------------------------------------------------------
 

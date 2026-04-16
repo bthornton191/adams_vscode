@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.14.0 (April 16th 2026)](#1140-april-16th-2026)
   - [1.13.1 (April 15th 2026)](#1131-april-15th-2026)
   - [1.13.0 (April 8th 2026)](#1130-april-8th-2026)
   - [1.12.2 (April 8th 2026)](#1122-april-8th-2026)
@@ -59,6 +60,13 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.14.0 (April 16th 2026)
+
+- **Added** Macro parameter docstrings: place a comment line immediately after a `!$param` definition to document it (e.g. `! The part to analyse`). Docstrings are shown in hover tooltips.
+- **Improved** Macro hover now shows a full **Parameters** section listing each parameter's type, default value, and docstring.
+- **Added** Hovering an argument name at a macro invocation site shows that specific parameter's type, default, and docstring. Abbreviated argument names are resolved.
+- **Improved** Macro Header snippet now includes a parameter placeholder with a docstring comment to demonstrate the convention.
 
 ## 1.13.1 (April 15th 2026)
 
