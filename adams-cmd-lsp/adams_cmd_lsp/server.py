@@ -28,6 +28,7 @@ from .macros import (
     scan_macro_files, parse_macro_file, MacroRegistry, DEFAULT_MACRO_PATTERNS,
     DEFAULT_IGNORE_DIRS, extract_macros_from_statements,
     _USER_ENTERED_COMMAND_RE, _COMMENT_PARAM_RE, _END_OF_PARAMETERS,
+    resolve_macro_argument_name,
 )
 from .references import MacroIndex, index_file_text
 from .ude import UdeRegistry, scan_ude_files, DEFAULT_UDE_PATTERNS
@@ -1106,17 +1107,45 @@ def goto_definition(params: types.DefinitionParams):
     return None
 
 
+def _format_param_line(param) -> str:
+    """Return a single Markdown list item for a MacroParameter."""
+    parts = [f"- `{param.name}`"]
+    if param.type_str:
+        parts.append(f" *({param.type_str})*")
+    if param.default is not None:
+        parts.append(f" (default: `{param.default}`)")
+    if param.docstring:
+        parts.append(f" — {param.docstring}")
+    return "".join(parts)
+
+
+def _build_param_hover_md(param) -> str:
+    """Return standalone Markdown for a single parameter (invocation-site hover)."""
+    heading = f"**`{param.name}`**"
+    if param.type_str:
+        heading += f" *({param.type_str})*"
+    if param.default is not None:
+        heading += f" (default: `{param.default}`)"
+    lines = [heading]
+    if param.docstring:
+        lines.append("")
+        lines.append(param.docstring)
+    return "\n".join(lines)
+
+
 @server.feature(types.TEXT_DOCUMENT_HOVER)
 def hover(params: types.HoverParams):
     """Show hover documentation for macro command invocations.
 
-    Returns Markdown with the macro name and (when available) its help
-    string for ``"registry"`` and ``"inline"`` origins.  Returns ``None``
-    for built-in commands (handled by the JS hover provider) and for the
-    ``!USER_ENTERED_COMMAND`` definition site.
+    Returns Markdown with the macro name, help string, and parameter list
+    for ``"registry"`` and ``"inline"`` origins.  When the cursor is on an
+    argument name at an invocation site, returns info for that parameter only.
+    Returns ``None`` for built-in commands (handled by the JS hover provider)
+    and for the ``!USER_ENTERED_COMMAND`` definition site.
     """
     uri = params.text_document.uri
     line = params.position.line
+    character = params.position.character
     try:
         doc = server.workspace.get_text_document(uri)
         text = doc.source
@@ -1132,6 +1161,43 @@ def hover(params: types.HoverParams):
         return None
 
     src_line, src_col_start, src_col_end = origin_range
+
+    # --- Invocation-site argument hover ---
+    # Check whether the cursor sits on an argument name in the statement.
+    if macro_def is not None and macro_def.parameters:
+        try:
+            statements = _parse_cmd(text)
+        except Exception:  # noqa: BLE001
+            statements = []
+
+        stmt = next(
+            (s for s in statements
+             if not s.is_comment and not s.is_blank
+             and s.line_start <= line <= s.line_end),
+            None,
+        )
+        if stmt is not None:
+            for arg in stmt.arguments:
+                if arg.name_line != line:
+                    continue
+                arg_end_col = arg.name_column + len(arg.name)
+                if arg.name_column <= character < arg_end_col:
+                    canonical = resolve_macro_argument_name(macro_def, arg.name)
+                    if canonical is not None:
+                        param = macro_def.parameters[canonical]
+                        arg_range = types.Range(
+                            start=types.Position(line=arg.name_line, character=arg.name_column),
+                            end=types.Position(line=arg.name_line, character=arg_end_col),
+                        )
+                        return types.Hover(
+                            contents=types.MarkupContent(
+                                kind=types.MarkupKind.Markdown,
+                                value=_build_param_hover_md(param),
+                            ),
+                            range=arg_range,
+                        )
+
+    # --- Command-level hover ---
     hover_range = types.Range(
         start=types.Position(line=src_line, character=src_col_start),
         end=types.Position(line=src_line, character=src_col_end),
@@ -1145,6 +1211,10 @@ def hover(params: types.HoverParams):
         md = f"# {command_key}\n\n{formatted_desc}"
     else:
         md = f"# {command_key}"
+
+    if macro_def is not None and macro_def.parameters:
+        param_lines = [_format_param_line(p) for p in macro_def.parameters.values()]
+        md += "\n\n**Parameters:**\n" + "\n".join(param_lines)
 
     return types.Hover(
         contents=types.MarkupContent(

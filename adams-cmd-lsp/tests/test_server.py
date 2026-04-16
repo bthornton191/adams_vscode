@@ -1403,6 +1403,210 @@ def test_hover_inline_macro_with_description(monkeypatch):
     assert "Inline help text" in result.contents.value
 
 
+def test_hover_macro_with_parameters_shows_param_list(monkeypatch):
+    """Hover on a macro invocation includes a Parameters section with type/default/docstring."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition, MacroParameter
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={
+            "part": MacroParameter(
+                name="part",
+                type_str="part",
+                default=None,
+                docstring="The part to analyse",
+            ),
+            "iterations": MacroParameter(
+                name="iterations",
+                type_str="integer",
+                default="3",
+                docstring=None,
+            ),
+        },
+        source_file="/wear.mac",
+        line=0,
+        description="Compute wear on a contact pair",
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm wear part=p1\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.hover(params)
+    assert result is not None
+    md = result.contents.value
+    assert "# cdm wear" in md
+    assert "Compute wear on a contact pair" in md
+    assert "**Parameters:**" in md
+    assert "`part`" in md
+    assert "*(part)*" in md
+    assert "The part to analyse" in md
+    assert "`iterations`" in md
+    assert "*(integer)*" in md
+    assert "default: `3`" in md
+
+
+def test_hover_macro_with_no_parameters_has_no_param_section(monkeypatch):
+    """Hover on a macro with no parameters shows no Parameters section."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm tool",
+        parameters={},
+        source_file="/tool.mac",
+        line=0,
+        description="Does something",
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm tool\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=0),
+    )
+    result = srv.hover(params)
+    assert result is not None
+    assert "**Parameters:**" not in result.contents.value
+
+
+def test_hover_argument_name_returns_param_info(monkeypatch):
+    """Hovering an argument name at a macro invocation returns that param's info."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition, MacroParameter
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={
+            "part": MacroParameter(
+                name="part",
+                type_str="part",
+                default=None,
+                docstring="The part to analyse",
+            ),
+        },
+        source_file="/wear.mac",
+        line=0,
+        description="Compute wear",
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm wear part=p1\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    # Cursor on 'part' argument name (column 9)
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=9),
+    )
+    result = srv.hover(params)
+    assert result is not None
+    md = result.contents.value
+    assert "`part`" in md
+    assert "*(part)*" in md
+    assert "The part to analyse" in md
+    # Range should cover only the argument name token
+    assert result.range.start.character == 9
+    assert result.range.end.character == 9 + len("part")
+
+
+def test_hover_abbreviated_argument_name_resolves(monkeypatch):
+    """Hovering an abbreviated argument name resolves to the canonical parameter."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition, MacroParameter
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={
+            "iterations": MacroParameter(
+                name="iterations",
+                type_str="integer",
+                default="3",
+                docstring="Number of wear iterations",
+            ),
+        },
+        source_file="/wear.mac",
+        line=0,
+        description=None,
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm wear iter=5\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    # 'iter' is an abbreviation of 'iterations' — cursor on column 9
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=9),
+    )
+    result = srv.hover(params)
+    assert result is not None
+    md = result.contents.value
+    assert "`iterations`" in md
+    assert "Number of wear iterations" in md
+
+
+def test_hover_unknown_argument_name_falls_through_to_command(monkeypatch):
+    """Hovering an unknown argument name falls through to command-level hover."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition, MacroParameter
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={
+            "part": MacroParameter(name="part", type_str="part"),
+        },
+        source_file="/wear.mac",
+        line=0,
+        description="Compute wear",
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm wear unknown_arg=x\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    # Cursor on 'unknown_arg' argument name (column 9)
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=9),
+    )
+    result = srv.hover(params)
+    # Falls through to command hover
+    assert result is not None
+    assert "# cdm wear" in result.contents.value
+
+
+def test_hover_cursor_on_argument_value_returns_command_hover(monkeypatch):
+    """Hovering the value of an argument (past the '=') returns command-level hover."""
+    from adams_cmd_lsp.macros import MacroRegistry, MacroDefinition, MacroParameter
+    reg = MacroRegistry()
+    reg.register(MacroDefinition(
+        command="cdm wear",
+        parameters={
+            "part": MacroParameter(name="part", type_str="part", docstring="The part"),
+        },
+        source_file="/wear.mac",
+        line=0,
+        description="Compute wear",
+    ))
+    uri = "file:///test.cmd"
+    text = "cdm wear part=p1\n"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = reg
+    # Cursor on 'p1' value (column 14 — past '=')
+    params = types.HoverParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=0, character=14),
+    )
+    result = srv.hover(params)
+    # Falls through to command hover (value is not an argument name hit)
+    assert result is not None
+    assert "# cdm wear" in result.contents.value
+
+
 # ---------------------------------------------------------------------------
 # find_references
 # ---------------------------------------------------------------------------

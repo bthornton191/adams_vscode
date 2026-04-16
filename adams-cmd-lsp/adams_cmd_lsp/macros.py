@@ -40,6 +40,7 @@ class MacroParameter:
     # Numeric range constraints: keys are 'gt','ge','lt','le'
     constraints: Dict[str, str] = field(default_factory=dict)
     count: Optional[str] = None         # C= qualifier value
+    docstring: Optional[str] = None     # comment lines immediately after !$param definition
 
 
 @dataclass
@@ -290,20 +291,73 @@ def _parse_qualifiers(qualifier_str: str) -> MacroParameter:
     return p
 
 
+def _collect_param_docstring(lines: list, start: int) -> Tuple[Optional[str], int]:
+    """Collect docstring comment lines starting at *start* (the line after !$param).
+
+    Consumes consecutive ``!``-comment lines that are not:
+    - another ``!$param`` definition
+    - ``!END_OF_PARAMETERS``
+    - a separator line (``! -----``)
+    - a recognised header keyword (``!HELP_STRING``, ``!AUTHOR``, etc.)
+    - a blank line
+    - a non-comment line
+
+    Returns ``(docstring_or_None, next_index)`` where *next_index* is the index
+    of the first unconsumed line (so the caller's main loop can resume from there).
+    """
+    collected: List[str] = []
+    i = start
+    while i < len(lines):
+        stripped = lines[i].strip()
+        # Blank or non-comment line — stop
+        if not stripped or not stripped.startswith("!"):
+            break
+        # Another !$param definition — stop (belongs to next param)
+        if _COMMENT_PARAM_RE.match(stripped):
+            break
+        # !END_OF_PARAMETERS — stop
+        if _END_OF_PARAMETERS.match(stripped):
+            break
+        # Separator line (! -----, ! =====, etc.) — stop
+        if _SEPARATOR_RE.match(stripped):
+            break
+        # Recognised header keyword (HELP_STRING, AUTHOR, etc.) — stop
+        if _HEADER_KEYWORD_TERM_RE.match(stripped):
+            break
+        # Plain comment — collect it
+        text = stripped[1:].strip()
+        if text:
+            collected.append(text)
+        i += 1
+
+    if not collected:
+        return None, i
+    result = "\n".join(collected).strip()
+    return (result if result else None), i
+
+
 def _extract_params_from_text(text: str) -> Dict[str, MacroParameter]:
     """Scan *text* for all parameter occurrences and return {name: MacroParameter}.
 
     Rules (per Adams docs):
     - The FIRST occurrence of a parameter defines it.
     - Qualifiers can only appear on the first occurrence.
-    - `!$name` in a comment is the canonical way to define parameters.
-    - `$name` in command text (first occurrence) also works if no comment
+    - ``!$name`` in a comment is the canonical way to define parameters.
+    - ``$name`` in command text (first occurrence) also works if no comment
       definition precedes it.
-    - Stops at !END_OF_PARAMETERS if present.
+    - Stops at ``!END_OF_PARAMETERS`` if present.
+
+    Docstring extraction:
+    - Comment lines immediately *after* a ``!$param`` definition line are
+      collected as the parameter's docstring.
+    - Collection stops at the next ``!$param``, blank line, non-comment line,
+      separator, ``!END_OF_PARAMETERS``, or recognised header keyword.
     """
     params: Dict[str, MacroParameter] = {}
-
-    for line in text.splitlines():
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines):
+        line = lines[i]
         stripped = line.strip()
 
         # Stop at !END_OF_PARAMETERS
@@ -331,7 +385,12 @@ def _extract_params_from_text(text: str) -> Dict[str, MacroParameter]:
             if pname and pname not in params:
                 p = _parse_qualifiers(qual_str)
                 p.name = pname
+                # Collect docstring from the lines that follow
+                docstring, i = _collect_param_docstring(lines, i + 1)
+                p.docstring = docstring
                 params[pname] = p
+            else:
+                i += 1
             continue
 
         # Scan the whole line for $param occurrences (including inside commands)
@@ -356,7 +415,10 @@ def _extract_params_from_text(text: str) -> Dict[str, MacroParameter]:
             if pname and pname not in params:
                 p = _parse_qualifiers(qual_str)
                 p.name = pname
+                # No docstring for bare $param usage in command text
                 params[pname] = p
+
+        i += 1
 
     return params
 
