@@ -155,6 +155,61 @@ suite("MCP Server Provider", () => {
         );
     });
 
+    // -----------------------------------------------------------------------
+    // ADAMS_LAUNCH_COMMAND env var forwarding
+    // -----------------------------------------------------------------------
+
+    test("forwards adamsLaunchCommand config to ADAMS_LAUNCH_COMMAND env var on Adams View definition", async function () {
+        const vscode = require("vscode");
+        const cfg = vscode.workspace.getConfiguration("msc-adams");
+        await cfg.update(
+            "adamsLaunchCommand",
+            "C:\\Adams\\mdi.bat",
+            vscode.ConfigurationTarget.Workspace,
+        );
+
+        try {
+            const defs = capturedProvider.provideMcpServerDefinitions();
+            const viewDef = defs.find((d) => d.name === "Adams View");
+
+            assert.ok(viewDef, "Adams View definition should be present");
+            assert.strictEqual(
+                viewDef.env.ADAMS_LAUNCH_COMMAND,
+                "C:\\Adams\\mdi.bat",
+                "ADAMS_LAUNCH_COMMAND should match the adamsLaunchCommand config value",
+            );
+            assert.strictEqual(
+                viewDef.env.ADAMS_LISTENER_PORT,
+                String(cfg.get("aviewPortNumber", 5002)),
+                "ADAMS_LISTENER_PORT should still be present",
+            );
+        } finally {
+            await cfg.update("adamsLaunchCommand", undefined, vscode.ConfigurationTarget.Workspace);
+        }
+    });
+
+    test("uses default adamsLaunchCommand value for ADAMS_LAUNCH_COMMAND when no explicit override is set", async function () {
+        const vscode = require("vscode");
+        const cfg = vscode.workspace.getConfiguration("msc-adams");
+        await cfg.update("adamsLaunchCommand", undefined, vscode.ConfigurationTarget.Workspace);
+
+        const defs = capturedProvider.provideMcpServerDefinitions();
+        const viewDef = defs.find((d) => d.name === "Adams View");
+
+        assert.ok(viewDef, "Adams View definition should be present");
+        // The setting has a default of "mdi.bat" in package.json, so
+        // ADAMS_LAUNCH_COMMAND is always populated.
+        assert.strictEqual(
+            viewDef.env.ADAMS_LAUNCH_COMMAND,
+            cfg.get("adamsLaunchCommand"),
+            "ADAMS_LAUNCH_COMMAND should match the effective config value (default or explicit)",
+        );
+    });
+
+    // -----------------------------------------------------------------------
+    // --macro-base-dir (no workspace folder)
+    // -----------------------------------------------------------------------
+
     test("omits --macro-base-dir but keeps --scan-workspace-macros when no workspace folder is open", async function () {
         const vscode = require("vscode");
 

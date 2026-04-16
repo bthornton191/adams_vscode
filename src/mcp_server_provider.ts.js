@@ -24,6 +24,12 @@ function registerMcpServerProvider(context, reporter = null) {
             const port = config.get("aviewPortNumber", 5002);
             const version = context.extension.packageJSON.version ?? "0.0.0";
 
+            const adamsViewEnv = { ADAMS_LISTENER_PORT: String(port) };
+            const launchCommand = config.get("adamsLaunchCommand");
+            if (launchCommand) {
+                adamsViewEnv.ADAMS_LAUNCH_COMMAND = launchCommand;
+            }
+
             const definitions = [
                 new vscode.McpStdioServerDefinition(
                     "Adams View",
@@ -33,7 +39,7 @@ function registerMcpServerProvider(context, reporter = null) {
                             path.join("adams-view-mcp-server", "dist", "index.js"),
                         ),
                     ],
-                    { ADAMS_LISTENER_PORT: String(port) },
+                    adamsViewEnv,
                     version,
                 ),
             ];
