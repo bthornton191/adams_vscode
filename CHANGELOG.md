@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.14.1 (April 16th 2026)](#1141-april-16th-2026)
   - [1.14.0 (April 16th 2026)](#1140-april-16th-2026)
   - [1.13.1 (April 15th 2026)](#1131-april-15th-2026)
   - [1.13.0 (April 8th 2026)](#1130-april-8th-2026)
@@ -60,6 +61,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.14.1 (April 16th 2026)
+
+- **Fixed** Adams View MCP server now respects the `msc-adams.adamsLaunchCommand` setting when auto-launching Adams View. The configured path is forwarded as the `ADAMS_LAUNCH_COMMAND` environment variable to the server process.
 
 ## 1.14.0 (April 16th 2026)
 
