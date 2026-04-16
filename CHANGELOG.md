@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.14.2 (April 16th 2026)](#1142-april-16th-2026)
   - [1.14.1 (April 16th 2026)](#1141-april-16th-2026)
   - [1.14.0 (April 16th 2026)](#1140-april-16th-2026)
   - [1.13.1 (April 15th 2026)](#1131-april-15th-2026)
@@ -61,6 +62,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.14.2 (April 16th 2026)
+
+- **Fixed** Adams CMD syntax highlighter now correctly highlights inline comments (e.g. `simulation end_time = 1.0  ! run for 1 second`). Previously, `!` was only recognised as a comment at the start of a line.
 
 ## 1.14.1 (April 16th 2026)
 
