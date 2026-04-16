@@ -40,7 +40,10 @@ ADAMS_LISTENER_PORT environment variable) and verifies the session is
 initialised by querying db_exists('.mdi').
 
 Returns:
-  { "connected": boolean, "message": string }
+  { "connected": boolean, "message": string, "working_directory"?: string }
+
+When connected, also returns Adams View's current working directory. The
+working_directory field is omitted if the CWD cannot be retrieved.
 
 Use this first to verify connectivity before running other Adams tools.`,
       inputSchema: z.object({}).strict(),
@@ -54,12 +57,19 @@ Use this first to verify connectivity before running other Adams tools.`,
     async () => {
       try {
         const connected = await checkConnection();
-        const result = {
+        const result: { connected: boolean; message: string; working_directory?: string } = {
           connected,
           message: connected
             ? "Adams View is running and ready."
             : "Adams View is not reachable or the session is not ready.",
         };
+        if (connected) {
+          try {
+            result.working_directory = String(await evaluateExp("getcwd()"));
+          } catch {
+            // Best-effort — omit working_directory if it can't be retrieved
+          }
+        }
         return {
           content: [{ type: "text" as const, text: JSON.stringify(result, null, 2) }],
         };
