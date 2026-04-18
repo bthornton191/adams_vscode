@@ -446,10 +446,18 @@
   },
 
   "_comment_batch2": [
-    " 13) contact create: commands.exp incorrectly puts stiffness/damping/dmax/exponent",
+    " 13) contact create / contact modify: commands.exp incorrectly marks normal_function",
+    "     and normal_routine as mutually exclusive, and similarly friction_function and",
+    "     friction_routine. In Adams these are complementary pairs: normal_function provides",
+    "     the force-vs-penetration parameters while normal_routine names the DLL subroutine",
+    "     that implements the custom contact law — both must be supplied together.",
+    "     Same applies to friction_function / friction_routine. These two groups are removed",
+    "     from both contact create and contact modify.",
+    "     Additionally, contact create: commands.exp incorrectly puts stiffness/damping/dmax/exponent",
     "     in an exclusive group. These are all penalty-method parameters used together.",
     "     Similarly coulomb_friction/mu_static/mu_dynamic/etc. are friction params used",
-    "     together. Both groups removed. penalty vs restitution_coefficient (group 6)",
+    "     together. Both groups removed from contact create only (contact modify does not",
+    "     have these groups in commands.exp). penalty vs restitution_coefficient (group 6)",
     "     remains correct.",
     "",
     " 14) section create / section modify: cross-section dimension args (cyl_radius,",
@@ -485,7 +493,15 @@
       "exclusive_groups_remove": [
         ["stiffness", "damping", "dmax", "exponent"],
         ["coulomb_friction", "mu_static", "mu_dynamic",
-         "friction_transition_velocity", "stiction", "max_stiction_deformation"]
+         "friction_transition_velocity", "stiction", "max_stiction_deformation"],
+        ["normal_function", "normal_routine"],
+        ["friction_function", "friction_routine"]
+      ]
+    },
+    "contact modify": {
+      "exclusive_groups_remove": [
+        ["normal_function", "normal_routine"],
+        ["friction_function", "friction_routine"]
       ]
     },
     "section create": {
