@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.14.3 (April 17th 2026)](#1143-april-17th-2026)
   - [1.14.2 (April 16th 2026)](#1142-april-16th-2026)
   - [1.14.1 (April 16th 2026)](#1141-april-16th-2026)
   - [1.14.0 (April 16th 2026)](#1140-april-16th-2026)
@@ -62,6 +63,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.14.3 (April 17th 2026)
+
+- **Fixed** Adams CMD linter no longer incorrectly reports E006 (mutually exclusive arguments) when `contact create` or `contact modify` uses both `normal_function` and `normal_routine` together, or both `friction_function` and `friction_routine` together. These are complementary parameter pairs, not alternatives.
 
 ## 1.14.2 (April 16th 2026)
 

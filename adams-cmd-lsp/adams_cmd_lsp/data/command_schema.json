@@ -7799,20 +7799,6 @@
           ]
         },
         {
-          "group": 7,
-          "members": [
-            "normal_function",
-            "normal_routine"
-          ]
-        },
-        {
-          "group": 9,
-          "members": [
-            "friction_function",
-            "friction_routine"
-          ]
-        },
-        {
           "group": 11,
           "members": [
             "j_geometry_name",
@@ -8159,20 +8145,6 @@
           "members": [
             "i_flip_geometry_name",
             "j_flip_geometry_name"
-          ]
-        },
-        {
-          "group": 7,
-          "members": [
-            "normal_function",
-            "normal_routine"
-          ]
-        },
-        {
-          "group": 9,
-          "members": [
-            "friction_function",
-            "friction_routine"
           ]
         }
       ]
