@@ -14,7 +14,9 @@
 !               2. Second item
 ! AUTHOR:       Ben Thornton (ben.thornton@hexagon.com)
 !$param1:t=int:d=100
+! The first parameter. Controls the number of iterations.
 !$part_name:t=str:d="part"
+! The name of the part to create. Used as a prefix for each part in the loop.
 !END_OF_PARAMETERS
 
 var set var=$_self.varname str=(eval(db_default(system_defaults, "model")))

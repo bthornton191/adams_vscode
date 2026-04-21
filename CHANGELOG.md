@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.15.0 (April 20th 2026)](#1150-april-20th-2026)
   - [1.14.3 (April 17th 2026)](#1143-april-17th-2026)
   - [1.14.2 (April 16th 2026)](#1142-april-16th-2026)
   - [1.14.1 (April 16th 2026)](#1141-april-16th-2026)
@@ -63,6 +64,15 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.15.0 (April 20th 2026)
+
+- **Added** Syntax highlighting for macro file frontmatter (`.mac` files). The header block between `!USER_ENTERED_COMMAND` and `!END_OF_PARAMETERS` now highlights:
+  - Keywords (`USER_ENTERED_COMMAND`, `END_OF_PARAMETERS`, `HELP_STRING`, `AUTHOR`, `DATE`, etc.) in the same colour as `$_self`
+  - The command name after `USER_ENTERED_COMMAND` in command colour
+  - Help text and parameter docstrings as strings
+  - Parameter names (`!$param`) as parameter references
+  - Qualifier keys (`t`, `d`, `ud`, `c`, etc.) as arguments, and their values with distinct colours for quoted vs unquoted forms
 
 ## 1.14.3 (April 17th 2026)
 
