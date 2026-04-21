@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "1.14.3",
+    "version": "1.15.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -396,6 +396,13 @@
                             }
                         },
                         {
+                            "scope": "constant.other.qualifier.adams_cmd",
+                            "settings": {
+                                "foreground": "#bd785b",
+                                "fontStyle": "bold"
+                            }
+                        },
+                        {
                             "scope": "arguments",
                             "settings": {
                                 "foreground": "#41a189"
@@ -525,6 +532,13 @@
                     {
                         "scope": "msg.command",
                         "settings": {
+                            "fontStyle": "bold"
+                        }
+                    },
+                    {
+                        "scope": "constant.other.qualifier.adams_cmd",
+                        "settings": {
+                            "foreground": "#d4976b",
                             "fontStyle": "bold"
                         }
                     }

@@ -9,6 +9,9 @@
 			"include": "#py"
 		},
 		{
+			"include": "#macro-frontmatter"
+		},
+		{
 			"include": "#keywords"
 		},
 		{
@@ -141,6 +144,101 @@
 				{
 					"name": "keyword.boolean",
 					"match": "(!=|==|<|<=|>|>=|&&|\\|\\|)"	
+				}
+			]
+		},
+		"macro-frontmatter": {
+			"comment": "Macro file header block: begins with !USER_ENTERED_COMMAND, ends at !END_OF_PARAMETERS or first non-comment line",
+			"begin": "^(!)[ \\t]*(USER_ENTERED_COMMAND)\\b(.*)",
+			"beginCaptures": {
+				"1": {"name": "comment"},
+				"2": {"name": "selfParameter"},
+				"3": {"name": "command.command"}
+			},
+			"end": "^(!)[ \\t]*(END_OF_PARAMETERS)[ \\t]*$|(?=^[^!])",
+			"endCaptures": {
+				"1": {"name": "comment"},
+				"2": {"name": "selfParameter"}
+			},
+			"patterns": [
+				{
+					"comment": "HELP_STRING or DESCRIPTION: keyword + optional colon, then multi-line string content",
+					"begin": "^(!)[ \\t]*(HELP_STRING|DESCRIPTION)[ \\t]*(:?)[ \\t]*(.*)",
+					"beginCaptures": {
+						"1": {"name": "comment"},
+						"2": {"name": "selfParameter"},
+						"3": {"name": "keyword.operator"},
+						"4": {"name": "string.unquoted.adams_cmd"}
+					},
+					"end": "(?=^![ \\t]*(?:USER_ENTERED_COMMAND|HELP_STRING|DESCRIPTION|AUTHOR|DATE|MACRO[ \\t_]?NAME|CREATE_PANEL|WRAP_IN_UNDO|HELP_FILE|END_OF_PARAMETERS)\\b|^![ \\t]*\\$|^[^!])",
+					"patterns": [
+						{
+							"comment": "continuation lines: ! prefix stays comment, remaining text is string",
+							"match": "^(!)(.*)",
+							"captures": {
+								"1": {"name": "comment"},
+								"2": {"name": "string.unquoted.adams_cmd"}
+							}
+						}
+					]
+				},
+				{
+					"comment": "non-parsed header keywords: value shown as comment since LSP does not store it",
+					"match": "^(!)[ \\t]*(MACRO[ \\t_]?NAME|AUTHOR|DATE|CREATE_PANEL|WRAP_IN_UNDO|HELP_FILE)[ \\t]*(:?)[ \\t]*(.*)",
+					"captures": {
+						"1": {"name": "comment"},
+						"2": {"name": "selfParameter"},
+						"3": {"name": "keyword.operator"},
+						"4": {"name": "comment"}
+					}
+				},
+				{
+					"comment": "parameter definition line with detailed qualifier highlighting; docstring continuation lines follow",
+					"begin": "^(!)(\\$(?:'?)[a-zA-Z0-9_]*(?:'?))(.*)",
+					"beginCaptures": {
+						"1": {"name": "comment"},
+						"2": {"name": "parameter.reference"},
+						"3": {
+							"patterns": [
+								{
+									"comment": "qualifier with quoted value: :key=\"value\"",
+									"match": "(:)(t|d|ud|c|gt|ge|lt|le)(=)(\"[^\"]*\")",
+									"captures": {
+										"1": {"name": "keyword.operator"},
+										"2": {"name": "command.argument"},
+										"3": {"name": "keyword.operator"},
+										"4": {"name": "string.quoted.double.adams_cmd"}
+									}
+								},
+								{
+									"comment": "qualifier with unquoted value: :key=value",
+									"match": "(:)(t|d|ud|c|gt|ge|lt|le)(=)([^:]*)",
+									"captures": {
+										"1": {"name": "keyword.operator"},
+										"2": {"name": "command.argument"},
+										"3": {"name": "keyword.operator"},
+										"4": {"name": "constant.other.qualifier.adams_cmd"}
+									}
+								}
+							]
+						}
+					},
+					"end": "(?=^![ \\t]*(?:USER_ENTERED_COMMAND|HELP_STRING|DESCRIPTION|AUTHOR|DATE|MACRO[ \\t_]?NAME|CREATE_PANEL|WRAP_IN_UNDO|HELP_FILE|END_OF_PARAMETERS)\\b|^![ \\t]*\\$|^[^!])",
+					"patterns": [
+						{
+							"comment": "docstring lines immediately following a parameter definition",
+							"match": "^(!)(.*)",
+							"captures": {
+								"1": {"name": "comment"},
+								"2": {"name": "string.unquoted.adams_cmd"}
+							}
+						}
+					]
+				},
+				{
+					"comment": "separator lines and any other comment lines in the frontmatter block",
+					"name": "comment",
+					"match": "^!.*$"
 				}
 			]
 		},
