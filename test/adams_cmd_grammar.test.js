@@ -326,11 +326,11 @@ suite("adams_cmd grammar", () => {
         assert.ok(bangToken !== undefined, "expected to find a token containing !");
         assert.ok(
             !bangToken.scopes.includes("comment"),
-            '! inside a double-quoted string must NOT be a comment',
+            "! inside a double-quoted string must NOT be a comment",
         );
         assert.ok(
             bangToken.scopes.includes("string.quoted.double.adams_cmd"),
-            '! inside a double-quoted string should retain string scope',
+            "! inside a double-quoted string should retain string scope",
         );
     });
 
@@ -411,7 +411,10 @@ suite("adams_cmd grammar — macro frontmatter", () => {
         const tokens = tokenizeMacro(["!USER_ENTERED_COMMAND  cdm wear"])[0];
         const bang = tokenOnLine(tokens, "!");
         assert.ok(bang, "expected to find ! token");
-        assert.ok(bang.scopes.includes("comment"), `expected comment scope on !, got: ${bang.scopes}`);
+        assert.ok(
+            bang.scopes.includes("comment"),
+            `expected comment scope on !, got: ${bang.scopes}`,
+        );
     });
 
     // -----------------------------------------------------------------------
@@ -423,10 +426,7 @@ suite("adams_cmd grammar — macro frontmatter", () => {
         const tokens = tokenizeMacro(lines);
         const kw = tokenOnLine(tokens[1], "END_OF_PARAMETERS");
         assert.ok(kw, "expected to find END_OF_PARAMETERS token");
-        assert.ok(
-            kw.scopes.includes("selfParameter"),
-            `expected selfParameter, got: ${kw.scopes}`,
-        );
+        assert.ok(kw.scopes.includes("selfParameter"), `expected selfParameter, got: ${kw.scopes}`);
     });
 
     test("lines after END_OF_PARAMETERS are not in the frontmatter block", () => {
@@ -455,10 +455,7 @@ suite("adams_cmd grammar — macro frontmatter", () => {
         const tokens = tokenizeMacro(lines);
         const kw = tokenOnLine(tokens[1], "HELP_STRING");
         assert.ok(kw, "expected to find HELP_STRING token");
-        assert.ok(
-            kw.scopes.includes("selfParameter"),
-            `expected selfParameter, got: ${kw.scopes}`,
-        );
+        assert.ok(kw.scopes.includes("selfParameter"), `expected selfParameter, got: ${kw.scopes}`);
     });
 
     test("DESCRIPTION: keyword is selfParameter", () => {
@@ -540,24 +537,15 @@ suite("adams_cmd grammar — macro frontmatter", () => {
     // -----------------------------------------------------------------------
 
     test("AUTHOR: keyword is selfParameter", () => {
-        const lines = [
-            "!USER_ENTERED_COMMAND  cdm wear",
-            "! AUTHOR:  Ben Thornton",
-        ];
+        const lines = ["!USER_ENTERED_COMMAND  cdm wear", "! AUTHOR:  Ben Thornton"];
         const tokens = tokenizeMacro(lines);
         const kw = tokenOnLine(tokens[1], "AUTHOR");
         assert.ok(kw, "expected to find AUTHOR token");
-        assert.ok(
-            kw.scopes.includes("selfParameter"),
-            `expected selfParameter, got: ${kw.scopes}`,
-        );
+        assert.ok(kw.scopes.includes("selfParameter"), `expected selfParameter, got: ${kw.scopes}`);
     });
 
     test("AUTHOR: value text is comment (not a parsed field)", () => {
-        const lines = [
-            "!USER_ENTERED_COMMAND  cdm wear",
-            "! AUTHOR:  Ben Thornton",
-        ];
+        const lines = ["!USER_ENTERED_COMMAND  cdm wear", "! AUTHOR:  Ben Thornton"];
         const tokens = tokenizeMacro(lines);
         const val = tokens[1].find((t) => t.text.includes("Ben Thornton"));
         assert.ok(val, "expected to find author value token");
@@ -568,23 +556,21 @@ suite("adams_cmd grammar — macro frontmatter", () => {
     });
 
     test("MACRO NAME: keyword is selfParameter", () => {
-        const lines = [
-            "!USER_ENTERED_COMMAND  cdm wear",
-            "! MACRO NAME:  test.mac",
-        ];
+        const lines = ["!USER_ENTERED_COMMAND  cdm wear", "! MACRO NAME:  test.mac"];
         const tokens = tokenizeMacro(lines);
         // The keyword token may be "MACRO NAME" or "MACRO" depending on how it's captured
-        const kw = tokens[1].find((t) => t.text.includes("MACRO") && t.scopes.includes("selfParameter"));
+        const kw = tokens[1].find(
+            (t) => t.text.includes("MACRO") && t.scopes.includes("selfParameter"),
+        );
         assert.ok(kw, "expected MACRO NAME keyword to have selfParameter scope");
     });
 
     test("MACRO_NAME (underscore variant): keyword is selfParameter", () => {
-        const lines = [
-            "!USER_ENTERED_COMMAND  cdm wear",
-            "! MACRO_NAME:  test.mac",
-        ];
+        const lines = ["!USER_ENTERED_COMMAND  cdm wear", "! MACRO_NAME:  test.mac"];
         const tokens = tokenizeMacro(lines);
-        const kw = tokens[1].find((t) => t.text.includes("MACRO") && t.scopes.includes("selfParameter"));
+        const kw = tokens[1].find(
+            (t) => t.text.includes("MACRO") && t.scopes.includes("selfParameter"),
+        );
         assert.ok(kw, "expected MACRO_NAME (underscore) keyword to have selfParameter scope");
     });
 
@@ -617,15 +603,22 @@ suite("adams_cmd grammar — macro frontmatter", () => {
     test("qualifier colon separator is keyword.operator", () => {
         const lines = ["!USER_ENTERED_COMMAND  cdm wear", "!$param1:t=int:d=100"];
         const tokens = tokenizeMacro(lines);
-        const colons = tokens[1].filter((t) => t.text === ":" && t.scopes.includes("keyword.operator"));
+        const colons = tokens[1].filter(
+            (t) => t.text === ":" && t.scopes.includes("keyword.operator"),
+        );
         assert.ok(colons.length > 0, "expected at least one : token with keyword.operator scope");
     });
 
     test("qualifier unquoted value is constant.other.qualifier.adams_cmd", () => {
         const lines = ["!USER_ENTERED_COMMAND  cdm wear", "!$param1:t=int:d=100"];
         const tokens = tokenizeMacro(lines);
-        const val = tokens[1].find((t) => t.text === "int" && t.scopes.includes("constant.other.qualifier.adams_cmd"));
-        assert.ok(val, "expected qualifier value 'int' to have constant.other.qualifier.adams_cmd scope");
+        const val = tokens[1].find(
+            (t) => t.text === "int" && t.scopes.includes("constant.other.qualifier.adams_cmd"),
+        );
+        assert.ok(
+            val,
+            "expected qualifier value 'int' to have constant.other.qualifier.adams_cmd scope",
+        );
     });
 
     test("qualifier double-quoted value is string.quoted.double.adams_cmd", () => {
@@ -680,10 +673,7 @@ suite("adams_cmd grammar — macro frontmatter", () => {
     // -----------------------------------------------------------------------
 
     test("code line immediately after !USER_ENTERED_COMMAND (no END_OF_PARAMETERS) is not frontmatter", () => {
-        const lines = [
-            "!USER_ENTERED_COMMAND  cdm wear",
-            "variable set variable=foo real=1.0",
-        ];
+        const lines = ["!USER_ENTERED_COMMAND  cdm wear", "variable set variable=foo real=1.0"];
         const tokens = tokenizeMacro(lines);
         assert.ok(
             !lineHasScope(tokens[1], "selfParameter"),
