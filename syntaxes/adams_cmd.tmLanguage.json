@@ -149,16 +149,17 @@
 		},
 		"macro-frontmatter": {
 			"comment": "Macro file header block: begins with !USER_ENTERED_COMMAND, ends at !END_OF_PARAMETERS or first non-comment line",
+			"name": "meta.frontmatter.adams_cmd",
 			"begin": "^(!)[ \\t]*(USER_ENTERED_COMMAND)\\b(.*)",
 			"beginCaptures": {
 				"1": {"name": "comment"},
-				"2": {"name": "selfParameter"},
+				"2": {"name": "keyword.other.frontmatter.adams_cmd"},
 				"3": {"name": "command.command"}
 			},
 			"end": "^(!)[ \\t]*(END_OF_PARAMETERS)[ \\t]*$|(?=^[^!])",
 			"endCaptures": {
 				"1": {"name": "comment"},
-				"2": {"name": "selfParameter"}
+				"2": {"name": "keyword.other.frontmatter.adams_cmd"}
 			},
 			"patterns": [
 				{
@@ -166,7 +167,7 @@
 					"begin": "^(!)[ \\t]*(HELP_STRING|DESCRIPTION)[ \\t]*(:?)[ \\t]*(.*)",
 					"beginCaptures": {
 						"1": {"name": "comment"},
-						"2": {"name": "selfParameter"},
+						"2": {"name": "keyword.other.frontmatter.adams_cmd"},
 						"3": {"name": "keyword.operator"},
 						"4": {"name": "string.unquoted.adams_cmd"}
 					},
@@ -187,7 +188,7 @@
 					"match": "^(!)[ \\t]*(MACRO[ \\t_]?NAME|AUTHOR|DATE|CREATE_PANEL|WRAP_IN_UNDO|HELP_FILE)[ \\t]*(:?)[ \\t]*(.*)",
 					"captures": {
 						"1": {"name": "comment"},
-						"2": {"name": "selfParameter"},
+						"2": {"name": "keyword.other.frontmatter.adams_cmd"},
 						"3": {"name": "keyword.operator"},
 						"4": {"name": "comment"}
 					}
@@ -211,7 +212,17 @@
 									}
 								},
 								{
-									"comment": "qualifier with unquoted value: :key=value",
+									"comment": "qualifier with numeric value: :key=100 or :key=1.5 or :key=-10 or :key=.5",
+									"match": "(:)(t|d|ud|c|gt|ge|lt|le)(=)(-?(?:[0-9]+\\.?[0-9]*|\\.[0-9]+))",
+									"captures": {
+										"1": {"name": "keyword.operator"},
+										"2": {"name": "command.argument"},
+										"3": {"name": "keyword.operator"},
+										"4": {"name": "constant.numeric"}
+									}
+								},
+								{
+									"comment": "qualifier with unquoted non-numeric value: :key=int or :key=str",
 									"match": "(:)(t|d|ud|c|gt|ge|lt|le)(=)([^:]*)",
 									"captures": {
 										"1": {"name": "keyword.operator"},

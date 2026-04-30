@@ -446,6 +446,66 @@
                             "settings": {
                                 "foreground": "#8ba7c2"
                             }
+                        },
+                        {
+                            "scope": "keyword.other.frontmatter.adams_cmd",
+                            "settings": {
+                                "foreground": "#267f99",
+                                "fontStyle": "italic"
+                            }
+                        },
+                        {
+                            "scope": "meta.frontmatter.adams_cmd command.command",
+                            "settings": {
+                                "foreground": "#c07dff80",
+                                "fontStyle": "italic"
+                            }
+                        },
+                        {
+                            "scope": "meta.frontmatter.adams_cmd parameter.reference",
+                            "settings": {
+                                "foreground": "#41a18980",
+                                "fontStyle": "italic"
+                            }
+                        },
+                        {
+                            "scope": "meta.frontmatter.adams_cmd command.argument",
+                            "settings": {
+                                "foreground": "#3b8cd880",
+                                "fontStyle": "italic"
+                            }
+                        },
+                        {
+                            "scope": "meta.frontmatter.adams_cmd constant.other.qualifier.adams_cmd",
+                            "settings": {
+                                "foreground": "#bd785b80",
+                                "fontStyle": "italic"
+                            }
+                        },
+                        {
+                            "scope": "meta.frontmatter.adams_cmd constant.numeric",
+                            "settings": {
+                                "fontStyle": "italic"
+                            }
+                        },
+                        {
+                            "scope": "meta.frontmatter.adams_cmd string",
+                            "settings": {
+                                "foreground": "#a3151580",
+                                "fontStyle": "italic"
+                            }
+                        },
+                        {
+                            "scope": "meta.frontmatter.adams_cmd comment",
+                            "settings": {
+                                "fontStyle": "italic"
+                            }
+                        },
+                        {
+                            "scope": "meta.frontmatter.adams_cmd keyword.operator",
+                            "settings": {
+                                "fontStyle": "italic"
+                            }
                         }
                     ]
                 },
@@ -540,6 +600,66 @@
                         "settings": {
                             "foreground": "#d4976b",
                             "fontStyle": "bold"
+                        }
+                    },
+                    {
+                        "scope": "keyword.other.frontmatter.adams_cmd",
+                        "settings": {
+                            "foreground": "#4ec9b0",
+                            "fontStyle": "italic"
+                        }
+                    },
+                    {
+                        "scope": "meta.frontmatter.adams_cmd command.command",
+                        "settings": {
+                            "foreground": "#d3a7fd80",
+                            "fontStyle": "italic"
+                        }
+                    },
+                    {
+                        "scope": "meta.frontmatter.adams_cmd parameter.reference",
+                        "settings": {
+                            "foreground": "#b9edfd80",
+                            "fontStyle": "italic"
+                        }
+                    },
+                    {
+                        "scope": "meta.frontmatter.adams_cmd command.argument",
+                        "settings": {
+                            "foreground": "#8ec7f080",
+                            "fontStyle": "italic"
+                        }
+                    },
+                    {
+                        "scope": "meta.frontmatter.adams_cmd constant.other.qualifier.adams_cmd",
+                        "settings": {
+                            "foreground": "#d4976b80",
+                            "fontStyle": "italic"
+                        }
+                    },
+                    {
+                        "scope": "meta.frontmatter.adams_cmd constant.numeric",
+                        "settings": {
+                            "fontStyle": "italic"
+                        }
+                    },
+                    {
+                        "scope": "meta.frontmatter.adams_cmd string",
+                        "settings": {
+                            "foreground": "#ce917880",
+                            "fontStyle": "italic"
+                        }
+                    },
+                    {
+                        "scope": "meta.frontmatter.adams_cmd comment",
+                        "settings": {
+                            "fontStyle": "italic"
+                        }
+                    },
+                    {
+                        "scope": "meta.frontmatter.adams_cmd keyword.operator",
+                        "settings": {
+                            "fontStyle": "italic"
                         }
                     }
                 ]
