@@ -19,14 +19,14 @@ from pygls.lsp.server import LanguageServer
 from lsprotocol import types
 
 from .linter import lint_text
-from .parser import parse as _parse_cmd
+from .parser import parse as _parse_cmd, _find_comment_start
 from .schema import Schema
 from .diagnostics import Severity
 from .symbols import SymbolTable, build_symbol_table
 from .object_index import ObjectIndex, index_file_objects, _resolve_command_keys
 from .macros import (
-    scan_macro_files, parse_macro_file, MacroRegistry, DEFAULT_MACRO_PATTERNS,
-    DEFAULT_IGNORE_DIRS, extract_macros_from_statements,
+    scan_macro_files, parse_macro_file, MacroRegistry, MacroDefinition, MacroParameter,
+    DEFAULT_MACRO_PATTERNS, DEFAULT_IGNORE_DIRS, extract_macros_from_statements,
     _USER_ENTERED_COMMAND_RE, _COMMENT_PARAM_RE, _END_OF_PARAMETERS,
     resolve_macro_argument_name,
 )
@@ -1223,6 +1223,343 @@ def hover(params: types.HoverParams):
         ),
         range=hover_range,
     )
+
+
+# ---------------------------------------------------------------------------
+# Completion helpers
+# ---------------------------------------------------------------------------
+
+# Matches "list(val1, val2, ...)" in a MacroParameter.type_str
+_LIST_TYPE_RE = re.compile(r'^list\(([^)]+)\)$', re.IGNORECASE)
+
+
+def _parse_list_type_values(type_str: str) -> list:
+    """Extract completable values from a MacroParameter.type_str.
+
+    - ``"list(yes,no)"``  → ``["yes", "no"]``
+    - Anything else       → ``[]``
+    """
+    if not type_str:
+        return []
+    m = _LIST_TYPE_RE.match(type_str.strip())
+    if m:
+        return [v.strip() for v in m.group(1).split(',') if v.strip()]
+    return []
+
+
+def _lookup_macro_for_cmd(command_key: str, statements: list, stmt_line_start: int, uri: str):
+    """Return the MacroDefinition for *command_key*, or None.
+
+    Checks the workspace macro registry first, then falls back to macros
+    defined inline (via ``macro create`` / ``macro read``) earlier in the file.
+    """
+    key = command_key.lower().strip()
+
+    if _macro_registry is not None:
+        macro_def = _macro_registry.lookup_command(key)
+        if macro_def is not None:
+            return macro_def
+
+    if _schema is not None:
+        path = _uri_to_path(uri)
+        preceding = [s for s in statements if s.line_end < stmt_line_start]
+        inline_macros = extract_macros_from_statements(preceding, _schema, source_file=path or "")
+        for idef in inline_macros:
+            if idef.command == key:
+                return idef
+
+    return None
+
+
+def _get_completion_context(text: str, line: int, character: int, uri: str):
+    """Determine the completion context at the cursor position.
+
+    Returns one of:
+
+    - ``("command", prefix)``
+        Suggest macro command names starting with *prefix*.
+    - ``("argument", macro_def, used_arg_names, prefix)``
+        Suggest unused argument names for *macro_def*.
+    - ``("value", param, prefix)``
+        Suggest enum values for the *MacroParameter*.
+    - ``None``
+        Built-in command or no useful context — JS provider handles it.
+    """
+    if _schema is None:
+        return None
+
+    lines = text.splitlines()
+    if not (0 <= line < len(lines)):
+        return None
+
+    line_text = lines[line]
+
+    # Never complete inside plain comment lines
+    if line_text.lstrip().startswith('!'):
+        return None
+
+    try:
+        statements = _parse_cmd(text)
+    except Exception:  # noqa: BLE001
+        return None
+
+    # Find the statement that spans the cursor line
+    stmt = None
+    for s in statements:
+        if s.is_comment or s.is_blank:
+            continue
+        if s.line_start <= line <= s.line_end:
+            stmt = s
+            break
+
+    text_to_cursor = line_text[:character]
+
+    # --- 1. Value completion: line ends with  argname=  or  argname=partial ---
+    value_m = re.search(r'(\w+)\s*=\s*(\w*)$', text_to_cursor)
+    if value_m and stmt is not None and not stmt.is_control_flow:
+        cmd_tokens = stmt.command_key.split() if stmt.command_key else []
+        resolved_cmd, _ = _schema.resolve_command_key(cmd_tokens)
+        if resolved_cmd is None and stmt.command_key:
+            macro_def = _lookup_macro_for_cmd(stmt.command_key, statements, stmt.line_start, uri)
+            if macro_def is not None and isinstance(macro_def, MacroDefinition):
+                canonical = resolve_macro_argument_name(macro_def, value_m.group(1))
+                if canonical is not None:
+                    param = macro_def.parameters.get(canonical)
+                    if param is not None:
+                        return ("value", param, value_m.group(2))
+
+    # --- 2. No statement found: try raw command prefix ---
+    if stmt is None or stmt.is_control_flow:
+        raw_prefix = text_to_cursor.lstrip()
+        if '=' not in raw_prefix:
+            return ("command", raw_prefix)
+        return None
+
+    cmd_tokens = stmt.command_key.split() if stmt.command_key else []
+    resolved_cmd, _ = _schema.resolve_command_key(cmd_tokens)
+
+    # Built-in command: JS provider handles it
+    if resolved_cmd is not None:
+        return None
+
+    # --- 3. Determine if cursor is in the command-key region ---
+    # command_key_tokens: [(token_text, phys_line, phys_col), ...]
+    cursor_past_cmd = True
+    if stmt.command_key_tokens:
+        last_tok, last_tok_line, last_tok_col = stmt.command_key_tokens[-1]
+        cmd_end_col = last_tok_col + len(last_tok)
+        cursor_past_cmd = line > last_tok_line or (line == last_tok_line and character > cmd_end_col)
+    else:
+        first_line = lines[stmt.line_start] if 0 <= stmt.line_start < len(lines) else ""
+        leading = len(first_line) - len(first_line.lstrip())
+        cursor_past_cmd = character > leading + len(stmt.command_key)
+
+    if not cursor_past_cmd:
+        # Cursor is within the command key region.
+        # The parser may have absorbed a partial arg-name-without-equals into
+        # the command_key (e.g. 'custom command part_' → key='custom command part_').
+        # Check if a known macro matches a *prefix* of the parsed command_key;
+        # if so, the trailing token is a partial argument name.
+        full_key = stmt.command_key.lower()
+        matched_macro = None
+        arg_prefix_from_key = ""
+        if _macro_registry is not None:
+            for cmd_key, mdef in _macro_registry.items():
+                if full_key == cmd_key:
+                    matched_macro = mdef
+                    break
+                if full_key.startswith(cmd_key + " "):
+                    arg_prefix_from_key = full_key[len(cmd_key) + 1:].strip()
+                    matched_macro = _lookup_macro_for_cmd(cmd_key, statements, stmt.line_start, uri)
+                    break
+        if matched_macro is not None and arg_prefix_from_key:
+            used_args = {a.name.lower() for a in stmt.arguments}
+            used_args.discard(arg_prefix_from_key.lower())
+            return ("argument", matched_macro, used_args, arg_prefix_from_key)
+        # No macro match: fall through to command prefix suggestion
+        cmd_prefix = text_to_cursor.lstrip()
+        if '=' not in cmd_prefix:
+            return ("command", cmd_prefix)
+        return None
+
+    # --- 4. Cursor is after command key: argument name completion ---
+    macro_def = _lookup_macro_for_cmd(stmt.command_key, statements, stmt.line_start, uri)
+    if macro_def is None:
+        # Unknown command — might be a multi-word command prefix; suggest names
+        return ("command", stmt.command_key)
+
+    # Collect already-used argument names from the parsed statement
+    used_args = {a.name.lower() for a in stmt.arguments}
+
+    # Check if there's a partial argument name being typed before the cursor
+    arg_prefix = ""
+    partial_m = re.search(r'\b(\w+)$', text_to_cursor)
+    if partial_m:
+        # Only treat as a partial arg name if there's no '=' after it
+        rest = line_text[partial_m.end():]
+        comment_start = _find_comment_start(rest)
+        if '=' not in rest[:comment_start]:
+            arg_prefix = partial_m.group(1)
+            used_args.discard(arg_prefix.lower())
+
+    return ("argument", macro_def, used_args, arg_prefix)
+
+
+@server.feature(
+    types.TEXT_DOCUMENT_COMPLETION,
+    types.CompletionOptions(trigger_characters=["="]),
+)
+def completion(params: types.CompletionParams):
+    """Provide completions for macro command names, arguments, and values.
+
+    Built-in Adams commands are handled by the JS completion provider; this
+    handler returns results only for macro commands that are not in the schema.
+    """
+    if _schema is None:
+        return None
+
+    uri = params.text_document.uri
+    line = params.position.line
+    character = params.position.character
+
+    try:
+        doc = server.workspace.get_text_document(uri)
+        text = doc.source
+    except Exception:  # noqa: BLE001
+        return None
+
+    ctx = _get_completion_context(text, line, character, uri)
+    if ctx is None:
+        return None
+
+    lines = text.splitlines()
+    line_text = lines[line] if 0 <= line < len(lines) else ""
+    leading_ws = len(line_text) - len(line_text.lstrip())
+
+    kind = ctx[0]
+    items = []
+
+    if kind == "command":
+        prefix = ctx[1].lower()
+
+        # Replace range: from start of typed text on this line to cursor
+        replace_range = types.Range(
+            start=types.Position(line=line, character=leading_ws),
+            end=types.Position(line=line, character=character),
+        )
+
+        seen: set = set()
+
+        # Workspace registry macros
+        if _macro_registry is not None:
+            for cmd_key, macro_def in _macro_registry.items():
+                if cmd_key.startswith(prefix) and cmd_key not in seen:
+                    seen.add(cmd_key)
+                    doc_content = None
+                    if macro_def.description:
+                        doc_content = types.MarkupContent(
+                            kind=types.MarkupKind.Markdown,
+                            value=macro_def.description,
+                        )
+                    items.append(types.CompletionItem(
+                        label=cmd_key,
+                        kind=types.CompletionItemKind.Function,
+                        detail=os.path.basename(macro_def.source_file) if macro_def.source_file else None,
+                        documentation=doc_content,
+                        text_edit=types.TextEdit(range=replace_range, new_text=cmd_key),
+                        filter_text=cmd_key,
+                    ))
+
+        # Inline macros defined earlier in the file
+        if _schema is not None:
+            try:
+                stmts_for_inline = _parse_cmd(text)
+            except Exception:  # noqa: BLE001
+                stmts_for_inline = []
+            preceding = [s for s in stmts_for_inline if s.line_start < line]
+            path = _uri_to_path(uri)
+            inline_macros = extract_macros_from_statements(preceding, _schema, source_file=path or "")
+            for idef in inline_macros:
+                if idef.command.startswith(prefix) and idef.command not in seen:
+                    seen.add(idef.command)
+                    items.append(types.CompletionItem(
+                        label=idef.command,
+                        kind=types.CompletionItemKind.Function,
+                        detail="inline macro",
+                        text_edit=types.TextEdit(range=replace_range, new_text=idef.command),
+                        filter_text=idef.command,
+                    ))
+
+    elif kind == "argument":
+        _, macro_def, used_args, prefix = ctx
+
+        # Replace range: from start of the partial arg name to cursor
+        replace_start = character - len(prefix)
+        replace_range = types.Range(
+            start=types.Position(line=line, character=replace_start),
+            end=types.Position(line=line, character=character),
+        )
+
+        params_dict = macro_def.parameters if macro_def is not None else {}
+        for param_name, param in params_dict.items():
+            if param_name in used_args:
+                continue
+            if prefix and not param_name.startswith(prefix.lower()):
+                continue
+            doc_content = None
+            detail = None
+            if isinstance(param, MacroParameter):
+                detail = param.type_str or None
+                if param.docstring:
+                    doc_content = types.MarkupContent(
+                        kind=types.MarkupKind.PlainText,
+                        value=param.docstring,
+                    )
+            new_text = param_name + "="
+            items.append(types.CompletionItem(
+                label=param_name,
+                kind=types.CompletionItemKind.Property,
+                detail=detail,
+                documentation=doc_content,
+                text_edit=types.TextEdit(range=replace_range, new_text=new_text),
+                filter_text=param_name,
+            ))
+
+    elif kind == "value":
+        _, param, prefix = ctx
+
+        # Replace range: from start of partial value to cursor
+        replace_start = character - len(prefix)
+        replace_range = types.Range(
+            start=types.Position(line=line, character=replace_start),
+            end=types.Position(line=line, character=character),
+        )
+
+        if param is not None and isinstance(param, MacroParameter):
+            values = _parse_list_type_values(param.type_str or "")
+            default_val = param.default.strip('"\'') if param.default else None
+            for val in values:
+                if not val.lower().startswith(prefix.lower()):
+                    continue
+                items.append(types.CompletionItem(
+                    label=val,
+                    kind=types.CompletionItemKind.EnumMember,
+                    text_edit=types.TextEdit(range=replace_range, new_text=val),
+                ))
+            # Suggest default value if not already in the list
+            if default_val and default_val.lower().startswith(prefix.lower()):
+                if not any(v.lower() == default_val.lower() for v in values):
+                    items.append(types.CompletionItem(
+                        label=default_val,
+                        kind=types.CompletionItemKind.Value,
+                        detail="default",
+                        text_edit=types.TextEdit(range=replace_range, new_text=default_val),
+                    ))
+
+    if not items:
+        return None
+
+    return types.CompletionList(is_incomplete=False, items=items)
 
 
 @server.feature(types.TEXT_DOCUMENT_REFERENCES)
