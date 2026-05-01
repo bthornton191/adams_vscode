@@ -48,9 +48,9 @@
             "!MACRO NAME:  $TM_FILENAME",
             "!HELP_STRING: ${2:description}   ",
             "!AUTHOR:      ${3:author}",
-            "!END_OF_PARAMETERS",
             "!\\$${4:param_name}:t=${5:type}",
             "! ${6:Parameter description (shown on hover)}",
+            "!END_OF_PARAMETERS",
             "$0"
         ],   
         "description": "Macro Header"        
