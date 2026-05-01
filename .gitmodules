@@ -1,0 +1,4 @@
+[submodule "resources/adamspy"]
+	path = resources/adamspy
+	url = https://github.com/bthornton191/adams-python-stubs
+	branch = master
