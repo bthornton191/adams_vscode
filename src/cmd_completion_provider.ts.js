@@ -29,20 +29,48 @@ function cmd_completion_provider(
             // to isolate the command name.
             const command_key = strip_argument_pairs(full_text);
 
+            // If command_key doesn't match directly, check if the trailing token is a partial
+            // argument name being typed (e.g. "marker create m" → key="marker create", partial="m").
+            let resolved_command_key = command_key;
+            let partial_arg = "";
+            if (!commands.hasOwnProperty(command_key)) {
+                const last_space = command_key.lastIndexOf(" ");
+                if (last_space !== -1) {
+                    const candidate_key = command_key.slice(0, last_space).trimEnd();
+                    const candidate_token = command_key.slice(last_space + 1).trimStart();
+                    if (!candidate_token.includes("=") && commands.hasOwnProperty(candidate_key)) {
+                        resolved_command_key = candidate_key;
+                        partial_arg = candidate_token.toLowerCase();
+                    }
+                }
+            }
+
+            // Commands — only suggest on the first (non-continuation) line
+            const on_continuation =
+                position.line > 0 && /&[ \t]*(!.*)?$/.test(document.lineAt(position.line - 1).text);
+
+            // Suppress function completions when typing an argument name for a known command
+            // (not a value after '='). Applies on both first and continuation lines.
+            const typing_arg_value = /(\w+)=(\w*)$/.test(current_line);
+            const in_arg_name_context =
+                commands.hasOwnProperty(resolved_command_key) && !typing_arg_value;
+
             // Functions
-            for (var [name, doc] of function_names.entries()) {
-                if (name.startsWith(word)) {
-                    let completion = new vscode.CompletionItem(name);
-                    completion.kind = vscode.CompletionItemKind.Function;
-                    completion.command = { command: "editor.action.showHover" };
-                    completion.documentation = new vscode.MarkdownString(doc);
-                    completions.push(completion);
+            if (!in_arg_name_context) {
+                for (var [name, doc] of function_names.entries()) {
+                    if (name.startsWith(word)) {
+                        let completion = new vscode.CompletionItem(name);
+                        completion.kind = vscode.CompletionItemKind.Function;
+                        completion.command = { command: "editor.action.showHover" };
+                        completion.documentation = new vscode.MarkdownString(doc);
+                        completions.push(completion);
+                    }
                 }
             }
 
             // Arguments
-            // If the stripped full text exactly matches a command, we are in the arguments section
-            if (commands.hasOwnProperty(command_key)) {
+            // If the resolved command key matches a command, we are in the arguments section
+            if (commands.hasOwnProperty(resolved_command_key)) {
                 // Collect argument names already used across all continuation lines
                 const used_args = new Set();
                 for (const m of full_text.matchAll(/(\w+)\s*=/g)) {
@@ -58,13 +86,22 @@ function cmd_completion_provider(
                 }
                 var indent = indent_type.repeat(get_indent_level(current_line, indent_type) + 1);
 
-                const cmd_doc = command_docs.get(command_key);
+                const cmd_doc = command_docs.get(resolved_command_key);
 
-                for (let arg of commands[command_key]) {
+                for (let arg of commands[resolved_command_key]) {
                     if (used_args.has(arg)) continue;
+                    if (partial_arg && !arg.toLowerCase().startsWith(partial_arg)) continue;
                     let label = current_line.endsWith(" ") ? arg : " " + arg;
+                    if (partial_arg) {
+                        // The typed partial word is already present; no leading space needed.
+                        label = arg;
+                    }
                     let completion = new vscode.CompletionItem(label + "=");
                     completion.kind = vscode.CompletionItemKind.Field;
+                    if (partial_arg) {
+                        // Set filterText without leading space so VS Code matches the typed word
+                        completion.filterText = arg + "=";
+                    }
                     if (cmd_doc) {
                         completion.documentation = new vscode.MarkdownString(cmd_doc);
                     }
@@ -76,10 +113,10 @@ function cmd_completion_provider(
             // Detect when the cursor is right after `arg_name=` or `arg_name=partial`
             // Pattern: some text ending in  word= or word=partial  (no space after =)
             const arg_value_match = current_line.match(/(\w+)=(\w*)$/);
-            if (arg_value_match && commands.hasOwnProperty(command_key)) {
+            if (arg_value_match && commands.hasOwnProperty(resolved_command_key)) {
                 const arg_name = arg_value_match[1];
                 const partial = arg_value_match[2].toLowerCase();
-                const cmd_options = (arg_options || {})[command_key];
+                const cmd_options = (arg_options || {})[resolved_command_key];
                 const values = cmd_options && cmd_options[arg_name];
                 if (values) {
                     const value_completions = [];
@@ -95,10 +132,6 @@ function cmd_completion_provider(
                     }
                 }
             }
-
-            // Commands — only suggest on the first (non-continuation) line
-            const on_continuation =
-                position.line > 0 && /&[ \t]*(!.*)?$/.test(document.lineAt(position.line - 1).text);
 
             if (!on_continuation) {
                 for (let [command, args] of Object.entries(commands)) {
