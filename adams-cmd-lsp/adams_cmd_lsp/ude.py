@@ -108,6 +108,10 @@ class UdeRegistry:
         self._mtimes.pop(path, None)
         self._mtimes.pop(str(norm), None)
 
+    def items(self):
+        """Iterate over (definition_name, UdeDefinition) pairs."""
+        return iter(self._definitions.items())
+
     def __len__(self):
         return len(self._definitions)
 
