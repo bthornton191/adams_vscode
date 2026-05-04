@@ -372,6 +372,9 @@
             }
         ],
         "configurationDefaults": {
+            "[adams_cmd]": {
+                "editor.snippetSuggestions": "bottom"
+            },
             "editor.tokenColorCustomizations": {
                 "[*Light*]": {
                     "textMateRules": [
