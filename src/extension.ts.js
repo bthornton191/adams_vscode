@@ -60,12 +60,30 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     // ---------------------------------------------------------------------------
     // Link Provider
     // ---------------------------------------------------------------------------
-    vscode.languages.registerDocumentLinkProvider("adams_cmd", link_provider(reporter));
-    vscode.languages.registerDocumentLinkProvider("adams_adm", link_provider(reporter));
-    vscode.languages.registerDocumentLinkProvider("adams_acf", link_provider(reporter));
-    vscode.languages.registerDocumentLinkProvider("adams_msg", link_provider(reporter));
-    vscode.languages.registerDocumentLinkProvider("adams_log", link_provider(reporter));
-    vscode.languages.registerDocumentLinkProvider("adams_to", link_provider(reporter));
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_cmd" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_adm" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_acf" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_msg" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_log" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_to" },
+        link_provider(reporter),
+    );
 
     // ---------------------------------------------------------------------------
     // Completion Provider
@@ -138,7 +156,7 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     }
 
     vscode.languages.registerHoverProvider(
-        "adams_cmd",
+        { scheme: "file", language: "adams_cmd" },
         cmd_hover_provider(
             view_functions,
             view_commands,
@@ -150,7 +168,7 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     );
 
     vscode.languages.registerCompletionItemProvider(
-        "adams_cmd",
+        { scheme: "file", language: "adams_cmd" },
         cmd_completion_provider(view_functions, view_commands, arg_options, command_docs, reporter),
         "=", // trigger value completions after arg=
     );
