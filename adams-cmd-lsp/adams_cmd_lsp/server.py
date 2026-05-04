@@ -28,13 +28,41 @@ from .macros import (
     scan_macro_files, parse_macro_file, MacroRegistry, MacroDefinition, MacroParameter,
     DEFAULT_MACRO_PATTERNS, DEFAULT_IGNORE_DIRS, extract_macros_from_statements,
     _USER_ENTERED_COMMAND_RE, _COMMENT_PARAM_RE, _END_OF_PARAMETERS,
-    resolve_macro_argument_name,
+    resolve_macro_argument_name, _extract_params_from_text,
 )
 from .references import MacroIndex, index_file_text
+from .rules import _ADAMS_ENTITY_TYPE_NAMES
 from .ude import UdeRegistry, scan_ude_files, DEFAULT_UDE_PATTERNS
 
 
 server = LanguageServer("adams-cmd-lsp", "v0.1.0")
+
+# ---------------------------------------------------------------------------
+# Macro parameter definition completions — type and qualifier constants
+# ---------------------------------------------------------------------------
+
+# Valid values for the t= qualifier on !$param lines.
+# Primitives listed first (most common), then all Adams entity types,
+# then 'list' last (special snippet form).
+_PARAM_PRIMITIVE_TYPES = ["string", "str", "real", "integer"]
+_PARAM_ENTITY_TYPES = sorted(_ADAMS_ENTITY_TYPE_NAMES)  # alphabetical
+_PARAM_TYPE_VALUES = _PARAM_PRIMITIVE_TYPES + _PARAM_ENTITY_TYPES  # 'list' added dynamically
+
+# Qualifier keys for !$param definition lines.
+# Each entry: (key, insert_text_with_equals, description)
+_PARAM_QUALIFIER_KEYS = [
+    ("t",  "t=",  "type"),
+    ("d",  "d=",  "default value"),
+    ("ud", "ud=", "updated default"),
+    ("ge", "ge=", "numeric constraint: \u2265 value"),
+    ("gt", "gt=", "numeric constraint: > value"),
+    ("le", "le=", "numeric constraint: \u2264 value"),
+    ("lt", "lt=", "numeric constraint: < value"),
+    ("c",  "c=",  "count"),
+]
+
+# Regex: matches a macro parameter definition line like  !$name  or  !$'name'
+_PARAM_DEF_LINE_RE = re.compile(r'^!\$', re.IGNORECASE)
 
 # Semantic token legend — used for macro command/argument highlighting
 _SEMANTIC_TOKEN_TYPES = ["keyword", "parameter"]
@@ -1407,13 +1435,18 @@ def _get_completion_context(text: str, line: int, character: int, uri: str):
 
 @server.feature(
     types.TEXT_DOCUMENT_COMPLETION,
-    types.CompletionOptions(trigger_characters=["="]),
+    types.CompletionOptions(trigger_characters=["=", "$", ":"]),
 )
 def completion(params: types.CompletionParams):
     """Provide completions for macro command names, arguments, and values.
 
+    Also provides macro parameter reference completions ($param) when the
+    cursor is immediately after a '$' anywhere on the line — including after
+    '=' and inside expressions like eval(...).
+
     Built-in Adams commands are handled by the JS completion provider; this
-    handler returns results only for macro commands that are not in the schema.
+    handler returns results only for macro commands that are not in the schema,
+    EXCEPT for $param completions which work in all command contexts.
     """
     if _schema is None:
         return None
@@ -1426,6 +1459,123 @@ def completion(params: types.CompletionParams):
         doc = server.workspace.get_text_document(uri)
         text = doc.source
     except Exception:  # noqa: BLE001
+        return None
+
+    # --- $param reference completions ---
+    # Fires on '$' trigger or whenever the cursor follows a '$' anywhere on the
+    # line (after '=', mid-expression, etc.).  Works for ALL commands — both
+    # built-in and macro.  Guard: skip if the cursor is on a comment line.
+    lines_for_param = text.splitlines()
+    line_text_for_param = lines_for_param[line] if 0 <= line < len(lines_for_param) else ""
+    if not line_text_for_param.lstrip().startswith('!'):
+        text_to_cursor_for_param = line_text_for_param[:character]
+        param_m = re.search(r'\$(\w*)$', text_to_cursor_for_param)
+        if param_m:
+            partial = param_m.group(1).lower()
+            # Replace range: from the '$' to the cursor
+            dollar_col = character - len(param_m.group(0))
+            replace_range = types.Range(
+                start=types.Position(line=line, character=dollar_col),
+                end=types.Position(line=line, character=character),
+            )
+            # Extract macro parameters from the current file using the canonical parser
+            file_params = _extract_params_from_text(text)
+            param_items = []
+            for pname, param in file_params.items():
+                if partial and not pname.startswith(partial):
+                    continue
+                doc_content = None
+                if isinstance(param, MacroParameter) and param.docstring:
+                    doc_content = types.MarkupContent(
+                        kind=types.MarkupKind.PlainText,
+                        value=param.docstring,
+                    )
+                param_items.append(types.CompletionItem(
+                    label="$" + pname,
+                    kind=types.CompletionItemKind.Variable,
+                    detail=param.type_str if isinstance(param, MacroParameter) else None,
+                    documentation=doc_content,
+                    sort_text="a" + pname,
+                    text_edit=types.TextEdit(range=replace_range, new_text="$" + pname),
+                    filter_text="$" + pname,
+                ))
+            # Always include $_self (sorts last)
+            if not partial or "_self".startswith(partial):
+                param_items.append(types.CompletionItem(
+                    label="$_self",
+                    kind=types.CompletionItemKind.Variable,
+                    detail="macro",
+                    sort_text="z_self",
+                    text_edit=types.TextEdit(range=replace_range, new_text="$_self"),
+                    filter_text="$_self",
+                ))
+            if param_items:
+                return types.CompletionList(items=param_items, is_incomplete=False)
+
+    # --- Macro parameter definition completions ---
+    # Fires on !$param_name:... lines.  Provides:
+    #   * type values after  t=<partial>
+    #   * qualifier keys after  :<partial>  (excluding keys already on the line)
+    lines_for_def = text.splitlines()
+    line_text_for_def = lines_for_def[line] if 0 <= line < len(lines_for_def) else ""
+    if _PARAM_DEF_LINE_RE.match(line_text_for_def.lstrip()):
+        text_to_cursor_def = line_text_for_def[:character]
+
+        # ---- t= type value completions ----
+        type_m = re.search(r'(?:^|:)t=(\w*)$', text_to_cursor_def, re.IGNORECASE)
+        if type_m:
+            partial = type_m.group(1).lower()
+            items = []
+            # Sort index: primitives get "0_", entity types get "1_", list gets "2_"
+            for i, tval in enumerate(_PARAM_PRIMITIVE_TYPES):
+                if tval.startswith(partial):
+                    items.append(types.CompletionItem(
+                        label=tval,
+                        kind=types.CompletionItemKind.EnumMember,
+                        detail="primitive type",
+                        sort_text=f"0_{i:02d}_{tval}",
+                    ))
+            for tval in _PARAM_ENTITY_TYPES:
+                if tval.startswith(partial):
+                    items.append(types.CompletionItem(
+                        label=tval,
+                        kind=types.CompletionItemKind.EnumMember,
+                        detail="Adams object type",
+                        sort_text=f"1_{tval}",
+                    ))
+            if "list".startswith(partial):
+                items.append(types.CompletionItem(
+                    label="list",
+                    kind=types.CompletionItemKind.EnumMember,
+                    detail="enumerated choices: list(val1,val2,...)",
+                    sort_text="2_list",
+                    insert_text="list($1)",
+                    insert_text_format=types.InsertTextFormat.Snippet,
+                ))
+            if items:
+                return types.CompletionList(items=items, is_incomplete=False)
+
+        # ---- qualifier key completions ----
+        # Trigger: cursor is at  :  or  :partial  (no = in the trailing segment)
+        qual_key_m = re.search(r':(\w*)$', text_to_cursor_def)
+        if qual_key_m:
+            partial = qual_key_m.group(1).lower()
+            # Collect qualifier keys already present on the line (before the cursor)
+            used_keys = {m.group(1).lower() for m in re.finditer(r':(\w+)=', text_to_cursor_def)}
+            items = []
+            for key, insert, description in _PARAM_QUALIFIER_KEYS:
+                if key in used_keys:
+                    continue
+                if not partial or key.startswith(partial):
+                    items.append(types.CompletionItem(
+                        label=key,
+                        kind=types.CompletionItemKind.Property,
+                        detail=description,
+                        insert_text=insert,
+                    ))
+            if items:
+                return types.CompletionList(items=items, is_incomplete=False)
+
         return None
 
     ctx = _get_completion_context(text, line, character, uri)

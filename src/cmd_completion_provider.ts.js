@@ -22,6 +22,15 @@ function cmd_completion_provider(
             const word = document.getText(range).toLowerCase();
             const current_line = document.lineAt(position).text.substr(0, position.character);
 
+            // Comment and macro parameter-definition lines (starting with !) are
+            // handled by the LSP server — return nothing here to avoid incorrect
+            // function completions (e.g. !$param:t=m shouldn't show mod/mode).
+            // This intentionally covers ALL !-prefixed lines: plain comments,
+            // !$param definitions, !AUTHOR:, !END_OF_PARAMETERS, etc.
+            if (current_line.trimStart().startsWith("!")) {
+                return [];
+            }
+
             // Reconstruct the full command text across & continuation lines
             const full_text = get_full_command_context(document, position);
 
