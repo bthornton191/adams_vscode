@@ -552,6 +552,426 @@ class TestCompletionHandler:
 
 
 # ---------------------------------------------------------------------------
+# TestParamRefCompletion
+# ---------------------------------------------------------------------------
+
+class TestParamRefCompletion:
+    """$param reference completions — triggered by '$' anywhere on the line."""
+
+    def _make_params(self, uri, line, character,
+                     trigger_kind=types.CompletionTriggerKind.TriggerCharacter,
+                     trigger_char="$"):
+        return types.CompletionParams(
+            text_document=types.TextDocumentIdentifier(uri=uri),
+            position=types.Position(line=line, character=character),
+            context=types.CompletionContext(
+                trigger_kind=trigger_kind,
+                trigger_character=trigger_char,
+            ),
+        )
+
+    def _mock_workspace(self, monkeypatch, text, uri="file:///test.cmd"):
+        import types as python_types
+        mock_doc = python_types.SimpleNamespace(source=text)
+        mock_ws = python_types.SimpleNamespace(
+            get_text_document=lambda u: mock_doc,
+        )
+        monkeypatch.setattr(srv, "server", python_types.SimpleNamespace(workspace=mock_ws))
+
+    def setup_method(self):
+        srv._schema = srv.Schema.load()
+        srv._macro_registry = None
+
+    def teardown_method(self):
+        srv._macro_registry = None
+
+    # -----------------------------------------------------------------------
+    # Core behaviour
+    # -----------------------------------------------------------------------
+
+    def test_dollar_returns_all_params_and_self(self, monkeypatch):
+        """'$' with no partial returns all defined params plus $_self."""
+        text = (
+            "!$str_param_1:t=str\n"
+            "!$real_param_1:t=real\n"
+            "!$model:t=model\n"
+            "!END_OF_PARAMETERS\n"
+            "part create rigid_body name_and_position part_name=$\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 4
+        character = len("part create rigid_body name_and_position part_name=$")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        assert "$str_param_1" in labels
+        assert "$real_param_1" in labels
+        assert "$model" in labels
+        assert "$_self" in labels
+
+    def test_dollar_partial_filters(self, monkeypatch):
+        """'$s' returns only params whose name starts with 's'; not others."""
+        text = (
+            "!$str_param_1:t=str\n"
+            "!$real_param_1:t=real\n"
+            "!$model:t=model\n"
+            "!END_OF_PARAMETERS\n"
+            "part create rigid_body name_and_position part_name=$s\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 4
+        character = len("part create rigid_body name_and_position part_name=$s")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        assert "$str_param_1" in labels
+        assert "$real_param_1" not in labels
+        assert "$model" not in labels
+        assert "$_self" not in labels
+
+    def test_self_sorts_last(self, monkeypatch):
+        """$_self has a higher sort_text than macro-specific params."""
+        text = (
+            "!$my_param:t=str\n"
+            "!END_OF_PARAMETERS\n"
+            "marker create marker_name=$\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 2
+        character = len("marker create marker_name=$")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        self_item = next((i for i in result.items if i.label == "$_self"), None)
+        param_item = next((i for i in result.items if i.label == "$my_param"), None)
+        assert self_item is not None
+        assert param_item is not None
+        assert self_item.sort_text > param_item.sort_text
+
+    def test_no_params_returns_self_only(self, monkeypatch):
+        """File with no header params still returns $_self."""
+        text = "marker create marker_name=$\n"
+        self._mock_workspace(monkeypatch, text)
+        line = 0
+        character = len("marker create marker_name=$")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        assert labels == ["$_self"]
+
+    def test_dollar_mid_expression(self, monkeypatch):
+        """$param completions work inside eval(...) expressions."""
+        text = (
+            "!$my_part:t=part\n"
+            "!END_OF_PARAMETERS\n"
+            "marker create location=(eval(loc_global({0,0,0}, $\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 2
+        character = len("marker create location=(eval(loc_global({0,0,0}, $")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        assert "$my_part" in labels
+        assert "$_self" in labels
+
+    def test_param_has_docstring(self, monkeypatch):
+        """Params with a docstring comment get a documentation field."""
+        text = (
+            "!$my_param:t=str\n"
+            "! This is the docstring.\n"
+            "!END_OF_PARAMETERS\n"
+            "marker create marker_name=$\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 3
+        character = len("marker create marker_name=$")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        item = next((i for i in result.items if i.label == "$my_param"), None)
+        assert item is not None
+        assert item.documentation is not None
+        assert "docstring" in item.documentation.value
+
+    def test_param_type_in_detail(self, monkeypatch):
+        """The type qualifier appears in the detail field."""
+        text = (
+            "!$my_real:t=real\n"
+            "!END_OF_PARAMETERS\n"
+            "marker create marker_name=$\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 2
+        character = len("marker create marker_name=$")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        item = next((i for i in result.items if i.label == "$my_real"), None)
+        assert item is not None
+        assert item.detail == "real"
+
+    def test_dollar_in_builtin_command(self, monkeypatch):
+        """$param completions work inside built-in Adams commands too."""
+        text = (
+            "!$part_name:t=str\n"
+            "!END_OF_PARAMETERS\n"
+            "part create rigid_body name_and_position part_name=$\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 2
+        character = len("part create rigid_body name_and_position part_name=$")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        assert "$part_name" in labels
+        assert "$_self" in labels
+
+    def test_dollar_on_comment_line_no_completions(self, monkeypatch):
+        """No $param completions inside comment lines."""
+        text = (
+            "!$my_param:t=str\n"
+            "!END_OF_PARAMETERS\n"
+            "! This is a comment with a $ reference\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 2
+        character = len("! This is a comment with a $ reference")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        # The comment-line guard should prevent any $param completions
+        # (context will be None and result will be None)
+        assert result is None
+
+    def test_param_completion_replace_range_is_correct(self, monkeypatch):
+        """text_edit.range spans exactly the typed $partial (start at '$', end at cursor)."""
+        text = (
+            "!$my_var:t=str\n"
+            "!END_OF_PARAMETERS\n"
+            "marker create marker_name=$my_v\n"
+        )
+        self._mock_workspace(monkeypatch, text)
+        line = 2
+        character = len("marker create marker_name=$my_v")
+        params = self._make_params("file:///test.cmd", line, character)
+        result = srv.completion(params)
+        assert result is not None
+        item = next((i for i in result.items if i.label == "$my_var"), None)
+        assert item is not None
+        # '$my_v' is 5 chars; dollar_col = character - 5
+        assert item.text_edit.range.start.character == character - 5
+        assert item.text_edit.range.end.character == character
+
+
+# ---------------------------------------------------------------------------
+# TestParamDefinitionCompletion
+# ---------------------------------------------------------------------------
+
+class TestParamDefinitionCompletion:
+    """Completions on !$param_name:qualifier lines."""
+
+    def _make_params(self, uri, line, character,
+                     trigger_kind=types.CompletionTriggerKind.TriggerCharacter,
+                     trigger_char="="):
+        return types.CompletionParams(
+            text_document=types.TextDocumentIdentifier(uri=uri),
+            position=types.Position(line=line, character=character),
+            context=types.CompletionContext(
+                trigger_kind=trigger_kind,
+                trigger_character=trigger_char,
+            ),
+        )
+
+    def _mock_workspace(self, monkeypatch, text, uri="file:///test.cmd"):
+        import types as python_types
+        mock_doc = python_types.SimpleNamespace(source=text)
+        mock_ws = python_types.SimpleNamespace(
+            get_text_document=lambda u: mock_doc,
+        )
+        monkeypatch.setattr(srv, "server", python_types.SimpleNamespace(workspace=mock_ws))
+
+    def setup_method(self):
+        srv._schema = srv.Schema.load()
+        srv._macro_registry = None
+
+    def teardown_method(self):
+        srv._macro_registry = None
+
+    # -----------------------------------------------------------------------
+
+    def test_t_equals_returns_all_type_values(self, monkeypatch):
+        """'!$p:t=' returns all type values including primitives and object types."""
+        text = "!$p:t=\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("!$p:t="))
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        # Primitives present
+        assert "real" in labels
+        assert "integer" in labels
+        assert "string" in labels
+        # Adams object types present
+        assert "model" in labels
+        assert "part" in labels
+        assert "marker" in labels
+        # Special list type present
+        assert "list" in labels
+
+    def test_t_equals_partial_filters(self, monkeypatch):
+        """'!$p:t=m' returns only type values starting with 'm'."""
+        text = "!$p:t=m\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("!$p:t=m"))
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        # All returned labels start with 'm'
+        assert all(lbl.startswith("m") for lbl in labels), f"Non-m labels: {labels}"
+        assert "model" in labels
+        assert "marker" in labels
+        # Non-matching types excluded
+        assert "real" not in labels
+        assert "part" not in labels
+
+    def test_primitives_sort_before_entity_types(self, monkeypatch):
+        """Primitive types (real, string, integer) sort before Adams entity types."""
+        text = "!$p:t=\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("!$p:t="))
+        result = srv.completion(params)
+        assert result is not None
+        sorted_items = sorted(result.items, key=lambda i: i.sort_text or i.label)
+        primitive_labels = {"real", "integer", "string", "str"}
+        non_primitive_labels = {"model", "part", "marker", "contact"}
+        first_non_prim = next(
+            (i for i in sorted_items if i.label in non_primitive_labels), None
+        )
+        last_prim = next(
+            (i for i in reversed(sorted_items) if i.label in primitive_labels), None
+        )
+        assert first_non_prim is not None
+        assert last_prim is not None
+        assert last_prim.sort_text < first_non_prim.sort_text
+
+    def test_list_type_is_snippet(self, monkeypatch):
+        """The 'list' type completion uses snippet insert format with $1 inside parens."""
+        text = "!$p:t=l\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("!$p:t=l"))
+        result = srv.completion(params)
+        assert result is not None
+        item = next((i for i in result.items if i.label == "list"), None)
+        assert item is not None
+        assert item.insert_text == "list($1)"
+        assert item.insert_text_format == types.InsertTextFormat.Snippet
+
+    def test_colon_returns_qualifier_keys(self, monkeypatch):
+        """'!$p:' returns all qualifier key completions."""
+        text = "!$p:\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("!$p:"), trigger_char=":")
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        assert "t" in labels
+        assert "d" in labels
+        assert "ud" in labels
+        assert "ge" in labels
+        assert "gt" in labels
+        assert "le" in labels
+        assert "lt" in labels
+        assert "c" in labels
+
+    def test_qualifier_partial_filters(self, monkeypatch):
+        """'!$p:t=real:g' returns only ge and gt."""
+        text = "!$p:t=real:g\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("!$p:t=real:g"))
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        assert "ge" in labels
+        assert "gt" in labels
+        assert "t" not in labels
+        assert "d" not in labels
+
+    def test_excludes_already_used_qualifiers(self, monkeypatch):
+        """Qualifier keys already present on the line are excluded from suggestions."""
+        text = "!$p:t=real:\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("!$p:t=real:"), trigger_char=":")
+        result = srv.completion(params)
+        assert result is not None
+        labels = [item.label for item in result.items]
+        # 't' is already used — should not appear
+        assert "t" not in labels
+        # Others still available
+        assert "d" in labels
+        assert "ge" in labels
+
+    def test_qualifier_insert_text_includes_equals(self, monkeypatch):
+        """Qualifier key completion insert text ends with '='."""
+        text = "!$p:\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("!$p:"), trigger_char=":")
+        result = srv.completion(params)
+        assert result is not None
+        t_item = next((i for i in result.items if i.label == "t"), None)
+        assert t_item is not None
+        assert t_item.insert_text == "t="
+
+    def test_plain_comment_returns_none(self, monkeypatch):
+        """A plain comment line (! but no $) returns None — no param-def completions."""
+        text = "! This is a regular comment with t=m\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("! This is a regular comment with t=m"))
+        result = srv.completion(params)
+        assert result is None
+
+    def test_non_param_line_not_affected(self, monkeypatch):
+        """Regular command lines are not matched by the param-def handler."""
+        macro = _make_macro("custom command", part_name="part")
+        srv._macro_registry = _make_registry(macro)
+        text = "custom command \n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params("file:///test.cmd", 0, len("custom command "))
+        result = srv.completion(params)
+        # Normal macro argument completions should still work
+        assert result is not None
+        labels = [item.label for item in result.items]
+        assert "part_name" in labels
+
+    def test_cursor_inside_param_name_returns_none(self, monkeypatch):
+        """No completions when cursor is inside the param name itself (before first ':')."""
+        text = "!$param_na\n"
+        self._mock_workspace(monkeypatch, text)
+        # Cursor is mid-name: '!$param_na' — no qualifier context yet
+        params = self._make_params(
+            "file:///test.cmd", 0, len("!$param_na"),
+            trigger_kind=types.CompletionTriggerKind.Invoked, trigger_char=None,
+        )
+        result = srv.completion(params)
+        assert result is None
+
+    def test_quoted_param_name_no_completions_before_colon(self, monkeypatch):
+        """No completions inside a quoted param name (before any qualifier)."""
+        text = "!$'my param'\n"
+        self._mock_workspace(monkeypatch, text)
+        params = self._make_params(
+            "file:///test.cmd", 0, len("!$'my param'"),
+            trigger_kind=types.CompletionTriggerKind.Invoked, trigger_char=None,
+        )
+        result = srv.completion(params)
+        assert result is None
+
+
+# ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
 

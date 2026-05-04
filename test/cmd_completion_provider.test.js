@@ -700,4 +700,18 @@ suite("cmd_completion_provider", () => {
         assert.ok(!labels.includes("kinematic"), "'kinematic' should not match 'dy'");
         assert.ok(!labels.includes("static"), "'static' should not match 'dy'");
     });
+
+    test("should return no completions on macro parameter definition lines", () => {
+        const function_names = new Map([["mod", "mod doc"], ["mode", "mode doc"]]);
+        const commands = {};
+        const provider = cmd_completion_provider(function_names, commands);
+
+        // Typing 'm' after 't=' on a !$param definition line
+        const lineText = "!$model:t=m";
+        const localPosition = new vscode.Position(0, lineText.length);
+        const doc = makeDocument("", lineText);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        assert.deepStrictEqual(completions, [], "Expected no completions on !$ lines");
+    });
 });
