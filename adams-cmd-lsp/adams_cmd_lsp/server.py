@@ -22,7 +22,7 @@ from .linter import lint_text
 from .parser import parse as _parse_cmd, _find_comment_start
 from .schema import Schema
 from .diagnostics import Severity
-from .symbols import SymbolTable, build_symbol_table
+from .symbols import SymbolTable, build_symbol_table, _extract_eval_object_names
 from .object_index import ObjectIndex, index_file_objects, _resolve_command_keys
 from .macros import (
     scan_macro_files, parse_macro_file, MacroRegistry, MacroDefinition, MacroParameter,
@@ -371,6 +371,40 @@ def _get_doc_cache(uri: str, text: str = None):
 # ---------------------------------------------------------------------------
 # Adams object navigation helpers
 # ---------------------------------------------------------------------------
+
+def _get_eval_object_at_position(statements, line: int, character: int):
+    """Find an Adams object name inside an eval() expression at the cursor.
+
+    Complements :func:`_get_object_at_position` by scanning *all* argument
+    types — Adams variables are frequently referenced inside ``(eval(...))``
+    on ``real``, ``integer``, or ``function`` arguments where the schema type
+    alone provides no hint that an object name is embedded.
+
+    Returns:
+        ``("reference", name, v_line, v_col, v_end_col)`` on success.
+        ``None`` if no object name spans the cursor position.
+    """
+    if statements is None:
+        return None
+    for stmt in statements:
+        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
+            continue
+        if not (stmt.line_start <= line <= stmt.line_end):
+            continue
+        for arg in stmt.arguments:
+            val = arg.value
+            if not val or "eval(" not in val.lower():
+                continue
+            # eval expressions are always single-line after continuation joining
+            if arg.value_line != line:
+                continue
+            for e_name, e_line, e_col, e_end_col in _extract_eval_object_names(
+                val, arg.value_line, arg.value_column
+            ):
+                if e_col <= character <= e_end_col:
+                    return ("reference", e_name, e_line, e_col, e_end_col)
+    return None
+
 
 def _get_object_at_position(statements, schema, symbols, line: int, character: int):
     """Find the Adams object name at cursor position (line, character).
@@ -949,6 +983,9 @@ def goto_definition(params: types.DefinitionParams):
         return None
 
     obj = _get_object_at_position(statements, _schema, symbols, line, character)
+    if obj is None:
+        # Fallback: names inside (eval(...)) on any arg type (real, integer, etc.)
+        obj = _get_eval_object_at_position(statements, line, character)
     if obj is not None:
         kind, name, v_line, v_col, v_end_col = obj
 
@@ -1767,6 +1804,9 @@ def find_references(params: types.ReferenceParams):
         return []
 
     obj = _get_object_at_position(statements, _schema, symbols, line, character)
+    if obj is None:
+        # Fallback: names inside (eval(...)) on any arg type (real, integer, etc.)
+        obj = _get_eval_object_at_position(statements, line, character)
     if obj is not None:
         kind, name, v_line, v_col, v_end_col = obj
 

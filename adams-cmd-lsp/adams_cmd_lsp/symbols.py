@@ -15,12 +15,52 @@ _EVAL_LITERAL_PREFIX_RE = re.compile(
     re.IGNORECASE,
 )
 
+# Detects whether a value contains an eval() expression.
+_EVAL_DETECT_RE = re.compile(r'\beval\s*\(', re.IGNORECASE)
+
+# Matches Adams dot-path object names inside eval() expressions.
+# Requires the first segment after the dot to start with a letter or underscore
+# to avoid matching numeric literals like the ".0" in "0.6".
+_EVAL_OBJECT_NAME_RE = re.compile(r'\.[a-zA-Z_]\w*(?:\.\w+)*')
+
+
+def _extract_eval_object_names(value, value_line, value_column):
+    """Extract Adams dot-path object names from an eval() expression value.
+
+    Scans *value* (the raw argument string, e.g. ``"(eval(.m.arm_mass * 0.6))"``
+    or a compound expression) for dot-path tokens and returns their document
+    positions so callers can build navigation links or record references.
+
+    All names are assumed to lie on *value_line* (eval expressions are always
+    single-line after the parser joins continuation lines).
+
+    Args:
+        value:        Raw argument value string (including the surrounding parens).
+        value_line:   0-based document line of the value start.
+        value_column: 0-based column of the first character of *value*.
+
+    Returns:
+        List of ``(name, line, column, end_column)`` tuples — one per object
+        name token found.  Empty list if *value* contains no eval() call or no
+        dot-path names.
+    """
+    if not _EVAL_DETECT_RE.search(value):
+        return []
+    results = []
+    for m in _EVAL_OBJECT_NAME_RE.finditer(value):
+        name = m.group(0)
+        col = value_column + m.start()
+        end_col = value_column + m.end()
+        results.append((name, value_line, col, end_col))
+    return results
+
 # ---------------------------------------------------------------------------
 # Adams built-in symbols
 #
 # These objects are pre-created by Adams and are never created by a .cmd file,
 # so they would otherwise always trigger I202 "unresolved reference".
 # ---------------------------------------------------------------------------
+
 
 # Standard Adams color names sourced from afc/mdi/visedit/colors.py.
 # Adams accepts these case-insensitively (lookup is normalised to lowercase).
@@ -270,18 +310,28 @@ def build_symbol_table(statements, schema, macro_registry=None, show_macro_hint=
                 # Skip array-valued args — individual elements cannot be isolated
                 if arg_def.get("array"):
                     continue
-                # Skip runtime expressions
+                # Skip runtime expressions — handled by the eval pass below
                 if "$" in val or val.lower().startswith("(") or "eval(" in val.lower():
-                    continue
-                lookup_val = val.strip('"\'')
-                if lookup_val:
-                    table.add_reference(
-                        lookup_val,
-                        arg_def.get("object_type", ""),
-                        arg.value_line,
-                        arg.value_column,
-                        arg.value_column + len(val),
-                    )
+                    pass
+                else:
+                    lookup_val = val.strip('"\'')
+                    if lookup_val:
+                        table.add_reference(
+                            lookup_val,
+                            arg_def.get("object_type", ""),
+                            arg.value_line,
+                            arg.value_column,
+                            arg.value_column + len(val),
+                        )
+            # Extract object names from eval() expressions in any argument type.
+            # Adams variables are commonly referenced inside (eval(...)) on real,
+            # integer, or function arguments — the schema type provides no hint
+            # that an object name is embedded, so we scan all args here.
+            if "eval(" in val.lower():
+                for e_name, e_line, e_col, e_end_col in _extract_eval_object_names(
+                    val, arg.value_line, arg.value_column
+                ):
+                    table.add_reference(e_name, "", e_line, e_col, e_end_col)
         # -- UDE instance child registration --
         # When 'assembly create instance' or 'ude create instance' is encountered
         # and a ude_registry is present, register {instance_name}.{param_name} as

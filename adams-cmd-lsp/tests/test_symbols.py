@@ -2,7 +2,7 @@
 
 from adams_cmd_lsp.schema import Schema
 from adams_cmd_lsp.parser import parse
-from adams_cmd_lsp.symbols import SymbolTable, build_symbol_table
+from adams_cmd_lsp.symbols import SymbolTable, build_symbol_table, _extract_eval_object_names
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
@@ -275,7 +275,13 @@ def test_build_symbol_table_skips_array_references():
 
 
 def test_build_symbol_table_skips_eval_references():
-    """Existing_object args with (eval(...)) must not generate references."""
+    """Dot-path names inside (eval(...)) are now tracked as references.
+
+    The literal word "eval" must never appear in a reference name, and plain
+    existing_object references must still be recorded.  Names extracted from
+    the eval expression are registered so Go-to-Definition can navigate to
+    their definition sites.
+    """
     schema = Schema.load()
     text = (
         "constraint create joint fixed &\n"
@@ -292,9 +298,12 @@ def test_build_symbol_table_skips_eval_references():
                 stmt.resolved_command_key = resolved
     table = build_symbol_table(stmts, schema)
     ref_names = [r.name for r in table.references]
-    # eval expression must be skipped; ground.cm reference must be present
+    # The literal string "eval" must never appear as a reference name
     assert not any("eval" in n for n in ref_names)
-    assert ".m.ground.cm" in ref_names
+    # Plain existing_object reference must still be present
+    assert ".m.ground.cm" in ref_names, f"Expected .m.ground.cm in {ref_names}"
+    # Dot-path names from the eval expression are now tracked as references
+    assert ".m.p" in ref_names, f"Expected .m.p from eval expression; got {ref_names}"
 
 
 def test_object_reference_has_positions():
@@ -428,3 +437,144 @@ def test_get_references_by_name_no_false_positive_same_leaf_different_path():
         "Full-path query should only return exact-match, not same-leaf from other model"
     )
     assert refs[0].line == 10
+
+
+# ---------------------------------------------------------------------------
+# _extract_eval_object_names unit tests
+# ---------------------------------------------------------------------------
+
+def test_extract_eval_object_names_simple():
+    """Simple eval with a single object name returns one entry."""
+    results = _extract_eval_object_names("(eval(.m.arm_mass))", value_line=5, value_column=10)
+    assert len(results) == 1
+    name, line, col, end_col = results[0]
+    assert name == ".m.arm_mass"
+    assert line == 5
+    assert end_col == col + len(".m.arm_mass")
+
+
+def test_extract_eval_object_names_simple_positions():
+    """Column positions are offset correctly from value_column."""
+    value = "(eval(.m.arm_mass))"
+    dot_offset = value.index(".m")
+    results = _extract_eval_object_names(value, value_line=0, value_column=20)
+    assert len(results) == 1
+    name, line, col, end_col = results[0]
+    assert name == ".m.arm_mass"
+    assert col == 20 + dot_offset
+    assert end_col == col + len(".m.arm_mass")
+
+
+def test_extract_eval_object_names_compound():
+    """Compound eval with multiple object references returns one entry per name."""
+    value = "(eval(.m.arm_mass * 0.6 * .m.arm1_len**2 / 12.0))"
+    results = _extract_eval_object_names(value, value_line=2, value_column=0)
+    names = [r[0] for r in results]
+    assert ".m.arm_mass" in names
+    assert ".m.arm1_len" in names
+    assert len(results) == 2
+
+
+def test_extract_eval_object_names_no_eval():
+    """Values without eval() return an empty list."""
+    results = _extract_eval_object_names(".m.part1", value_line=0, value_column=0)
+    assert results == []
+
+
+def test_extract_eval_object_names_no_dots():
+    """eval() with no dot-path names returns an empty list."""
+    results = _extract_eval_object_names("(eval(30.0 * 2))", value_line=0, value_column=0)
+    assert results == []
+
+
+def test_extract_eval_object_names_ignores_numeric_dot():
+    """Numeric literals like 0.6 must not be mistaken for object names."""
+    value = "(eval(.m.arm_mass * 0.6))"
+    results = _extract_eval_object_names(value, value_line=0, value_column=0)
+    names = [r[0] for r in results]
+    assert ".m.arm_mass" in names
+    assert not any(n == ".6" or n == "0.6" for n in names)
+
+
+def test_extract_eval_object_names_case_insensitive_eval():
+    """EVAL(...) and Eval(...) are both detected."""
+    value = "(EVAL(.m.v1))"
+    results = _extract_eval_object_names(value, value_line=0, value_column=0)
+    assert len(results) == 1
+    assert results[0][0] == ".m.v1"
+
+
+# ---------------------------------------------------------------------------
+# build_symbol_table — eval references in non-object arg types
+# ---------------------------------------------------------------------------
+
+def test_build_symbol_table_eval_in_real_arg_registers_reference():
+    """Object names inside (eval(...)) on a real argument are tracked as references."""
+    schema = Schema.load()
+    text = (
+        "variable create variable_name = .m.arm_mass real_value = 0.8\n"
+        "part modify rigid_body mass_properties &\n"
+        "   part_name = .m.arm1 &\n"
+        "   mass = (eval(.m.arm_mass))\n"
+    )
+    stmts = parse(text)
+    for stmt in stmts:
+        if not stmt.resolved_command_key and stmt.command_key and \
+                not stmt.is_comment and not stmt.is_blank and not stmt.is_control_flow:
+            resolved, _ = schema.resolve_command_key(stmt.command_key.split())
+            if resolved:
+                stmt.resolved_command_key = resolved
+    table = build_symbol_table(stmts, schema)
+    ref_names = [r.name for r in table.references]
+    assert ".m.arm_mass" in ref_names, (
+        f"Expected .m.arm_mass from eval() on real arg; got {ref_names}"
+    )
+
+
+def test_build_symbol_table_eval_compound_real_arg():
+    """Multiple object names in a compound eval expression all generate references."""
+    schema = Schema.load()
+    text = (
+        "variable create variable_name = .m.arm_mass real_value = 0.8\n"
+        "variable create variable_name = .m.arm1_len real_value = 300.0\n"
+        "part modify rigid_body mass_properties &\n"
+        "   part_name = .m.arm1 &\n"
+        "   ixx = (eval(.m.arm_mass * .m.arm1_len**2 / 12.0))\n"
+    )
+    stmts = parse(text)
+    for stmt in stmts:
+        if not stmt.resolved_command_key and stmt.command_key and \
+                not stmt.is_comment and not stmt.is_blank and not stmt.is_control_flow:
+            resolved, _ = schema.resolve_command_key(stmt.command_key.split())
+            if resolved:
+                stmt.resolved_command_key = resolved
+    table = build_symbol_table(stmts, schema)
+    ref_names = [r.name for r in table.references]
+    assert ".m.arm_mass" in ref_names, f"Expected .m.arm_mass; got {ref_names}"
+    assert ".m.arm1_len" in ref_names, f"Expected .m.arm1_len; got {ref_names}"
+
+
+def test_build_symbol_table_eval_ref_has_correct_positions():
+    """ObjectReferences from eval() carry positions that span the dot-path token."""
+    schema = Schema.load()
+    # Single-line: "variable create variable_name = .m.v1 real_value = 0.0"  (line 0)
+    # "part modify rigid_body mass_properties part_name=.m.p mass=(eval(.m.v1))" (line 1)
+    text = (
+        "variable create variable_name = .m.v1 real_value = 0.0\n"
+        "part modify rigid_body mass_properties part_name=.m.p mass=(eval(.m.v1))\n"
+    )
+    stmts = parse(text)
+    for stmt in stmts:
+        if not stmt.resolved_command_key and stmt.command_key and \
+                not stmt.is_comment and not stmt.is_blank and not stmt.is_control_flow:
+            resolved, _ = schema.resolve_command_key(stmt.command_key.split())
+            if resolved:
+                stmt.resolved_command_key = resolved
+    table = build_symbol_table(stmts, schema)
+    v1_refs = [r for r in table.references if r.name == ".m.v1"]
+    # There should be at least one reference for .m.v1 (from the eval expression on line 1)
+    assert len(v1_refs) >= 1
+    eval_ref = next((r for r in v1_refs if r.line == 1), None)
+    assert eval_ref is not None, "Expected a reference on line 1 (eval expression)"
+    assert eval_ref.column >= 0
+    assert eval_ref.end_column == eval_ref.column + len(".m.v1")

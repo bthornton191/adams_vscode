@@ -206,6 +206,90 @@ def test_uri_to_path_encoded_spaces():
 
 
 # ---------------------------------------------------------------------------
+# _get_eval_object_at_position
+# ---------------------------------------------------------------------------
+
+if _PYGLS_AVAILABLE:
+    from adams_cmd_lsp.parser import parse as _parse_cmd
+    from adams_cmd_lsp.schema import Schema as _Schema
+
+
+def _make_stmts(text):
+    """Parse text and resolve command keys for use in position tests."""
+    schema = _Schema.load()
+    stmts = _parse_cmd(text)
+    for stmt in stmts:
+        if (not stmt.resolved_command_key and stmt.command_key
+                and not stmt.is_comment and not stmt.is_blank
+                and not stmt.is_control_flow):
+            resolved, _ = schema.resolve_command_key(stmt.command_key.split())
+            if resolved:
+                stmt.resolved_command_key = resolved
+    return stmts
+
+
+def test_get_eval_object_at_position_finds_name_in_eval():
+    """Cursor inside a dot-path name inside eval() returns the name and span."""
+    # "variable create variable_name = .m.v1 real_value = 0.0"  line 0
+    # "part modify rigid_body mass_properties part_name=.m.p mass=(eval(.m.v1))"  line 1
+    text = (
+        "variable create variable_name = .m.v1 real_value = 0.0\n"
+        "part modify rigid_body mass_properties part_name=.m.p mass=(eval(.m.v1))\n"
+    )
+    stmts = _make_stmts(text)
+    # Find the column of ".m.v1" on line 1
+    line1 = text.splitlines()[1]
+    dot_col = line1.index("(eval(") + len("(eval(")  # column of the dot in .m.v1
+    result = srv._get_eval_object_at_position(stmts, line=1, character=dot_col)
+    assert result is not None, "Should find object name inside eval()"
+    kind, name, v_line, v_col, v_end_col = result
+    assert kind == "reference"
+    assert name == ".m.v1"
+    assert v_line == 1
+    assert v_col == dot_col
+    assert v_end_col == dot_col + len(".m.v1")
+
+
+def test_get_eval_object_at_position_returns_none_outside_eval():
+    """Cursor on a plain arg value (no eval) returns None."""
+    text = "variable create variable_name = .m.v1 real_value = 0.0\n"
+    stmts = _make_stmts(text)
+    # Cursor on ".m.v1" — this is a new_object arg without eval
+    line0 = text.splitlines()[0]
+    dot_col = line0.index(".m.v1")
+    result = srv._get_eval_object_at_position(stmts, line=0, character=dot_col)
+    assert result is None, "_get_eval_object_at_position must not match non-eval values"
+
+
+def test_get_eval_object_at_position_compound_expression():
+    """Cursor on the second name in a compound eval picks the right name."""
+    text = (
+        "part modify rigid_body mass_properties part_name=.m.p "
+        "ixx=(eval(.m.arm_mass * .m.arm1_len**2 / 12.0))\n"
+    )
+    stmts = _make_stmts(text)
+    line0 = text.splitlines()[0]
+    col = line0.index(".m.arm1_len")
+    result = srv._get_eval_object_at_position(stmts, line=0, character=col)
+    assert result is not None
+    kind, name, v_line, v_col, v_end_col = result
+    assert name == ".m.arm1_len"
+
+
+def test_get_eval_object_at_position_returns_none_for_wrong_line():
+    """Cursor on a different line returns None even if that line is inside the statement."""
+    text = (
+        "part modify rigid_body mass_properties &\n"
+        "   part_name = .m.p &\n"
+        "   mass = (eval(.m.arm_mass))\n"
+    )
+    stmts = _make_stmts(text)
+    # Cursor on line 0 (the command line, not the eval line)
+    result = srv._get_eval_object_at_position(stmts, line=0, character=5)
+    assert result is None
+
+
+# ---------------------------------------------------------------------------
 # _refresh_macro_file
 # ---------------------------------------------------------------------------
 
