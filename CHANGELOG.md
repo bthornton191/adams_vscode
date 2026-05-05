@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.16.0 (May 5th 2026)](#1160-may-5th-2026)
   - [1.15.0 (April 20th 2026)](#1150-april-20th-2026)
   - [1.14.3 (April 17th 2026)](#1143-april-17th-2026)
   - [1.14.2 (April 16th 2026)](#1142-april-16th-2026)
@@ -64,6 +65,20 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.16.0 (May 5th 2026)
+
+- **Added** Lint rule E105: flags Adams design functions called without the required outer parentheses (e.g. `AX .part_1` instead of `AX(.part_1)`).
+- **Added** LSP: jump-to-definition and find-references now resolve object names inside `eval()` expressions.
+- **Added** LSP: `$param` completions and type/qualifier value completions in macro bodies.
+- **Added** LSP: completion helpers for macro commands.
+- **Fixed** CMD completion on continuation lines now shows command arguments instead of functions.
+- **Fixed** Indentation: pressing Enter on a continuation line no longer causes double-indentation.
+- **Fixed** `END_OF_PARAMETERS` moved to the end of the Macro Header snippet so the cursor lands in the correct position.
+- **Fixed** Grammar: corrected scope assignments for macro frontmatter keywords.
+- **Fixed** Link provider registrations now include the `file` URI scheme.
+- **Fixed** Snippet completions for Adams CMD are now deprioritised (appear at the bottom of the list).
+- **Fixed** Removed extraneous code block from `STR_SPRINTF` documentation.
 
 ## 1.15.0 (April 20th 2026)
 
