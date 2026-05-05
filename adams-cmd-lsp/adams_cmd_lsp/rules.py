@@ -79,6 +79,138 @@ _ADAMS_ENTITY_TYPE_NAMES = [
 
 
 # ---------------------------------------------------------------------------
+# Adams design function names (used by rule_unwrapped_design_function / E105)
+#
+# Any identifier in this set, when used as a bare argument value followed
+# immediately by '(', is a design-function call that REQUIRES outer
+# parentheses: '(func(...))' or '(eval(func(...)))'.
+# Sourced from resources/adams_design_functions/ filenames (one per function).
+# ---------------------------------------------------------------------------
+_ADAMS_DESIGN_FUNCTIONS = frozenset({
+    # Math / trig
+    "abs", "acos", "aint", "anint", "asin", "atan", "atan2",
+    "ceil", "clip", "cos", "cosh", "dtor", "exp", "floor", "int",
+    "log", "log10", "mod", "nint", "rtod", "rtoi", "sign", "sin",
+    "sinh", "sqrt", "tan", "tanh",
+    # Vector / matrix math
+    "allm", "anym", "cols", "compress", "cond", "cross", "det",
+    "diff", "differentiate", "dim", "dm", "dmat", "dot", "element",
+    "exclude", "first", "first_n", "integr", "integrate", "inverse",
+    "last", "last_n", "mag", "maxi", "mean", "meshgrid", "mini",
+    "mode", "norm", "norm2", "normalize", "prod", "reshape", "reverse",
+    "roll", "rows", "series", "series2", "shape", "sort", "sort_by",
+    "sort_index", "ssq", "stack", "sum", "transpose", "unique", "unwrap",
+    # Interpolation / spline
+    "akima_spline", "akima_spline2", "cspline", "cubic_spline",
+    "griddata", "hermite_spline", "interp1", "interp2", "interpft",
+    "linear_spline", "notaknot_spline", "polyfit", "polyval",
+    "resample", "spline",
+    # Signal processing
+    "bartlett", "bartlett_window", "blackman", "blackman_window",
+    "butter_denominator", "butter_filter", "butter_numerator",
+    "buttord_frequency", "buttord_order", "detrend", "fftmag",
+    "fftphase", "filter", "filtfilt", "frequency", "hamming",
+    "hamming_window", "hanning", "hanning_window", "hot_spots",
+    "parzen", "parzen_window", "psd", "pwelch", "rectangular",
+    "rectangular_window", "rms", "triangular", "triangular_window",
+    "welch", "welch_window",
+    # Bode / control
+    "bodeabcd", "bodelse", "bodelsm", "bodeseq", "bodetfcoef", "bodetfs",
+    # Adams location functions
+    "loc_along_line", "loc_by_flexbody_nodeid", "loc_cylindrical",
+    "loc_frame_mirror", "loc_global", "loc_inline", "loc_loc", "loc_local",
+    "loc_mirror", "loc_on_axis", "loc_on_line", "loc_perpendicular",
+    "loc_plane_mirror", "loc_relative_to", "loc_spherical",
+    "loc_to_flexbody_nodeid", "loc_x_axis", "loc_y_axis", "loc_z_axis",
+    # Adams orientation functions
+    "ori_align_axis", "ori_align_axis_eul", "ori_all_axes", "ori_along_axis",
+    "ori_frame_mirror", "ori_global", "ori_in_plane", "ori_local",
+    "ori_mirror", "ori_one_axis", "ori_ori", "ori_plane_mirror",
+    "ori_relative_to",
+    # Adams result / runtime functions
+    "ax", "ay", "az", "dx", "dy", "dz", "measure", "phi", "pitch",
+    "psi", "theta", "yaw",
+    # Database / object query
+    "aggregate_mass", "align", "balance", "center",
+    "db_active", "db_ancestor", "db_changed", "db_children", "db_count",
+    "db_default", "db_default_name", "db_default_name_for_type",
+    "db_delete_dependents", "db_del_param_dependents",
+    "db_del_unparam_dependents", "db_dependents",
+    "db_dependents_exhaustive", "db_descendants", "db_exists",
+    "db_field_filter", "db_field_type", "db_filter_name", "db_filter_type",
+    "db_full_name_from_short", "db_full_type_fields",
+    "db_immediate_children", "db_object_count", "db_obj_exists",
+    "db_obj_exists_exhaustive", "db_obj_from_name_type", "db_of_class",
+    "db_of_type_exists", "db_oldest_ancestor", "db_referents",
+    "db_referents_exhaustive", "db_short_name", "db_two_way", "db_type",
+    "db_type_fields", "find_macro_from_command", "max", "min",
+    # String functions
+    "append", "expr_exists", "expr_reference", "expr_references",
+    "expr_string", "on_off", "param_string", "parse_status", "refs_string",
+    "status_print", "stoi", "stoo", "stor", "str_case", "str_chr",
+    "str_compare", "str_date", "str_delete", "str_find", "str_find_count",
+    "str_find_in_strings", "str_find_n", "str_insert", "str_is_real",
+    "str_is_space", "str_length", "str_match", "str_merge_strings",
+    "str_print", "str_remove_whitespace", "str_replace_all", "str_split",
+    "str_sprintf", "str_substr", "str_timestamp", "str_xlate", "user_string",
+    # File / system
+    "aview_edit_file", "backup_file", "chdir", "copy_files",
+    "execute_view_command", "file_alert", "file_directory_name",
+    "file_exists", "file_minus_ext", "file_temp_name", "getcwd", "getenv",
+    "guicleanup", "local_file_name", "mkdir", "putenv", "rand",
+    "remove_file", "rename_file", "rmdir", "security_check", "sys_info",
+    "term_status",
+    # Unique name utilities
+    "unique_file_name", "unique_full_name", "unique_id", "unique_local_name",
+    "unique_name", "unique_name_in_hierarchy", "unique_partial_name",
+    # Time / simulation
+    "pi", "sim_status", "sim_time", "step", "time", "timer_cpu",
+    "timer_elapsed",
+    # Matrix transformations
+    "convert_angles", "tmat", "tmat3",
+    # FE / flex body
+    "dura_hot_spots", "dura_life", "dura_max_stress", "dura_top_spots",
+    "node_ids_closest_to", "node_ids_in_volume", "node_ids_within_radius",
+    "node_id_closest", "node_id_is_interface", "node_node_closest",
+    "top_spots",
+    # GUI / interactive
+    "alert", "alert2", "alert3", "pick_object", "select_directory",
+    "select_field", "select_file", "select_multi_text", "select_object",
+    "select_objects", "select_request_ids", "select_text", "select_type",
+    # Conditional (IF() function — not the control-flow keyword)
+    "if",
+    # Eigenvalue
+    "eigenvalues_i", "eigenvalues_r", "eig_di", "eig_dr", "eig_vi", "eig_vr",
+    # Table
+    "otable_changed_cells", "table_column_selected_cells", "table_get_cells",
+    "table_get_dimension", "table_get_reals", "table_get_selected_cols",
+    "table_get_selected_rows",
+    # DOE
+    "doe_matrix", "doe_num_terms",
+    # Read / write (T/O format)
+    "read_t_o_attribute_exists", "read_t_o_block_exists",
+    "read_t_o_check_header", "read_t_o_close_file", "read_t_o_find_block",
+    "read_t_o_find_subblock", "read_t_o_integer", "read_t_o_next_attribute",
+    "read_t_o_next_block", "read_t_o_open_file", "read_t_o_read_table_line",
+    "read_t_o_real", "read_t_o_real_array",
+    "read_t_o_start_subblock_table_read", "read_t_o_start_table_read",
+    "read_t_o_string", "read_t_o_subblock_integer", "read_t_o_subblock_real",
+    "read_t_o_subblock_real_array", "read_t_o_subblock_string",
+    "read_t_o_subblock_table_column", "read_t_o_table_column",
+    "read_t_o_units",
+    "write_i_n_table_reals", "write_t_o_close_file", "write_t_o_comment",
+    "write_t_o_data_block", "write_t_o_integer", "write_t_o_open_file",
+    "write_t_o_pop_precision", "write_t_o_push_precision", "write_t_o_real",
+    "write_t_o_real_array", "write_t_o_string", "write_t_o_subblock",
+    "write_t_o_table_header", "write_t_o_table_line", "write_t_o_table_reals",
+    "write_t_o_table_string", "write_t_o_units",
+    # Misc
+    "angles", "tilde", "units_conversion_factor", "units_string",
+    "units_type", "units_value", "val", "valat", "vali", "user",
+})
+
+
+# ---------------------------------------------------------------------------
 # Structural / command-level rules
 # ---------------------------------------------------------------------------
 
@@ -982,6 +1114,66 @@ def rule_macro_invalid_argument(statements, schema, symbols):
 # Rule registry
 # ---------------------------------------------------------------------------
 
+def rule_unwrapped_design_function(statements, schema, symbols):
+    """E105 — Design function call used as argument value without outer parentheses.
+
+    Adams CMD requires that any design-function call used as an argument value
+    be wrapped in outer parentheses so the parser recognises it as an
+    expression rather than a bare word.  Both forms are valid:
+
+        location = (loc_relative_to(...))          ! parametric
+        location = (eval(loc_relative_to(...)))    ! immediate evaluation
+
+    The bare form is NOT valid and Adams will treat it as a literal string:
+
+        location = loc_relative_to(...)            ! ERROR — missing outer ()
+
+    Detection: if an argument value starts with an identifier that is a known
+    Adams design function, immediately followed by '(', flag it as E105.
+    Values already starting with '(' (including '(eval(...))'), '"', "'",
+    or '$' are skipped.
+    """
+    diagnostics = []
+    for stmt in statements:
+        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
+            continue
+        for arg in stmt.arguments:
+            val = arg.value.strip()
+            if not val:
+                continue
+            # Already wrapped in parens, quoted, or a macro parameter — OK
+            if val[0] in ('(', '"', "'", '$'):
+                continue
+            # Must start with a valid identifier character
+            if not (val[0].isalpha() or val[0] == '_'):
+                continue
+            # Extract the leading identifier
+            i = 0
+            while i < len(val) and (val[i].isalnum() or val[i] == '_'):
+                i += 1
+            if i == 0:
+                continue
+            # Must be immediately followed by '(' to be a function call
+            if i >= len(val) or val[i] != '(':
+                continue
+            name = val[:i].lower()
+            if name not in _ADAMS_DESIGN_FUNCTIONS:
+                continue
+            diagnostics.append(Diagnostic(
+                line=arg.value_line,
+                column=arg.value_column,
+                end_line=arg.value_line,
+                end_column=arg.value_column + i,
+                code="E105",
+                message=(
+                    f"Design function '{name}' used without outer parentheses. "
+                    f"Use '({name}(...))' or '(eval({name}(...)))'."
+                ),
+                severity=Severity.ERROR,
+            ))
+    return diagnostics
+
+
 ALL_RULES = [
     rule_unknown_command,           # E001 — sets resolved_command_key as side-effect
     rule_invalid_argument,          # E002
@@ -993,6 +1185,7 @@ ALL_RULES = [
     rule_unbalanced_parens,         # E101
     rule_unclosed_quote,            # E102
     rule_control_flow_balance,      # E104
+    rule_unwrapped_design_function,  # E105
     rule_type_mismatch,             # W201 / I202
     rule_macro_invalid_argument,    # E002 (macro) — must run after rule_unknown_command
 ]

@@ -13,6 +13,7 @@ from adams_cmd_lsp.rules import (
     rule_unbalanced_parens,
     rule_unclosed_quote,
     rule_control_flow_balance,
+    rule_unwrapped_design_function,
     rule_type_mismatch,
     rule_macro_invalid_argument,
     _types_compatible,
@@ -1615,6 +1616,116 @@ def test_i202_no_false_positive_materials_library():
     assert len(i202_mat) == 0, (
         f"I202 must not fire for .materials.* references, got: {i202_mat}"
     )
+
+
+# ---------------------------------------------------------------------------
+# E105 — Design function used without outer parentheses
+# ---------------------------------------------------------------------------
+
+def test_e105_bare_loc_function_flags():
+    """location = loc_global(...) without outer parens must fire E105."""
+    text = "marker create marker_name=.m.p.cm location=loc_global(0,0,0)"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" in _codes(diags)
+
+
+def test_e105_bare_ori_function_flags():
+    """orientation = ori_in_plane(...) without outer parens must fire E105."""
+    text = "marker create marker_name=.m.p.cm orientation=ori_in_plane(0,0,0)"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" in _codes(diags)
+
+
+def test_e105_bare_db_function_flags():
+    """integer_value = db_exists(...) without outer parens must fire E105."""
+    text = "variable create variable_name=.m.v integer_value=db_exists(.m.p)"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" in _codes(diags)
+
+
+def test_e105_bare_str_function_flags():
+    """string_value = str_sprintf(...) without outer parens must fire E105."""
+    text = 'variable create variable_name=.m.v string_value=str_sprintf("x=%d",1)'
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" in _codes(diags)
+
+
+def test_e105_wrapped_in_parens_no_flag():
+    """location = (loc_global(...)) — correctly wrapped — must NOT fire E105."""
+    text = "marker create marker_name=.m.p.cm location=(loc_global(0,0,0))"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" not in _codes(diags)
+
+
+def test_e105_wrapped_in_eval_no_flag():
+    """location = (eval(loc_global(...))) — wrapped with eval — must NOT fire E105."""
+    text = "marker create marker_name=.m.p.cm location=(eval(loc_global(0,0,0)))"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" not in _codes(diags)
+
+
+def test_e105_quoted_function_string_no_flag():
+    """function = \"STEP(TIME, ...)\" — value is a quoted string — must NOT fire E105."""
+    text = 'force create direct single_component_force single_component_force_name=.m.f function="STEP(TIME,0,0,1,500)"'
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" not in _codes(diags)
+
+
+def test_e105_macro_parameter_no_flag():
+    """location = $my_loc — macro parameter — must NOT fire E105."""
+    text = "marker create marker_name=.m.p.cm location=$my_loc"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" not in _codes(diags)
+
+
+def test_e105_bare_object_path_no_flag():
+    """part_name = .model.my_part — dot-path — must NOT fire E105."""
+    text = "marker create marker_name=.model.p.cm"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" not in _codes(diags)
+
+
+def test_e105_numeric_value_no_flag():
+    """location = 0, 0, 0 — numeric value — must NOT fire E105."""
+    text = "marker create marker_name=.m.p.cm location=0,0,0"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" not in _codes(diags)
+
+
+def test_e105_case_insensitive():
+    """LOC_GLOBAL (uppercase) must also fire E105."""
+    text = "marker create marker_name=.m.p.cm location=LOC_GLOBAL(0,0,0)"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" in _codes(diags)
+
+
+def test_e105_multiline_continuation_flags():
+    """Bare design function call on a continuation line must fire E105."""
+    text = (
+        "marker create &\n"
+        "   marker_name=.m.p.cm &\n"
+        "   location=loc_global(0,0,0)"
+    )
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" in _codes(diags)
+
+
+def test_e105_message_names_function():
+    """E105 message must include the offending function name."""
+    text = "marker create marker_name=.m.p.cm location=loc_global(0,0,0)"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    e105 = [d for d in diags if d.code == "E105"]
+    assert len(e105) == 1
+    assert "loc_global" in e105[0].message.lower()
+
+
+def test_e105_bare_identifier_not_function_no_flag():
+    """A bare identifier that is a known function name but NOT followed by '(' must NOT fire."""
+    # 'step = 300' — 'step' is a design function but here it's an arg name,
+    # and the value '300' is not a function call.
+    text = "simulation single_run transient type=auto_select end_time=3.0 number_of_steps=300 model_name=.m"
+    diags = _lint(text, rule_fn=rule_unwrapped_design_function)
+    assert "E105" not in _codes(diags)
 
 
 def test_i202_no_false_positive_color_r_string():
