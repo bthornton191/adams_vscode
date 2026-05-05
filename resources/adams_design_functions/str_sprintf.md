@@ -25,6 +25,4 @@ STR_SPRINTF("The %s of %s is %03d%%.", {"value", "angle", 2})
 ```
 
 ### Result
-```
 The value of the angle is 002%
-```
