@@ -43,7 +43,8 @@ If only a **subset** of tests fail with real assertion messages, that is a genui
 ## Resources
 - `resources/adams_design_functions/*.md` — documentation for Adams functions, one file per function. These can be edited manually when documentation needs updating.
 - `resources/adams_view_commands/` — Adams command definitions (`structured.json`, `unstructured.json`). Loaded at activation.
-- `resources/adamspy/*.pyi` — Python type stubs for the Adams View Python API. Enables Python intellisense.
+- `resources/adamspy/` — Git submodule pointing to [adams-python-stubs](https://github.com/bthornton191/adams-python-stubs) (tracks `master`). Contains `.pyi` type stubs for the Adams View Python API. Enables Python intellisense. Run `git submodule update --init` after a fresh clone.
+- `resources/adams_skills/` — Git submodule pointing to [adams_skills](https://github.com/bthornton191/adams_skills) (tracks `main`). Contains 5 Copilot agent skills (adams-cmd-model-builder, adams-python-model-builder, adams-flex, adams-simulation-debugger, adams-subroutine-writer) bundled into the extension via `contributes.chatSkills` in `package.json`. Run `git submodule update --init` after a fresh clone. To update skills to the latest release, run `git submodule update --remote resources/adams_skills`.
 
 ## Build & Publish
 - Build: `vsce package -o adams_vscode.vsix --pre-release` (task: *Build Locally*)
@@ -106,9 +107,10 @@ These are areas worth paying attention to when writing or reviewing code — not
 After completing a feature or bug fix, follow this protocol before declaring the task done:
 
 1. **Run tests** and confirm they pass for all changed files.
-2. **Delegate a code review** to an explore subagent or another appropriate read-only subagent. Instruct it to load the `code-reviewer` skill and review all changed files.
-3. **If the reviewer returns REQUEST CHANGES**, address every CRITICAL and WARNING finding. Report any INFO findings to the user but do not fix them unless asked.
-4. **Re-run the review** after making fixes until you receive an APPROVE verdict.
-5. Only declare the task complete after receiving an **APPROVE** verdict.
+2. **If Python (adams-cmd-lsp) files were changed**, re-bundle: run the *Bundle LSP Dependencies* task (or `python -m pip install --target .\bundled\libs --no-cache-dir .\adams-cmd-lsp` from the workspace root). Without this step the extension dev host will not pick up the changes.
+3. **Delegate a code review** to an explore subagent or another appropriate read-only subagent. Instruct it to load the `code-reviewer` skill and review all changed files.
+4. **If the reviewer returns REQUEST CHANGES**, address every CRITICAL and WARNING finding. Report any INFO findings to the user but do not fix them unless asked.
+5. **Re-run the review** after making fixes until you receive an APPROVE verdict.
+6. Only declare the task complete after receiving an **APPROVE** verdict.
 
 Do not skip the review step. Do not declare completion without an APPROVE verdict.
