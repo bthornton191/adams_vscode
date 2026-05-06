@@ -1,6 +1,6 @@
 # Data Elements — Python API Reference
 
-> **Authoritative stubs**: `references/adamspy-stubs/adamspy/DataElement.pyi`, `DesignVariable.pyi`, `Material.pyi`
+> **Authoritative stubs**: `references/adamspy-stubs/DataElement.pyi`, `DesignVariable.pyi`, `Material.pyi`
 
 ---
 

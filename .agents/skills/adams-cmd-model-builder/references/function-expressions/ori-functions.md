@@ -2,6 +2,24 @@
 
 ORI_ functions return a **body-fixed 3-1-3 Euler angle sequence** `{psi, theta, phi}` (degrees) describing the orientation of a coordinate system. They are design-time functions evaluated during model construction.
 
+## Usage in CMD commands
+
+When an `ORI_` function is used as a parameter value in a CMD command, it **must** be enclosed in outer parentheses `(...)`. Without them Adams treats the text as a literal string rather than an expression. See **Core Rule 17** in the skill for the parametric vs immediate (`eval()`) distinction.
+
+```adams_cmd
+! WRONG — no outer parentheses
+marker create marker_name = .model.part.mkr &
+    orientation = ori_in_plane(.model.ground.m1, .model.ground.m2, .model.ground.m3, "z_zy")
+
+! Parametric — Adams stores and re-evaluates the expression on model update
+marker create marker_name = .model.part.mkr &
+    orientation = (ori_in_plane(.model.ground.m1, .model.ground.m2, .model.ground.m3, "z_zy"))
+
+! Immediate — Adams evaluates now and stores fixed angles (use in loops)
+marker create marker_name = .model.part.mkr &
+    orientation = (eval(ori_in_plane(.model.ground.m1, .model.ground.m2, .model.ground.m3, "z_zy")))
+```
+
 ## Quick reference
 
 | Function | Signature | Returns |

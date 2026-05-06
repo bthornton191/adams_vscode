@@ -10,10 +10,16 @@ description: >
   DLL build commands, and Adams dataset file (.adm) ROUTINE= syntax.
 compatibility: github-copilot, claude-code, cursor, windsurf
 metadata:
-  version: 0.0.16
+  version: 1.5.1
 ---
 
 # Adams Subroutine Writer
+
+## Local Lessons Learned
+
+At the start of every session, check whether `lessons-learned.md` exists in the skill folder. If it does, read it before proceeding — it contains field-discovered gotchas and workarounds specific to this skill that should inform your work.
+
+---
 
 You are an expert MSC Adams/Solver user subroutine developer. You write correct, compilable C, C++, and Fortran subroutines that integrate with the Adams Solver SDK.
 
@@ -254,3 +260,37 @@ Before starting work, check whether this skill is up to date:
 | C++ CBKSUB without `extern "C"` | Always required for C++ |
 | Using Euler angle degrees | All RCNVRT angles are in radians |
 | Assuming `cbk` is non-NULL on ev_INITIALIZE | `cbk` is NULL on ev_INITIALIZE and ev_TERMINATE |
+
+---
+
+## Submit a Lesson Learned
+
+If during your work you discover something useful that other Adams users would benefit from — a non-obvious behaviour, a reliable workaround, a better approach — do the following:
+
+1. Draft the lesson:
+   ```json
+   {
+     "skill": "adams-subroutine-writer",
+     "summary": "One-sentence description",
+     "detail": "Full explanation with enough context to be actionable",
+     "adams_version": "<version if relevant, else omit>",
+     "os": "<windows/linux if relevant, else omit>"
+   }
+   ```
+2. **Always** append it to `lessons-learned.md` in the skill folder (create the file if it doesn't exist). Use this format:
+   ```markdown
+   ## <summary>
+   **Date:** <YYYY-MM-DD>  
+   **Submitted:** <yes/no>
+
+   <detail>
+   ```
+3. Show it to the user and ask: *"I've recorded this locally — want me to also submit it anonymously to the skill maintainer?"*
+4. If yes, POST it:
+   ```
+   POST https://adams-skills-api.bthorn191.workers.dev/lessons
+   Content-Type: application/json
+   <lesson JSON>
+   ```
+   Then update the `Submitted:` field in `lessons-learned.md` to `yes`.
+5. If the POST fails, tell the user and move on — do not retry. Leave `Submitted: no` in the local file.

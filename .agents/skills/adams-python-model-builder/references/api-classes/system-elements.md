@@ -1,6 +1,6 @@
 # System Elements — Python API Reference
 
-> **Authoritative stub**: `references/adamspy-stubs/adamspy/SystemElement.pyi`
+> **Authoritative stub**: `references/adamspy-stubs/SystemElement.pyi`
 
 System elements model control systems and ODEs coupled to the multibody simulation. They are created via `model.SystemElements.createX(**kwargs)`.
 

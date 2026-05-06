@@ -1,6 +1,6 @@
 # Simulation and Analysis Results — Python API Reference
 
-> **Authoritative stubs**: `references/adamspy-stubs/adamspy/Simulation.pyi`, `Analysis.pyi`
+> **Authoritative stubs**: `references/adamspy-stubs/Simulation.pyi`, `Analysis.pyi`
 
 ---
 

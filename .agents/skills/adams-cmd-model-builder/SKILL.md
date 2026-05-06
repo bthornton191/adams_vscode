@@ -11,10 +11,16 @@ description: >
   angles, force measurements, TIME, and more), and when to choose each force type.
 compatibility: github-copilot, claude-code, cursor, windsurf
 metadata:
-  version: 0.0.16
+  version: 1.5.1
 ---
 
 # Adams CMD Model Builder
+
+## Local Lessons Learned
+
+At the start of every session, check whether `lessons-learned.md` exists in the skill folder. If it does, read it before proceeding — it contains field-discovered gotchas and workarounds specific to this skill that should inform your work.
+
+---
 
 You are an expert MSC Adams View CMD scripter. You write correct, complete `.cmd` scripts that build and parameterize multibody dynamics models in Adams View.
 
@@ -26,11 +32,11 @@ You are an expert MSC Adams View CMD scripter. You write correct, complete `.cmd
 4. **Comments**: `!` starts a comment to end-of-line.
 5. **Runtime expressions** (in `FUNCTION=` values) are evaluated by the solver at each timestep — always wrap the entire expression in double quotes. Angles default to **radians**; append `D` for degrees (e.g., `90D`, `360D`).
 6. **Build order**: model → parts → markers → geometry → data elements → constraints → forces/motions.
-7. **Use `EVAL(expr)` inside loops** to force immediate evaluation of a variable expression rather than storing a literal string.
+7. **`EVAL(expr)` forces immediate evaluation** — wrapping an expression in `(eval(...))` evaluates it *right now* and stores the fixed result, rather than keeping a live parametric expression. Use `eval()` inside loops to compute part names, locations, and other loop-dependent values. Prefer the parametric form `(expr)` when you want the marker or object to track its reference automatically on model updates. See Rule 17 for the required parenthesization syntax that applies to both forms.
 8. **Never specify `adams_id` manually** — Adams auto-assigns IDs. Adding them by hand is error-prone and unnecessary in CMD scripts.
 9. **`part create` only once per part** — Use `part create rigid_body name_and_position` to create the part, then `part modify rigid_body mass_properties` (not `part create`) to set mass/inertia. Calling `part create` a second time on the same part will error.
 10. **Always create `.cm` first, then pass `center_of_mass_marker`** — Adams does NOT auto-create the `.cm` marker. You must explicitly create it before calling `part modify rigid_body mass_properties`, and you must pass it via `center_of_mass_marker`. Omitting it causes Adams to error with "no CM marker" at simulation time. Place the `.cm` marker at the part's actual centre of mass location. Example:
-    ```cmd
+    ```adams_cmd
     part create rigid_body name_and_position &
         part_name = .model.link &
         location  = 0.0, 0.0, 0.0
@@ -55,11 +61,11 @@ You are an expert MSC Adams View CMD scripter. You write correct, complete `.cmd
 13. **Spring-damper keyword: `translational_spring_damper`, not `spring_damper`**: the correct command is `force create element_like translational_spring_damper`. Free length is set via `displacement_at_preload` (not `length`). The parameter `length` does not exist on this command — if you see `length = 200.0` in broken code, rename it to `displacement_at_preload = 200.0`.
 14. **Simulation command: `simulation single_run transient`** — the keyword `simulate transient` does not exist. Use `simulation single_run transient & type = auto_select & end_time = ... & number_of_steps = ... & model_name = ... & initial_static = no`.
 15. **Always add geometry to moving parts, using correct syntax** — Adams models without geometry are very difficult to inspect visually. Add at least one `geometry create shape` command to every moving rigid part or point mass. **Geometry syntax rules (Adams 2023.2):** `sphere` and `box` are not valid shape keywords — use `ellipsoid` (with equal x/y/z scale factors for a sphere-like shape) or `cylinder` instead. Do NOT include `part_name` or `adams_id` in geometry commands (the part is inferred from the object path). Do NOT use `side_count_for_perimeter` for cylinders. For `link` shape, use `i_marker`/`j_marker` (not `i_marker_name`/`j_marker_name`). See the geometry reference for complete examples.
-16. **Expression values must stay on a single line** — the `&` continuation character works for splitting *commands* across lines, and plain comma-separated parameter values can be split across lines with `&` (e.g., `location = 0.0, &` on one line then `0.0, 0.0` on the next). However, inline-evaluated expressions — text inside parentheses like `(eval(...))` — cannot span multiple lines. Adams parses these as a single token and will error if it encounters a line break mid-expression, even with `&`.
+16. **Parenthesized expressions (Rule 17) must stay on a single line** — the `&` continuation character works for splitting *commands* across lines, and plain comma-separated parameter values can be split across lines with `&` (e.g., `location = 0.0, &` on one line then `0.0, 0.0` on the next). However, expressions in parentheses — such as `(loc_relative_to(...))` or `(eval(...))` — cannot span multiple lines. Adams parses these as a single token and will error if it encounters a line break mid-expression, even with `&`.
 
     For arguments that *store* a function string (like `function = "..."`), you can pass multiple comma-separated quoted strings to break up long expressions — Adams concatenates them, and each appears on a new line in the GUI. This is the preferred way to keep long function expressions readable.
 
-    ```cmd
+    ```adams_cmd
     ! OK — plain comma-separated values can be split with &
     marker create marker_name = .mod.part.mkr &
         location = 0.0, &
@@ -82,11 +88,86 @@ You are an expert MSC Adams View CMD scripter. You write correct, complete `.cmd
         location = (eval(loc_global({0,0,0}, .mod.part.cm)))
     ```
 
+17. **Design-time expressions used as parameter values must be enclosed in `(...)`** — whenever a `LOC_*`, `ORI_*`, or other design-time function appears as a parameter value, it **must** be wrapped in outer parentheses. Without them, Adams treats the text as a literal string and the command produces wrong results or an error.
+
+    There are two valid forms — choose based on whether you need live parameterization:
+
+    - **Parametric** `(expr)` — Adams stores the expression and re-evaluates it whenever the model updates. The marker tracks its reference automatically.
+    - **Immediate** `(eval(expr))` — Adams evaluates the expression *right now* and stores the fixed numbers. Use inside loops or when you need the current computed value. This breaks live parameterization.
+
+    ```adams_cmd
+    ! WRONG — missing outer parentheses; Adams sees bare text, not an expression
+    marker create  &
+       marker_name = .hover_demo.arm1.cm  &
+       location    = loc_relative_to({0.0, -150.0, 0.0}, .hover_demo.ground.pivot_top)  &
+       orientation = ori_in_plane({0.0, -150.0, 0.0}, {0.0, 0.0, 0.0}, .hover_demo.ground.pivot_top)
+
+    ! CORRECT — parametric form (Adams re-evaluates on model update)
+    marker create  &
+       marker_name = .hover_demo.arm1.cm  &
+       location    = (loc_relative_to({0.0, -150.0, 0.0}, .hover_demo.ground.pivot_top))  &
+       orientation = (ori_in_plane({0.0, -150.0, 0.0}, {0.0, 0.0, 0.0}, .hover_demo.ground.pivot_top))
+
+    ! ALSO CORRECT — immediate form (Adams evaluates now; breaks parameterization)
+    marker create  &
+       marker_name = .hover_demo.arm1.cm  &
+       location    = (eval(loc_relative_to({0.0, -150.0, 0.0}, .hover_demo.ground.pivot_top)))  &
+       orientation = (eval(ori_in_plane({0.0, -150.0, 0.0}, {0.0, 0.0, 0.0}, .hover_demo.ground.pivot_top)))
+    ```
+
+---
+
+## Common Patterns
+
+### Passing a Python result back to CMD via `set_dv`
+
+`run_python_code(str)` always returns `1` (success) or `0` (failure) — the Python expression's own return value is **discarded**. To get a computed value from Python into CMD, have the Python code write it into an Adams design variable with `set_dv` from the [`aviewpy`](https://pypi.org/project/aviewpy/) library, then read the variable back in CMD.
+
+The technique uses a **string-array accumulation** pattern:
+
+1. Build `$_self.py_str` by appending comma-separated quoted strings — each string is one line of Python.
+2. Join the array into a single newline-separated script with `str_merge_strings("\\n", $_self.py_str)`.
+3. Execute via `run_python_code(...)`, assigning the throwaway `1`/`0` return to `$_self.tmp_int`.
+4. Read the result directly from the design variable that `set_dv` created (e.g., `$_self.my_result`).
+
+```adams_cmd
+var set var=$_self.py_str str=                             "from aviewpy.variables import set_dv"
+var set var=$_self.py_str str=(eval($_self.py_str)),       "result = my_function()"
+var set var=$_self.py_str str=(eval($_self.py_str)),       "set_dv('$_self', 'my_result', result)"
+var set var=$_self.tmp_int int=(eval(run_python_code(str_merge_strings("\\n", $_self.py_str))))
+
+! Now the result is available as a design variable on $_self
+if condition=(eval($_self.my_result) > 10)
+    ! do something
+end
+```
+
+**Key points:**
+
+- `set_dv(parent, name, value)` from `aviewpy.variables` creates the design variable if it doesn't exist, or updates it if it does. It auto-detects the type (`real`, `integer`, `string`).
+- Inside a macro, pass `'$_self'` as the parent string — Adams substitutes the macro's full dot-path name before Python sees it, so the DV becomes a child of the macro (e.g., `$_self.my_result`).
+- `str_merge_strings(separator, string_array)` is an Adams expression function that joins an array of strings with the given separator.
+- The `$_self.tmp_int` variable is throwaway — it exists only so that the `run_python_code` call is actually executed.
+- **Installation:** `aviewpy` must be installed into the Adams Python environment: `path/to/mdi.bat python -m pip install aviewpy`.
+
+---
+
+## Common Antipatterns
+
+### Using the return value of `run_python_code` as a result
+
+```adams_cmd
+! WRONG — my_result will always be 1 (success), not the Python function's return value
+var set var=$_self.my_result int=(eval(run_python_code("my_function()")))
+```
+
+`run_python_code` returns an exit-code (`1` = success, `0` = failure), **not** the value of the Python expression. See the `set_dv` pattern above for the correct approach.
+
 ---
 
 ## Model-Building Workflow
 
-```cmd
+```adams_cmd
 ! 1. Create model
 model create model_name = my_model
 
@@ -174,7 +255,7 @@ constraint create joint revolute &
 
 Function expressions are evaluated at every solver timestep. They appear in `FUNCTION=` for forces, motions, variables, data elements, and any other element that accepts one.
 
-```cmd
+```adams_cmd
 ! Smooth ramp-up from 0 to 500 N over first 1 second
 function = "STEP(TIME, 0.0, 0.0, 1.0, 500.0)"
 
@@ -202,7 +283,7 @@ Full function reference: [`references/function-expressions/README.md`](reference
 
 ## Scripting Quick Reference
 
-```cmd
+```adams_cmd
 ! Parameterized real variable
 variable set variable_name = .model.par_length real_value = 250.0
 
@@ -241,7 +322,7 @@ Full scripting reference: [`references/commands/scripting.md`](references/comman
 
 Macros are `.mac` files loaded with `macro read` and executed by name.
 
-```cmd
+```adams_cmd
 ! Load a macro from disk
 macro read &
     file_name    = "C:/macros/my_macro.mac" &
@@ -251,7 +332,7 @@ macro read &
 .my_lib.my_macro  arg1 = value1
 ```
 
-```cmd
+```adams_cmd
 ! --- .mac file skeleton ---
 !USER_ENTERED_COMMAND  mylib my_macro
 !WRAP_IN_UNDO          yes
@@ -277,6 +358,7 @@ variable delete variable = $_self.*
 | Collision-free names | `UNIQUE_NAME(".model.spr_")` |
 | Find owning model | `DB_ANCESTOR(eval($part), "model")` |
 | Output parameter (return value) | Pass string containing target variable name; callee writes to it |
+| Return Python value to CMD | `set_dv` from `aviewpy` — see Common Patterns above |
 
 Full macro reference: [`references/commands/macros.md`](references/commands/macros.md)
 
@@ -300,6 +382,7 @@ Full macro reference: [`references/commands/macros.md`](references/commands/macr
 | Example: icon-resize macro | [`assets/cmd_scripts/example_macro_resize_icons.mac`](assets/cmd_scripts/example_macro_resize_icons.mac) |
 | Example: batch spring-creation macro | [`assets/cmd_scripts/example_macro_batch_spring.mac`](assets/cmd_scripts/example_macro_batch_spring.mac) |
 | Example: export-results macro | [`assets/cmd_scripts/example_macro_export_results.mac`](assets/cmd_scripts/example_macro_export_results.mac) |
+| Batch runner script | [`scripts/run_adams_cmd.py`](scripts/run_adams_cmd.py) |
 
 ---
 
@@ -307,7 +390,7 @@ Full macro reference: [`references/commands/macros.md`](references/commands/macr
 
 To run a transient dynamics simulation from within a CMD script:
 
-```cmd
+```adams_cmd
 simulation single_run transient &
     type            = auto_select &
     end_time        = 2.0 &
@@ -320,3 +403,60 @@ simulation single_run transient &
 - `initial_static = no` skips the static equilibrium step before the transient run.
 - `type = auto_select` lets Adams choose the integrator automatically.
 - **Do NOT use `simulate transient`** — that is not a valid Adams View keyword.
+
+---
+
+## Running a CMD Script in Batch (Headless)
+
+Use `scripts/run_adams_cmd.py` to execute any `.cmd` script in Adams View batch mode from the command line. The script handles locating `mdi.bat`, injecting a **unique log file** (so concurrent runs never clash), launching Adams, waiting for completion, and reporting errors.
+
+```
+python .agents/skills/adams-cmd-model-builder/scripts/run_adams_cmd.py .\my_script.cmd [--cwd .\working_directory] [--timeout 120]
+```
+
+Key options:
+
+| Option | Description |
+|--------|-------------|
+| `cmd_file` | Path to the `.cmd` file to run (absolute or relative) |
+| `--cwd` | Working directory for Adams View. Default: directory of the CMD file. Override to `./working_directory` when the run depends on `aview.cmd` / `aviewBS.cmd` being present. |
+| `--timeout` | Seconds to wait for Adams to finish (default: 120) |
+| `--log-output` | Copy the unique log file to this path after the run |
+
+The script prints the **unique log file path** so you can read it for results or errors after completion. Exit codes: `0` = success, `1` = errors in log, `2` = `mdi.bat` not found or CMD file not found, `3` = Adams timed out.
+
+`mdi.bat` is located automatically via: VS Code `msc-adams.adamsLaunchCommand` setting → `ADAMS_LAUNCH_COMMAND` env var → `ADAMS_INSTALL_DIR` env var → default install path (`C:\Program Files\MSC.Software\Adams`).
+
+---
+
+## Submit a Lesson Learned
+
+If during your work you discover something useful that other Adams users would benefit from — a non-obvious behaviour, a reliable workaround, a better approach — do the following:
+
+1. Draft the lesson:
+   ```json
+   {
+     "skill": "adams-cmd-model-builder",
+     "summary": "One-sentence description",
+     "detail": "Full explanation with enough context to be actionable",
+     "adams_version": "<version if relevant, else omit>",
+     "os": "<windows/linux if relevant, else omit>"
+   }
+   ```
+2. **Always** append it to `lessons-learned.md` in the skill folder (create the file if it doesn't exist). Use this format:
+   ```markdown
+   ## <summary>
+   **Date:** <YYYY-MM-DD>  
+   **Submitted:** <yes/no>
+
+   <detail>
+   ```
+3. Show it to the user and ask: *"I've recorded this locally — want me to also submit it anonymously to the skill maintainer?"*
+4. If yes, POST it:
+   ```
+   POST https://adams-skills-api.bthorn191.workers.dev/lessons
+   Content-Type: application/json
+   <lesson JSON>
+   ```
+   Then update the `Submitted:` field in `lessons-learned.md` to `yes`.
+5. If the POST fails, tell the user and move on — do not retry. Leave `Submitted: no` in the local file.
