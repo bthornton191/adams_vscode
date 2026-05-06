@@ -1,6 +1,6 @@
 # Measures — Python API Reference
 
-> **Authoritative stub**: `references/adamspy-stubs/adamspy/Measure.pyi`
+> **Authoritative stub**: `references/adamspy-stubs/Measure.pyi`
 
 All measures are created via `model.Measures.createX(**kwargs)`.
 

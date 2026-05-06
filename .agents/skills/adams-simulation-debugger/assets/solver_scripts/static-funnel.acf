@@ -1,0 +1,50 @@
+! static-funnel.acf
+! Purpose: Bring a model to static equilibrium using the "static funnel" technique.
+!          Useful when the model starts far from equilibrium, causing standard Newton
+!          to diverge immediately.
+!
+! Strategy: Run a series of short quasi-static analyses with progressively tightening
+!           tolerances. Each stage uses the previous stage's endpoint as its initial
+!           condition, gradually "funneling" the model to the final equilibrium.
+!
+! Adjust end_time values and loading to match your model.
+
+! ====================================================
+! Stage 1: Loose tolerances, very small steps
+! (get the model into a rough equilibrium basin first)
+! ====================================================
+EQUILIBRIUM/METHOD=ADVANCED, &
+            STABILITY=1e-3,   &
+            ERROR=1e-2,       &
+            IMBALANCE=1e-2,   &
+            MAXIT=50,         &
+            ALIMIT=5.0D,      &
+            TLIMIT=5.0
+
+SIMULATE/STATIC, END=0.2, STEPS=20
+
+! ====================================================
+! Stage 2: Tighter tolerances, more steps
+! ====================================================
+EQUILIBRIUM/METHOD=ADVANCED, &
+            STABILITY=1e-4,   &
+            ERROR=1e-3,       &
+            IMBALANCE=1e-3,   &
+            MAXIT=40,         &
+            ALIMIT=2.0D,      &
+            TLIMIT=2.0
+
+SIMULATE/STATIC, END=0.5, STEPS=50
+
+! ====================================================
+! Stage 3: Production tolerances
+! ====================================================
+EQUILIBRIUM/METHOD=ORIGINAL,  &
+            STABILITY=1e-5,   &
+            ERROR=1e-4,       &
+            IMBALANCE=1e-4,   &
+            MAXIT=25,         &
+            ALIMIT=0.5D,      &
+            TLIMIT=0.5
+
+SIMULATE/STATIC, END=1.0, STEPS=100

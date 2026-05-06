@@ -1,6 +1,6 @@
 # Geometry — Python API Reference
 
-> **Authoritative stub**: `references/adamspy-stubs/adamspy/Geometry.pyi`
+> **Authoritative stub**: `references/adamspy-stubs/Geometry.pyi`
 
 **Solid geometry** is created on a **part**: `part.Geometries.createX()`  
 **Model-level geometry** (spring-damper visual, force display): `model.Geometries.createX()`

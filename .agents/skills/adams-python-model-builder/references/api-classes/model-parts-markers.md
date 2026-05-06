@@ -1,6 +1,6 @@
 # Model, Parts, and Markers — Python API Reference
 
-> **Authoritative stubs**: `references/adamspy-stubs/adamspy/Model.pyi`, `Part.pyi`, `Marker.pyi`
+> **Authoritative stubs**: `references/adamspy-stubs/Model.pyi`, `Part.pyi`, `Marker.pyi`
 
 ---
 

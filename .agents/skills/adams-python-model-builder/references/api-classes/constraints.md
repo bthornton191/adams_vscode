@@ -1,6 +1,6 @@
 # Constraints and Motions — Python API Reference
 
-> **Authoritative stub**: `references/adamspy-stubs/adamspy/Constraint.pyi`
+> **Authoritative stub**: `references/adamspy-stubs/Constraint.pyi`
 
 All constraints are created via `model.Constraints.createX(**kwargs)`.
 

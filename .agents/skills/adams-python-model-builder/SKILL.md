@@ -13,10 +13,16 @@ description: >
   script for Adams — even if they don't say "Python API" explicitly.
 compatibility: github-copilot, claude-code, cursor, windsurf
 metadata:
-  version: 0.0.16
+  version: 1.5.1
 ---
 
 # Adams Python Model Builder
+
+## Local Lessons Learned
+
+At the start of every session, check whether `lessons-learned.md` exists in the skill folder. If it does, read it before proceeding — it contains field-discovered gotchas and workarounds specific to this skill that should inform your work.
+
+---
 
 You are an expert MSC Adams Python API developer. You write correct, complete Python scripts that build and parameterize multibody dynamics models in Adams View using `import Adams`.
 
@@ -37,12 +43,28 @@ You are an expert MSC Adams Python API developer. You write correct, complete Py
    ```
 4. **Array property reassignment**: Array-valued properties (location, orientation, stiffness, xyz_component_gravity, etc.) must be reassigned in full — in-place element mutation is silently ignored by Adams.
    ```python
-   loc = marker.location   # get a copy
-   loc[0] += 50.0          # modify the copy
-   marker.location = loc   # reassign — required
-   # marker.location[0] += 50  ← does NOT work
+   g = grav.xyz_component_gravity   # get a copy
+   g[1] = -9806.65                  # modify the copy
+   grav.xyz_component_gravity = g   # reassign — required
+   # grav.xyz_component_gravity[1] = -9806.65  ← does NOT work
    ```
-5. **`Adams.expression()` vs `Adams.eval()` vs direct assignment**:
+5. **`Marker.location` coordinate-frame asymmetry**: The getter returns **local** coordinates (in the parent part's CS) but the setter expects **global** coordinates (model CS). Do **not** read `.location`, modify it, and write it back — the frames differ so the result will be wrong. Instead, use `marker.location_global` for the round-trip, or set an absolute global position directly.
+   ```python
+   # ✗ WRONG — mixes local read with global write
+   loc = marker.location        # local coords
+   loc[0] += 50.0
+   marker.location = loc        # interpreted as global — silently wrong!
+
+   # ✓ CORRECT — read global, modify, write global
+   loc = marker.location_global # global coords (read-only property, returns a copy)
+   loc[0] += 50.0
+   marker.location = loc        # global coords — correct
+
+   # ✓ CORRECT — set an absolute global position
+   marker.location = [100, 0, 250]
+   ```
+   The same local-get / global-set asymmetry applies to `marker.orientation`.
+6. **`Adams.expression()` vs `Adams.eval()` vs direct assignment**:
    - `Adams.expression(str)` — stores the expression string; re-evaluates when the design variable changes (parametric).
    - `Adams.eval(str)` — evaluates once immediately and stores the resulting value (not parametric).
    - Direct assignment — stores a constant (e.g., `marker.location = [0, 0, 100]`).
@@ -51,7 +73,7 @@ You are an expert MSC Adams Python API developer. You write correct, complete Py
    dv = model.DesignVariables.createReal(name='LENGTH', value=250.0)
    marker.location = expression(f'{{0, 0, {dv.full_name}}}')  # parametric
    ```
-6. **Set units via `Adams.defaults`** before creating geometry — values are always interpreted in the current unit system.
+7. **Set units via `Adams.defaults`** before creating geometry — values are always interpreted in the current unit system.
    ```python
    d = Adams.defaults
    d.units.length = 'mm'
@@ -59,10 +81,52 @@ You are an expert MSC Adams Python API developer. You write correct, complete Py
    d.units.time   = 'second'
    d.units.force  = 'newton'
    ```
-7. **Orientation angles are in degrees** when passed as `orientation=[psi, theta, phi]` to `create()` methods.
-8. **Do not specify `adams_id`** unless you have a specific reason — Adams auto-assigns all IDs.
-9. **Access the active model** with `Adams.defaults.model` or `Adams.getCurrentModel()`.
-10. **CMD bridge** — use `Adams.execute_cmd(str)` for features not yet exposed in the Python API (e.g., `Adams.execute_cmd('simulation single_run transient ...')`).
+8. **Orientation angles are in degrees** when passed as `orientation=[psi, theta, phi]` to `create()` methods.
+9. **Do not specify `adams_id`** unless you have a specific reason — Adams auto-assigns all IDs.
+10. **Access the active model** with `Adams.defaults.model` or `Adams.getCurrentModel()`.
+11. **CMD bridge** — use `Adams.execute_cmd(str)` for features not yet exposed in the Python API (e.g., `Adams.execute_cmd('simulation single_run transient ...')`).
+
+---
+
+## Common Patterns
+
+### Returning a value to CMD from `run_python_code`
+
+When Python code is executed from CMD via `run_python_code(str)`, the CMD-side return value is always `1` (success) or `0` (failure) — the Python expression's own return value is **discarded**. To pass a result back to CMD, store it in an Adams design variable using `set_dv` from the [`aviewpy`](https://pypi.org/project/aviewpy/) library. The CMD macro then reads it directly.
+
+```adams_cmd
+! Inside a CMD macro — run Python and capture the result via set_dv
+var set var=$_self.py_str str=                             "from aviewpy.variables import set_dv"
+var set var=$_self.py_str str=(eval($_self.py_str)),       "result = my_function()"
+var set var=$_self.py_str str=(eval($_self.py_str)),       "set_dv('$_self', 'my_result', result)"
+var set var=$_self.tmp_int int=(eval(run_python_code(str_merge_strings("\\n", $_self.py_str))))
+
+! Now the result is stored in the macro's own design variable 'my_result'
+if condition=(eval($_self.my_result) > 10)
+    ! do something
+end
+```
+
+The CMD macro reads the result back with `(eval($_self.my_result))`.
+
+**Key points:**
+
+- `set_dv(parent, name, value)` creates the design variable if it doesn't exist, or updates it. It auto-detects the type (`real`, `integer`, `string`).
+- Inside a CMD macro, pass `'$_self'` as the parent string — Adams substitutes the macro's full dot-path name before Python sees it, so the DV becomes a child of the macro.
+- **Installation:** `aviewpy` must be installed into the Adams Python environment: `path/to/mdi.bat python -m pip install aviewpy`.
+
+---
+
+## Common Antipatterns
+
+### Using the return value of `run_python_code` as a result
+
+```adams_cmd
+! WRONG — CMD will see 1 (success), not the Python function's return value
+var set var=$_self.my_result int=(eval(run_python_code("my_function()")))
+```
+
+`run_python_code` returns an exit-code (`1` = success, `0` = failure), **not** the value of the Python expression. See the `set_dv` pattern above for the correct approach.
 
 ---
 
@@ -304,7 +368,41 @@ Full expression reference: [`references/function-expressions.md`](references/fun
 | Session utilities (stoo, eval, file I/O) | [`references/api-classes/utilities.md`](references/api-classes/utilities.md) | `Adams.pyi`, `Expression.pyi` |
 | Naming conventions and dot-paths | [`references/naming-conventions.md`](references/naming-conventions.md) | — |
 | FUNCTION= runtime expressions | [`references/function-expressions.md`](references/function-expressions.md) | — |
-| Full type stubs (authoritative) | [`references/adamspy-stubs/adamspy/`](references/adamspy-stubs/adamspy/) | all `.pyi` files |
+| Full type stubs (authoritative) | [`references/adamspy-stubs/`](references/adamspy-stubs/) | all `.pyi` files |
 | Simple pendulum example | [`assets/python_scripts/simple_pendulum.py`](assets/python_scripts/simple_pendulum.py) | — |
 | Parametric chain example | [`assets/python_scripts/parametric_chain.py`](assets/python_scripts/parametric_chain.py) | — |
 | Oscillating slider example | [`assets/python_scripts/oscillating_slider.py`](assets/python_scripts/oscillating_slider.py) | — |
+
+---
+
+## Submit a Lesson Learned
+
+If during your work you discover something useful that other Adams users would benefit from — a non-obvious behaviour, a reliable workaround, a better approach — do the following:
+
+1. Draft the lesson:
+   ```json
+   {
+     "skill": "adams-python-model-builder",
+     "summary": "One-sentence description",
+     "detail": "Full explanation with enough context to be actionable",
+     "adams_version": "<version if relevant, else omit>",
+     "os": "<windows/linux if relevant, else omit>"
+   }
+   ```
+2. **Always** append it to `lessons-learned.md` in the skill folder (create the file if it doesn't exist). Use this format:
+   ```markdown
+   ## <summary>
+   **Date:** <YYYY-MM-DD>  
+   **Submitted:** <yes/no>
+
+   <detail>
+   ```
+3. Show it to the user and ask: *"I've recorded this locally — want me to also submit it anonymously to the skill maintainer?"*
+4. If yes, POST it:
+   ```
+   POST https://adams-skills-api.bthorn191.workers.dev/lessons
+   Content-Type: application/json
+   <lesson JSON>
+   ```
+   Then update the `Submitted:` field in `lessons-learned.md` to `yes`.
+5. If the POST fails, tell the user and move on — do not retry. Leave `Submitted: no` in the local file.

@@ -1,6 +1,6 @@
 # Forces — Python API Reference
 
-> **Authoritative stub**: `references/adamspy-stubs/adamspy/Force.pyi`
+> **Authoritative stub**: `references/adamspy-stubs/Force.pyi`
 
 All forces are created via `model.Forces.createX(**kwargs)`.
 

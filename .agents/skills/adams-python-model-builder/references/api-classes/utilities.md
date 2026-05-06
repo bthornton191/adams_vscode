@@ -1,6 +1,6 @@
 # Session Utilities — Python API Reference
 
-> **Authoritative stubs**: `references/adamspy-stubs/adamspy/Adams.pyi`, `Expression.pyi`, `Defaults.pyi`
+> **Authoritative stubs**: `references/adamspy-stubs/Adams.pyi`, `Expression.pyi`, `Defaults.pyi`
 
 ---
 

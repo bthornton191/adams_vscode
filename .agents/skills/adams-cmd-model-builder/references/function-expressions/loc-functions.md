@@ -2,6 +2,24 @@
 
 LOC_ functions return a 3-element array `{x, y, z}` representing a point expressed in the **global** coordinate system, unless stated otherwise. They are design-time functions evaluated during model construction, not during simulation.
 
+## Usage in CMD commands
+
+When a `LOC_` function is used as a parameter value in a CMD command, it **must** be enclosed in outer parentheses `(...)`. Without them Adams treats the text as a literal string rather than an expression. See **Core Rule 17** in the skill for the parametric vs immediate (`eval()`) distinction.
+
+```adams_cmd
+! WRONG — no outer parentheses
+marker create marker_name = .model.part.mkr &
+    location = loc_relative_to({0.0, -150.0, 0.0}, .model.ground.ref_mkr)
+
+! Parametric — Adams stores and re-evaluates the expression on model update
+marker create marker_name = .model.part.mkr &
+    location = (loc_relative_to({0.0, -150.0, 0.0}, .model.ground.ref_mkr))
+
+! Immediate — Adams evaluates now and stores fixed numbers (use in loops)
+marker create marker_name = .model.part.mkr &
+    location = (eval(loc_relative_to({0.0, -150.0, 0.0}, .model.ground.ref_mkr)))
+```
+
 ## Quick reference
 
 | Function | Signature | Returns |

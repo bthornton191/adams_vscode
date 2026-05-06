@@ -1,6 +1,6 @@
 # Contacts — Python API Reference
 
-> **Authoritative stub**: `references/adamspy-stubs/adamspy/Contact.pyi`
+> **Authoritative stub**: `references/adamspy-stubs/Contact.pyi`
 
 Contacts are created via `model.Contacts.createX(**kwargs)`.
 

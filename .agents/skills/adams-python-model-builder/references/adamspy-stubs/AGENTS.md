@@ -5,30 +5,29 @@ This repo contains Python type stubs (`.pyi` files) for the **MSC Adams Python A
 ## Repo structure
 
 ```
-adamspy/          # All stub files live here, matching Adams' module layout
-  Adams.pyi         # Top-level session object
-  Model.pyi
-  Part.pyi
-  Marker.pyi
-  Constraint.pyi
-  Force.pyi
-  Geometry.pyi
-  DataElement.pyi
-  Simulation.pyi
-  Analysis.pyi
-  Measure.pyi
-  Defaults.pyi
-  DesignVariable.pyi
-  Contact.pyi
-  SystemElement.pyi
-  Expression.pyi
-  Object.pyi        # Base class hierarchy
-  Manager.pyi       # AdamsManager / SubclassManager base classes
-  Material.pyi
-  Sensor.pyi
-  RuntimeFunction.pyi
-  Section.pyi
-  ... (other supporting modules)
+Adams.pyi         # Top-level session object
+Model.pyi
+Part.pyi
+Marker.pyi
+Constraint.pyi
+Force.pyi
+Geometry.pyi
+DataElement.pyi
+Simulation.pyi
+Analysis.pyi
+Measure.pyi
+Defaults.pyi
+DesignVariable.pyi
+Contact.pyi
+SystemElement.pyi
+Expression.pyi
+Object.pyi        # Base class hierarchy
+Manager.pyi       # AdamsManager / SubclassManager base classes
+Material.pyi
+Sensor.pyi
+RuntimeFunction.pyi
+Section.pyi
+... (other supporting modules)
 README.md
 AGENTS.md         # This file
 ```
@@ -79,11 +78,13 @@ Adams uses dot-path names: `.MODEL_NAME.PART_NAME.MARKER_NAME`. The `full_name` 
 
 Array-valued properties (location, orientation, stiffness, xyz_component_gravity, etc.) must be assigned as a whole — in-place element mutation is silently ignored by Adams:
 ```python
-loc = marker.location   # get
+loc = marker.location   # get (returns LOCAL coords, in parent part's CS)
 loc[0] += 10            # modify copy
-marker.location = loc   # reassign — required
+marker.location = loc   # reassign — required (interpreted as GLOBAL coords, in model CS)
 ```
 Stubs should type these as `List[float]` (not `Tuple`).
+
+> **Coordinate-frame quirk**: `marker.location` getter returns **local** coordinates (parent part's CS) while the setter expects **global** coordinates (model CS). Use `marker.location_global` to read the global position. The same applies to `marker.orientation`. Stubs and docstrings must document this asymmetry.
 
 ### Expression parameterization
 
