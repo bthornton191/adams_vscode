@@ -169,7 +169,14 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
 
     vscode.languages.registerCompletionItemProvider(
         { scheme: "file", language: "adams_cmd" },
-        cmd_completion_provider(view_functions, view_commands, arg_options, command_docs, reporter),
+        cmd_completion_provider(
+            view_functions,
+            view_commands,
+            arg_options,
+            command_docs,
+            reporter,
+            command_tree,
+        ),
         "=", // trigger value completions after arg=
     );
 

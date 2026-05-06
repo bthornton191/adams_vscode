@@ -1,11 +1,67 @@
 const vscode = require("vscode");
 
 /**
+ * Match a single token against a node's children, honouring min_prefix and
+ * ambiguity rules. Port of Schema._match_token() from adams_cmd_lsp/schema.py.
+ *
+ * @param {string} token
+ * @param {Object} children  — command_tree node.children
+ * @returns {string|null}    canonical child name, or null on no-match / ambiguity
+ */
+function _match_token(token, children) {
+    const t = token.toLowerCase();
+
+    // Exact match takes priority
+    for (const name of Object.keys(children)) {
+        if (name.toLowerCase() === t) return name;
+    }
+
+    // Prefix match — must be unambiguous and at least min_prefix chars
+    const matches = [];
+    for (const [name, node_data] of Object.entries(children)) {
+        const min_prefix = node_data.min_prefix !== undefined ? node_data.min_prefix : name.length;
+        if (t.length >= min_prefix && name.toLowerCase().startsWith(t)) {
+            matches.push(name);
+        }
+    }
+    return matches.length === 1 ? matches[0] : null;
+}
+
+/**
+ * Resolve a list of (possibly abbreviated) command tokens to a canonical key.
+ * Port of Schema.resolve_command_key() from adams_cmd_lsp/schema.py.
+ *
+ * @param {string[]} tokens        — e.g. ["var", "set"]
+ * @param {Object}   command_tree  — the "command_tree" object from command_schema.json
+ * @param {Object}   commands      — structured.json command key → arg[] (for leaf check)
+ * @returns {string|null}          canonical key (e.g. "variable set"), or null on failure
+ */
+function resolve_command_key(tokens, command_tree, commands) {
+    let node = command_tree;
+    const resolved = [];
+
+    for (const token of tokens) {
+        const children = node.children || {};
+        if (Object.keys(children).length === 0) return null;
+
+        const match = _match_token(token, children);
+        if (match === null) return null;
+
+        resolved.push(match);
+        node = children[match];
+    }
+
+    const key = resolved.join(" ");
+    return Object.prototype.hasOwnProperty.call(commands, key) ? key : null;
+}
+
+/**
  * @param {Map<string, string>} function_names
  * @param {Object} commands         command → string[]              (structured.json)
  * @param {Object} arg_options      command → {argName: string[]}   (argument_options.json)
  * @param {Map<string, string>} command_docs  command → markdown doc string
  * @param {object|null} reporter
+ * @param {Object|null} command_tree  command_schema.json "command_tree" (enables abbreviation resolution)
  * @returns {vscode.CompletionItemProvider}
  */
 function cmd_completion_provider(
@@ -14,6 +70,7 @@ function cmd_completion_provider(
     arg_options = {},
     command_docs = new Map(),
     reporter = null,
+    command_tree = null,
 ) {
     return {
         provideCompletionItems(document, position, token, context) {
@@ -50,6 +107,33 @@ function cmd_completion_provider(
                     if (!candidate_token.includes("=") && commands.hasOwnProperty(candidate_key)) {
                         resolved_command_key = candidate_key;
                         partial_arg = candidate_token.toLowerCase();
+                    }
+                }
+            }
+
+            // If still unresolved, try abbreviation-aware resolution via command_tree.
+            // This handles cases like "force create element translational_spring_damper"
+            // where "element" is an abbreviation of "element_like" in structured.json.
+            if (command_tree && !commands.hasOwnProperty(resolved_command_key)) {
+                const tokens = command_key.trim().split(/\s+/);
+                // Try the full token set as a complete command key
+                const full_resolved = resolve_command_key(tokens, command_tree, commands);
+                if (full_resolved) {
+                    resolved_command_key = full_resolved;
+                    partial_arg = "";
+                } else if (tokens.length > 1) {
+                    // Last token might be a partial argument name being typed
+                    const candidate_token = tokens[tokens.length - 1];
+                    if (!candidate_token.includes("=")) {
+                        const partial_resolved = resolve_command_key(
+                            tokens.slice(0, -1),
+                            command_tree,
+                            commands,
+                        );
+                        if (partial_resolved) {
+                            resolved_command_key = partial_resolved;
+                            partial_arg = candidate_token.toLowerCase();
+                        }
                     }
                 }
             }
