@@ -22,7 +22,7 @@ from .linter import lint_text
 from .parser import parse as _parse_cmd, _find_comment_start
 from .schema import Schema
 from .diagnostics import Severity
-from .symbols import SymbolTable, build_symbol_table, _extract_eval_object_names
+from .symbols import SymbolTable, build_symbol_table, _extract_eval_object_names, _EVAL_OBJECT_NAME_RE
 from .object_index import ObjectIndex, index_file_objects, _resolve_command_keys
 from .macros import (
     scan_macro_files, parse_macro_file, MacroRegistry, MacroDefinition, MacroParameter,
@@ -111,6 +111,41 @@ def _get_dollar_var_at_position(line_text: str, character: int):
     return None
 
 
+def _get_dollar_var_segment_at_position(line_text: str, character: int):
+    """Return the single dot-separated segment of a $variable token under the cursor.
+
+    For a token like ``$model.arm2_len`` the segments are ``$model`` and
+    ``arm2_len``.  The first segment retains the ``$`` prefix; subsequent
+    segments are the bare names between the dots.
+
+    Returns a 5-tuple::
+
+        (full_token, seg_col, seg_end_col, tok_col, tok_end_col)
+
+    where *full_token* is the entire matched token (e.g. ``$model.arm2_len``),
+    *seg_col* / *seg_end_col* bound only the segment the cursor is on, and
+    *tok_col* / *tok_end_col* bound the full token.
+
+    Returns ``None`` when no $variable token spans the cursor position.
+    """
+    for m in _DOLLAR_VAR_RE.finditer(line_text):
+        tok_col = m.start()
+        tok_end_col = m.end()
+        if not (tok_col <= character < tok_end_col):
+            continue
+        full_token = m.group(0)
+        # Build (start, end) pairs for each dot-segment within the line
+        seg_start = tok_col
+        for raw_seg in full_token.split('.'):
+            seg_end = seg_start + len(raw_seg)
+            if seg_start <= character < seg_end:
+                return (full_token, seg_start, seg_end, tok_col, tok_end_col)
+            seg_start = seg_end + 1  # +1 for the dot separator
+        # Cursor is on a trailing dot — fall back to full token
+        return (full_token, tok_col, tok_end_col, tok_col, tok_end_col)
+    return None
+
+
 def _find_variable_def_at_position(statements, schema, line: int, character: int):
     """If cursor is on the variable_name arg of a 'variable set' command, return it.
 
@@ -140,7 +175,7 @@ def _find_variable_def_at_position(statements, schema, line: int, character: int
 
 
 def _find_variable_definition_in_statements(statements, schema, var_token: str):
-    """Find the 'variable set variable_name=X' statement that defines *var_token*.
+    """Find the 'variable set/create variable_name=X' statement that defines *var_token*.
 
     Tries progressively shorter dot-separated prefixes of *var_token* so that
     clicking anywhere within '$_self.model.object_value.name' still resolves
@@ -148,6 +183,7 @@ def _find_variable_definition_in_statements(statements, schema, var_token: str):
 
     Returns (matched_name, def_line, val_col, val_end_col) or None.
     """
+    _VARIABLE_DEF_COMMANDS = {"variable set", "variable create"}
     parts = var_token.split('.')
     candidates = ['.'.join(parts[:i]) for i in range(len(parts), 0, -1)]
     for candidate in candidates:
@@ -155,10 +191,11 @@ def _find_variable_definition_in_statements(statements, schema, var_token: str):
         for stmt in statements:
             if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
                 continue
-            if (stmt.resolved_command_key or stmt.command_key) != "variable set":
+            cmd_key = stmt.resolved_command_key or stmt.command_key
+            if cmd_key not in _VARIABLE_DEF_COMMANDS:
                 continue
             for arg in stmt.arguments:
-                canonical = schema.resolve_argument_name("variable set", arg.name)
+                canonical = schema.resolve_argument_name(cmd_key, arg.name)
                 if canonical != "variable_name":
                     continue
                 if not arg.value:
@@ -404,6 +441,129 @@ def _get_eval_object_at_position(statements, line: int, character: int):
                 if e_col <= character <= e_end_col:
                     return ("reference", e_name, e_line, e_col, e_end_col)
     return None
+
+
+def _get_paren_object_at_position(statements, symbols, line: int, character: int):
+    """Find an Adams object name inside a parenthesized (non-eval) expression at the cursor.
+
+    Handles values like ``(.model.part.marker.location_global)`` on location,
+    orientation, or other argument types that are not ``new_object``/
+    ``existing_object`` in the schema.  The expression is not an ``eval()``,
+    so :func:`_get_eval_object_at_position` does not pick it up.
+
+    Strategy:
+    1. Scan all argument values that start with ``(`` but do not contain ``eval(``.
+    2. Extract Adams dot-path names using :data:`~symbols._EVAL_OBJECT_NAME_RE`.
+    3. For each candidate name under the cursor, progressively strip the
+       trailing path segment until a registered symbol is found — this handles
+       property accessors like ``.location_global`` that are not objects.
+
+    Returns:
+        ``("reference", name, v_line, v_col, v_end_col)`` on success.
+        ``None`` if no resolvable object name spans the cursor position.
+    """
+    if statements is None:
+        return None
+    for stmt in statements:
+        if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
+            continue
+        if not (stmt.line_start <= line <= stmt.line_end):
+            continue
+        for arg in stmt.arguments:
+            val = arg.value
+            if not val:
+                continue
+            if not val.startswith("("):
+                continue
+            if "eval(" in val.lower():
+                continue
+            if "$" in val:
+                continue
+            if arg.value_line != line:
+                continue
+            # Extract all dot-path names from the parenthesized expression
+            for m in _EVAL_OBJECT_NAME_RE.finditer(val):
+                e_col = arg.value_column + m.start()
+                e_end_col = arg.value_column + m.end()
+                if not (e_col <= character <= e_end_col):
+                    continue
+                full_name = m.group(0)
+                # Progressively strip trailing segments until we find a known object.
+                # This handles property accessors like .location_global that are not
+                # registered in the symbol table.
+                parts = full_name.split('.')
+                # parts[0] is always '' because full_name starts with '.'
+                for tail_count in range(0, len(parts) - 1):
+                    candidate = '.'.join(parts[:len(parts) - tail_count])
+                    if not candidate or candidate == '.':
+                        break
+                    if symbols is not None and (
+                        symbols.lookup(candidate) is not None
+                        or symbols.lookup_by_leaf_name(candidate.rsplit('.', 1)[-1])
+                    ):
+                        return ("reference", candidate, line, e_col, e_end_col)
+                # No registered symbol found — return the full name anyway so
+                # the cross-file index still has a chance to resolve it.
+                return ("reference", full_name, line, e_col, e_end_col)
+    return None
+
+
+def _resolve_segment_at_cursor(name: str, val_start: int, character: int):
+    """Given an Adams dot-path *name* and the cursor position, return the partial
+    path corresponding to the dot-segment under the cursor.
+
+    For example, with name='.model_1.part_1.marker_2' and the cursor sitting on
+    'part_1', returns ('.model_1.part_1', seg_col_start, seg_col_end) where the
+    column offsets are relative to the start of the argument value (val_start).
+
+    The cursor column *character* is an absolute document column.
+
+    Returns:
+        (partial_path, seg_doc_col_start, seg_doc_col_end) on success.
+        (name, val_start, val_start + len(name)) when the cursor is not within
+        a recognisable segment (fall-back to the full name).
+    """
+    # Normalise so the path always starts with a '.' for uniform processing.
+    norm = name if name.startswith('.') else '.' + name
+    # Collect the start positions of each segment within the normalised string.
+    # A segment boundary is every '.'; the root '.' at index 0 is also a boundary.
+    segment_ends = []   # (seg_start_in_norm, seg_end_in_norm)
+    i = 0
+    while i < len(norm):
+        if norm[i] == '.':
+            seg_start = i  # include the dot as part of the path up to this point
+            j = i + 1
+            while j < len(norm) and norm[j] != '.':
+                j += 1
+            segment_ends.append((i, j))  # [i:j] is ".segment_name"
+        i += 1
+
+    # Map each segment to its absolute document column range.
+    # norm_offset is the offset of norm[0] in the document.
+    norm_offset = val_start - (0 if name.startswith('.') else 0)
+    # name starts at val_start; if name had a leading '.', norm == name.
+    # if name did not have a leading '.', norm has one extra char at front.
+    extra = 0 if name.startswith('.') else 1
+
+    for seg_idx, (seg_start, seg_end) in enumerate(segment_ends):
+        # Document column of the first character of this segment's text (after the dot)
+        seg_doc_col = val_start + max(0, seg_start - extra)
+        seg_doc_end = val_start + (seg_end - extra)
+        # Cursor hit test: is the character within the textual span of this segment?
+        char_in_dot = seg_doc_col
+        char_in_end = seg_doc_end
+        # The dot itself (seg_doc_col) is not a clickable character for this
+        # segment — require the cursor to be on the segment text, not the dot.
+        if char_in_dot + 1 <= character < char_in_end:
+            # Build the partial path up to and including this segment.
+            partial = norm[:seg_end]
+            if not name.startswith('.'):
+                # The caller passed a non-dotted name; strip the leading dot we added.
+                partial = partial.lstrip('.')
+            return (partial, seg_doc_col, seg_doc_end)
+
+    # Fallback: return the full name
+    return (name, val_start, val_start + len(name))
 
 
 def _get_object_at_position(statements, schema, symbols, line: int, character: int):
@@ -986,8 +1146,25 @@ def goto_definition(params: types.DefinitionParams):
     if obj is None:
         # Fallback: names inside (eval(...)) on any arg type (real, integer, etc.)
         obj = _get_eval_object_at_position(statements, line, character)
+    if obj is None:
+        # Fallback: names inside parenthesized non-eval expressions, e.g.
+        # location=(.model.part.marker.location_global)
+        obj = _get_paren_object_at_position(statements, symbols, line, character)
     if obj is not None:
         kind, name, v_line, v_col, v_end_col = obj
+
+        # --- Per-segment resolution ---
+        # When the cursor is on one segment of a multi-segment path (e.g. 'part_1'
+        # in '.model_1.part_1.marker_2'), resolve only the partial path up to that
+        # segment rather than the full path, and highlight just that segment.
+        seg_name, seg_col, seg_end_col = _resolve_segment_at_cursor(
+            name, v_col, character
+        )
+        if seg_name != name:
+            # Cursor is on an intermediate segment — navigate to that partial path.
+            name = seg_name
+            v_col = seg_col
+            v_end_col = seg_end_col
 
         origin_selection = types.Range(
             start=types.Position(line=v_line, character=v_col),
@@ -1126,15 +1303,15 @@ def goto_definition(params: types.DefinitionParams):
             return locations if locations else None
 
         # Is the cursor on a $variable reference? → navigate to definition
-        var_tok = _get_dollar_var_at_position(lines_text[line], character)
-        if var_tok is not None:
-            full_token, tok_col, tok_end_col = var_tok
+        var_seg = _get_dollar_var_segment_at_position(lines_text[line], character)
+        if var_seg is not None:
+            full_token, seg_col, seg_end_col, tok_col, tok_end_col = var_seg
             def_r = _find_variable_definition_in_statements(statements, _schema, full_token)
             if def_r is not None:
                 _matched_name, def_line, def_col, def_end_col = def_r
                 origin_selection = types.Range(
-                    start=types.Position(line=line, character=tok_col),
-                    end=types.Position(line=line, character=tok_end_col),
+                    start=types.Position(line=line, character=seg_col),
+                    end=types.Position(line=line, character=seg_end_col),
                 )
                 target_range = types.Range(
                     start=types.Position(line=def_line, character=def_col),
@@ -1154,9 +1331,10 @@ def goto_definition(params: types.DefinitionParams):
                 candidate = '.'.join(parts[:i])
                 if candidate.lower() in mac_param_defs:
                     p_line, p_col, p_end_col = mac_param_defs[candidate.lower()]
+                    # Underline only the segment the cursor is actually on
                     origin_selection = types.Range(
-                        start=types.Position(line=line, character=tok_col),
-                        end=types.Position(line=line, character=tok_end_col),
+                        start=types.Position(line=line, character=seg_col),
+                        end=types.Position(line=line, character=seg_end_col),
                     )
                     target_range = types.Range(
                         start=types.Position(line=p_line, character=p_col),
@@ -1807,8 +1985,18 @@ def find_references(params: types.ReferenceParams):
     if obj is None:
         # Fallback: names inside (eval(...)) on any arg type (real, integer, etc.)
         obj = _get_eval_object_at_position(statements, line, character)
+    if obj is None:
+        # Fallback: names inside parenthesized non-eval expressions
+        obj = _get_paren_object_at_position(statements, symbols, line, character)
     if obj is not None:
         kind, name, v_line, v_col, v_end_col = obj
+
+        # Per-segment: resolve only the partial path under the cursor
+        seg_name, _seg_col, _seg_end_col = _resolve_segment_at_cursor(
+            name, v_col, character
+        )
+        if seg_name != name:
+            name = seg_name
 
         # Collect same-file references from the live symbol table
         same_file_refs = symbols.get_references_by_name(name)
