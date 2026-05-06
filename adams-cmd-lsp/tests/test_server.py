@@ -3147,6 +3147,64 @@ def test_get_dollar_var_at_position_no_dollar():
     assert result is None
 
 
+# ---------------------------------------------------------------------------
+# _get_dollar_var_segment_at_position unit tests
+# ---------------------------------------------------------------------------
+
+def test_get_dollar_var_segment_first_segment():
+    """Cursor on the first segment ('$model') returns only that segment's span."""
+    line_text = "mass=(eval($model.arm2_len))"
+    col = line_text.index("$model")
+    result = srv._get_dollar_var_segment_at_position(line_text, col)
+    assert result is not None
+    full_token, seg_col, seg_end_col, tok_col, tok_end_col = result
+    assert full_token == "$model.arm2_len"
+    assert line_text[seg_col:seg_end_col] == "$model"
+    assert line_text[tok_col:tok_end_col] == "$model.arm2_len"
+
+
+def test_get_dollar_var_segment_second_segment():
+    """Cursor on 'arm2_len' inside '$model.arm2_len' returns only that segment."""
+    line_text = "mass=(eval($model.arm2_len))"
+    col = line_text.index("arm2_len")
+    result = srv._get_dollar_var_segment_at_position(line_text, col)
+    assert result is not None
+    full_token, seg_col, seg_end_col, tok_col, tok_end_col = result
+    assert full_token == "$model.arm2_len"
+    assert line_text[seg_col:seg_end_col] == "arm2_len"
+    assert line_text[tok_col:tok_end_col] == "$model.arm2_len"
+
+
+def test_get_dollar_var_segment_three_part_token():
+    """Three-segment token '$_self.model.name' — cursor on middle segment."""
+    line_text = "x=(eval($_self.model.name))"
+    col = line_text.index("model")
+    result = srv._get_dollar_var_segment_at_position(line_text, col)
+    assert result is not None
+    full_token, seg_col, seg_end_col, tok_col, tok_end_col = result
+    assert full_token == "$_self.model.name"
+    assert line_text[seg_col:seg_end_col] == "model"
+
+
+def test_get_dollar_var_segment_no_dot():
+    """Single-segment token '$model' — cursor on the only segment."""
+    line_text = "part_name=$model"
+    col = line_text.index("$model")
+    result = srv._get_dollar_var_segment_at_position(line_text, col)
+    assert result is not None
+    full_token, seg_col, seg_end_col, tok_col, tok_end_col = result
+    assert full_token == "$model"
+    assert line_text[seg_col:seg_end_col] == "$model"
+    assert seg_col == tok_col
+    assert seg_end_col == tok_end_col
+
+
+def test_get_dollar_var_segment_returns_none_outside_token():
+    """Returns None when cursor is not within any $variable token."""
+    result = srv._get_dollar_var_segment_at_position("model create", 5)
+    assert result is None
+
+
 def test_find_variable_references_in_text():
     """_find_variable_references_in_text finds all occurrences of the var."""
     text = (
@@ -3516,3 +3574,424 @@ def test_find_references_dollar_var_exclude_declaration(monkeypatch):
     )
     assert 0 in lines_incl, f"include_declaration=True: definition line 0 missing"
     assert 2 in lines_incl, f"include_declaration=True: ref on line 2 missing"
+
+
+# ---------------------------------------------------------------------------
+# _find_variable_definition_in_statements — variable create
+# ---------------------------------------------------------------------------
+
+def test_find_variable_definition_finds_variable_create():
+    """_find_variable_definition_in_statements matches 'variable create' commands."""
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    # Only a 'variable create' command — no 'variable set'
+    text = "variable create variable_name=$model.arm1_len real_value=300.0\n"
+    schema = Schema.load()
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    result = srv._find_variable_definition_in_statements(stmts, schema, "$model.arm1_len")
+    assert result is not None, "Should find definition in 'variable create'"
+    matched_name, def_line, _, _ = result
+    assert matched_name == "$model.arm1_len"
+    assert def_line == 0
+
+
+def test_find_variable_definition_prefers_variable_create_over_shorter_prefix():
+    """Exact match in 'variable create' wins over a shorter prefix in 'variable set'."""
+    from adams_cmd_lsp.parser import parse as _parse
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    text = (
+        "variable set variable_name=$model obj=.m\n"
+        "variable create variable_name=$model.arm1_len real_value=300.0\n"
+    )
+    schema = Schema.load()
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    result = srv._find_variable_definition_in_statements(stmts, schema, "$model.arm1_len")
+    assert result is not None
+    matched_name, def_line, _, _ = result
+    # The exact match on line 1 must be preferred over the shorter '$model' prefix on line 0
+    assert matched_name == "$model.arm1_len"
+    assert def_line == 1
+
+
+# ---------------------------------------------------------------------------
+# _extract_eval_object_names — $ prefix skip
+# ---------------------------------------------------------------------------
+
+def test_extract_eval_object_names_skips_dollar_var_suffix():
+    """Dot-paths that are suffixes of $var tokens must not be returned."""
+    from adams_cmd_lsp.symbols import _extract_eval_object_names
+    # '$model.arm1_len' — the regex would naively match '.arm1_len' as a name;
+    # the fix must suppress it because the preceding text is '$model'.
+    value = "(eval($model.arm1_len * 0.5))"
+    result = _extract_eval_object_names(value, 0, 0)
+    names = [r[0] for r in result]
+    assert ".arm1_len" not in names, (
+        "'.arm1_len' should be skipped because it is a $var suffix"
+    )
+
+
+def test_extract_eval_object_names_keeps_standalone_dot_path():
+    """Standalone dot-paths (not preceded by $) are still returned."""
+    from adams_cmd_lsp.symbols import _extract_eval_object_names
+    value = "(eval(.model.arm1_len * 0.5))"
+    result = _extract_eval_object_names(value, 0, 0)
+    names = [r[0] for r in result]
+    assert ".model.arm1_len" in names, "Standalone dot-path must still be returned"
+
+
+def test_extract_eval_object_names_mixed():
+    """Mixed expression: $var.suffix is skipped, standalone path is kept."""
+    from adams_cmd_lsp.symbols import _extract_eval_object_names
+    value = "(eval($model.arm1_len + .model.arm2_len))"
+    result = _extract_eval_object_names(value, 0, 0)
+    names = [r[0] for r in result]
+    # The $model.arm1_len suffix '.arm1_len' must be suppressed
+    assert ".arm1_len" not in names
+    # The standalone .model.arm2_len must be present
+    assert ".model.arm2_len" in names
+
+
+# ---------------------------------------------------------------------------
+# _resolve_segment_at_cursor
+# ---------------------------------------------------------------------------
+
+def test_resolve_segment_at_cursor_last_segment():
+    """Cursor on the last segment returns the full path and segment span."""
+    # name='.model_1.part_1.marker_2', val_start=0
+    # '.marker_2' starts at index 15 in the string
+    name = ".model_1.part_1.marker_2"
+    val_start = 0
+    character = 17  # inside 'marker_2' (after the dot at 15)
+    partial, col_s, col_e = srv._resolve_segment_at_cursor(name, val_start, character)
+    assert partial == ".model_1.part_1.marker_2"
+    assert col_s == 15  # dot of '.marker_2' is at val_start + 15
+
+
+def test_resolve_segment_at_cursor_cursor_on_dot_returns_full_name():
+    """Cursor on a dot separator returns the full name unchanged (dot is not clickable)."""
+    name = ".model_1.part_1.marker_2"
+    val_start = 0
+    # character=8 is exactly the dot before 'part_1' — should NOT resolve to a segment
+    character = 8
+    partial, col_s, col_e = srv._resolve_segment_at_cursor(name, val_start, character)
+    # Dot is not a hit — fallback returns full name
+    assert partial == name
+
+
+def test_resolve_segment_at_cursor_middle_segment():
+    """Cursor on a middle segment returns the partial path up to that segment."""
+    # '.model_1.part_1.marker_2': '.part_1' starts at index 8
+    name = ".model_1.part_1.marker_2"
+    val_start = 0
+    character = 10  # inside 'part_1' (after the dot at index 8)
+    partial, col_s, col_e = srv._resolve_segment_at_cursor(name, val_start, character)
+    assert partial == ".model_1.part_1"
+    assert col_s == 8  # dot of '.part_1' is at val_start + 8
+    assert col_e == 15
+
+
+def test_resolve_segment_at_cursor_first_segment():
+    """Cursor on the first segment returns only that partial path."""
+    name = ".model_1.part_1.marker_2"
+    val_start = 5  # the value starts at col 5 in the document
+    character = 7  # inside 'model_1' (col 5 is the dot, col 6 is 'm', col 7 is 'o')
+    partial, col_s, col_e = srv._resolve_segment_at_cursor(name, val_start, character)
+    assert partial == ".model_1"
+    assert col_s == 5  # dot of '.model_1' is at val_start=5
+
+
+def test_resolve_segment_at_cursor_non_dotted_name():
+    """Names without a leading dot are handled correctly."""
+    # "model_1.part_1": 'model_1' is at val_start=0, 'part_1' starts at val_start+8
+    name = "model_1.part_1"
+    val_start = 0
+    character = 1  # inside 'model_1' (not at index 0, since index 0 is outside hit region)
+    partial, col_s, col_e = srv._resolve_segment_at_cursor(name, val_start, character)
+    assert partial.endswith("model_1")
+    # col_s must be >= 0 (no negative column values for non-dotted names)
+    assert col_s >= 0, f"col_s must be non-negative, got {col_s}"
+    assert col_e > col_s
+    assert col_s == 0   # first segment of non-dotted name starts at val_start=0
+    assert col_e == 7   # 'model_1' is 7 chars
+
+
+# ---------------------------------------------------------------------------
+# _get_paren_object_at_position
+# ---------------------------------------------------------------------------
+
+def test_get_paren_object_at_position_finds_name():
+    """(.model.part.marker.location_global) resolves to an object name at cursor."""
+    from adams_cmd_lsp.symbols import build_symbol_table
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    text = (
+        "model create model_name=.m\n"
+        "part create rigid_body name_and_position part_name=.m.p\n"
+        "marker create marker_name=.m.p.mkr\n"
+        "marker create marker_name=.m.p.mkr2 "
+        "location=(.m.p.mkr.location_global)\n"
+    )
+    schema = Schema.load()
+    from adams_cmd_lsp.parser import parse as _parse
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    symbols = build_symbol_table(stmts, schema)
+
+    line3 = text.splitlines()[3]
+    # Cursor inside '.m.p.mkr.location_global' in the location arg — find the occurrence
+    # inside the parenthesized expression (skip the first ".m.p.mkr" in marker_name=)
+    paren_start = line3.index("(.m.p.mkr") + 1  # column of the dot in ".m.p.mkr.location_global"
+    result = srv._get_paren_object_at_position(stmts, symbols, line=3, character=paren_start + 4)
+    assert result is not None, "Should find object in parenthesized expression"
+    kind, name, v_line, v_col, v_end_col = result
+    assert kind == "reference"
+    # The returned name should be '.m.p.mkr' (the last registered object before .location_global)
+    assert ".m.p" in name
+
+
+def test_get_paren_object_at_position_returns_none_outside_paren():
+    """Non-parenthesized values are not matched."""
+    from adams_cmd_lsp.symbols import build_symbol_table
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    text = "marker create marker_name=.m.p.mkr location=0,0,0\n"
+    schema = Schema.load()
+    from adams_cmd_lsp.parser import parse as _parse
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    symbols = build_symbol_table(stmts, schema)
+    result = srv._get_paren_object_at_position(stmts, symbols, line=0, character=3)
+    assert result is None
+
+
+def test_get_paren_object_at_position_ignores_eval_expressions():
+    """Values containing eval() are not matched (handled by _get_eval_object_at_position)."""
+    from adams_cmd_lsp.symbols import build_symbol_table
+    from adams_cmd_lsp.object_index import _resolve_command_keys
+    text = (
+        "variable create variable_name=.m.v real_value=300\n"
+        "marker create marker_name=.m.p.mkr location=(eval(.m.v, 0, 0))\n"
+    )
+    schema = Schema.load()
+    from adams_cmd_lsp.parser import parse as _parse
+    stmts = _parse(text)
+    _resolve_command_keys(stmts, schema)
+    symbols = build_symbol_table(stmts, schema)
+    line1 = text.splitlines()[1]
+    col = line1.index(".m.v")
+    result = srv._get_paren_object_at_position(stmts, symbols, line=1, character=col)
+    assert result is None, "eval() expressions should not be matched by _get_paren_object_at_position"
+
+
+# ---------------------------------------------------------------------------
+# goto_definition — per-segment navigation
+# ---------------------------------------------------------------------------
+
+def test_goto_definition_per_segment_navigates_to_model(monkeypatch):
+    """Ctrl+Click on 'model_1' segment in a full path navigates to the model definition."""
+    uri = "file:///test.cmd"
+    text = (
+        "model create model_name=.model_1\n"
+        "part create rigid_body name_and_position part_name=.model_1.part_1\n"
+        "marker create marker_name=.model_1.part_1.marker_1\n"
+        "marker create marker_name=.model_1.part_1.marker_2 "
+        "location=0,0,0\n"
+        "geometry create shape block block_name=.model_1.part_1.box_1 "
+        "corner_marker=.model_1.part_1.marker_1 diag_corner_coords=1,1,1\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._object_index = srv.ObjectIndex()
+    srv._doc_cache.pop(uri, None)
+
+    # Cursor on 'model_1' in the corner_marker arg on the last line
+    last_line = text.splitlines()[4]
+    col = last_line.index("corner_marker=") + len("corner_marker=") + 1  # inside 'model_1'
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=4, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Should navigate to model definition"
+    assert len(result) == 1
+    link = result[0]
+    # Target must be line 0 (the model create)
+    assert link.target_range.start.line == 0
+
+
+def test_goto_definition_per_segment_navigates_to_part(monkeypatch):
+    """Ctrl+Click on 'part_1' segment navigates to the part create line."""
+    uri = "file:///test.cmd"
+    text = (
+        "model create model_name=.model_1\n"
+        "part create rigid_body name_and_position part_name=.model_1.part_1\n"
+        "marker create marker_name=.model_1.part_1.marker_1\n"
+        "geometry create shape block block_name=.model_1.part_1.box_1 "
+        "corner_marker=.model_1.part_1.marker_1 diag_corner_coords=1,1,1\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._object_index = srv.ObjectIndex()
+    srv._doc_cache.pop(uri, None)
+
+    last_line = text.splitlines()[3]
+    cm_val_start = last_line.index("corner_marker=") + len("corner_marker=")
+    # column inside 'part_1' within '.model_1.part_1.marker_1'
+    # '.model_1' is 8 chars, so 'part_1' starts at cm_val_start + 9
+    col = cm_val_start + 9 + 1  # a character inside 'part_1'
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=3, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Should navigate to part definition"
+    assert len(result) == 1
+    link = result[0]
+    assert link.target_range.start.line == 1
+
+
+# ---------------------------------------------------------------------------
+# goto_definition — $variable in variable create
+# ---------------------------------------------------------------------------
+
+def test_goto_definition_dollar_var_in_variable_create(monkeypatch):
+    """goto_definition on a $var in the variable_name arg of 'variable create' works."""
+    uri = "file:///test.mac"
+    text = (
+        "!USER_ENTERED_COMMAND demo_macro\n"
+        "!$model:t=model,d=.m\n"
+        "!END_OF_PARAMETERS\n"
+        "variable create variable_name=$model.arm1_len real_value=300.0\n"
+        "marker create marker_name=$model.part.mkr location=(eval($model.arm1_len,0,0))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._object_index = srv.ObjectIndex()
+    srv._macro_index = srv.MacroIndex()
+    srv._doc_cache.pop(uri, None)
+
+    line3 = text.splitlines()[3]
+    # Cursor on '$model.arm1_len' in the eval on line 4
+    line4 = text.splitlines()[4]
+    col = line4.index("$model.arm1_len")
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=4, character=col + 7),
+    )
+    result = srv.goto_definition(params)
+    # Should navigate to line 3 (variable create) not to the !$model header
+    assert result is not None, "Should navigate to variable create definition"
+    assert len(result) == 1
+    link = result[0]
+    assert link.target_range.start.line == 3, (
+        f"Expected line 3 (variable create), got line {link.target_range.start.line}"
+    )
+
+
+def test_goto_definition_dollar_var_origin_selection_is_segment(monkeypatch):
+    """origin_selection_range is limited to the cursor's segment, not the full token.
+
+    When the cursor is on 'arm1_len' in '$model.arm1_len', the underline
+    (origin_selection_range) should cover only 'arm1_len', not '$model.arm1_len'.
+    """
+    uri = "file:///test.mac"
+    text = (
+        "!USER_ENTERED_COMMAND demo_macro\n"
+        "!$model:t=model,d=.m\n"
+        "!END_OF_PARAMETERS\n"
+        "variable create variable_name=$model.arm1_len real_value=300.0\n"
+        "marker create marker_name=$model.part.mkr location=(eval($model.arm1_len,0,0))\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._object_index = srv.ObjectIndex()
+    srv._macro_index = srv.MacroIndex()
+    srv._doc_cache.pop(uri, None)
+
+    line4 = text.splitlines()[4]
+
+    # -- case 1: cursor on 'arm1_len' (second segment) --
+    tok_start = line4.index("$model.arm1_len")
+    # '$model.' is 7 chars; cursor lands on 'a' in 'arm1_len'
+    seg2_cursor = tok_start + 7
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=4, character=seg2_cursor),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None and len(result) == 1
+    link = result[0]
+    osr = link.origin_selection_range
+    underlined = line4[osr.start.character:osr.end.character]
+    assert underlined == "arm1_len", (
+        f"Expected underline 'arm1_len', got '{underlined}'"
+    )
+
+    # -- case 2: cursor on '$model' (first segment) --
+    seg1_cursor = tok_start  # on the '$'
+
+    params2 = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=4, character=seg1_cursor),
+    )
+    result2 = srv.goto_definition(params2)
+    assert result2 is not None and len(result2) == 1
+    link2 = result2[0]
+    osr2 = link2.origin_selection_range
+    underlined2 = line4[osr2.start.character:osr2.end.character]
+    assert underlined2 == "$model", (
+        f"Expected underline '$model', got '{underlined2}'"
+    )
+
+
+def test_goto_definition_dollar_var_macro_param_fallback_segment_underline(monkeypatch):
+    """origin_selection_range is segment-only in the macro param fallback branch.
+
+    When a $variable token is only defined as a macro parameter header comment
+    (no variable create/set), goto_definition should fall back to the macro
+    param definition and still underline only the segment under the cursor.
+    """
+    uri = "file:///test.mac"
+    # NOTE: no 'variable create' for $model — only the !$model header param.
+    text = (
+        "!USER_ENTERED_COMMAND demo_macro\n"
+        "!$model:t=model,d=.m\n"
+        "!END_OF_PARAMETERS\n"
+        "marker create marker_name=$model.part.mkr location=0,0,0\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._object_index = srv.ObjectIndex()
+    srv._macro_index = srv.MacroIndex()
+    srv._doc_cache.pop(uri, None)
+
+    line3 = text.splitlines()[3]
+    tok_start = line3.index("$model.part.mkr")
+
+    # Cursor on '$model' (first segment) — fallback should find !$model header
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=3, character=tok_start),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None and len(result) == 1, "Should navigate to macro param definition"
+    link = result[0]
+    # Target must be line 1 (the !$model header line)
+    assert link.target_range.start.line == 1, (
+        f"Expected macro param line 1, got {link.target_range.start.line}"
+    )
+    # origin_selection_range must cover only '$model', not '$model.part.mkr'
+    osr = link.origin_selection_range
+    underlined = line3[osr.start.character:osr.end.character]
+    assert underlined == "$model", (
+        f"Expected underline '$model', got '{underlined}'"
+    )
