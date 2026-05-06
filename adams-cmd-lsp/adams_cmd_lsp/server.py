@@ -149,19 +149,21 @@ def _get_dollar_var_segment_at_position(line_text: str, character: int):
 
 
 def _find_variable_def_at_position(statements, schema, line: int, character: int):
-    """If cursor is on the variable_name arg of a 'variable set' command, return it.
+    """If cursor is on the variable_name arg of a variable set/create command, return it.
 
     Returns (var_name_including_dollar, v_line, v_col, v_end_col) or None.
     """
+    _VAR_DEF_COMMANDS = {"variable set", "variable create"}
     for stmt in statements:
         if stmt.is_comment or stmt.is_blank or stmt.is_control_flow:
             continue
         if not (stmt.line_start <= line <= stmt.line_end):
             continue
-        if (stmt.resolved_command_key or stmt.command_key) != "variable set":
+        cmd_key = stmt.resolved_command_key or stmt.command_key
+        if cmd_key not in _VAR_DEF_COMMANDS:
             continue
         for arg in stmt.arguments:
-            canonical = schema.resolve_argument_name("variable set", arg.name)
+            canonical = schema.resolve_argument_name(cmd_key, arg.name)
             if canonical != "variable_name":
                 continue
             val = arg.value
