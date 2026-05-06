@@ -4089,6 +4089,86 @@ def test_goto_def_spring_J_does_not_link_to_arm2_name(monkeypatch):
             )
 
 
+def test_goto_def_literal_suffix_pivot_I_does_not_link_to_variable(monkeypatch):
+    """Cursor on 'pivot_I' in '$model.$arm1_name.pivot_I' must NOT link to $arm1_name.
+
+    'pivot_I' is a literal object name suffix, not a $variable reference.
+    The $variable handler must skip it because cursor_prefix='pivot_I' (no '$').
+    """
+    text = (
+        "!USER_ENTERED_COMMAND demo\n"                       # line 0
+        "!$model:t=model,d=.m\n"                             # line 1
+        "!$arm1_name:t=string,d=arm1\n"                      # line 2
+        "!END_OF_PARAMETERS\n"                               # line 3
+        "marker create marker_name=$model.$arm1_name.pivot_I "
+        "location=0, 0, 0\n"                                 # line 4
+        "joint create joint_name=$model.pivot "
+        "i_marker=$model.$arm1_name.pivot_I\n"               # line 5
+    )
+    uri = "file:///test_pivot.mac"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._object_index = srv.ObjectIndex()
+    srv._macro_index = srv.MacroIndex()
+    srv._doc_cache.pop(uri, None)
+
+    line5 = text.splitlines()[5]
+    # Cursor on 'pivot_I' in i_marker=$model.$arm1_name.pivot_I
+    col = line5.rindex("pivot_I")
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=5, character=col),
+    )
+    result = srv.goto_definition(params)
+    # pivot_I is a literal suffix — must NOT navigate to !$arm1_name (line 2)
+    if result is not None:
+        for link in result:
+            assert link.target_range.start.line != 2, (
+                "pivot_I incorrectly navigated to !$arm1_name definition"
+            )
+
+
+def test_find_references_literal_suffix_does_not_resolve(monkeypatch):
+    """Shift+F12 on 'pivot_I' in '$model.$arm1_name.pivot_I' must NOT return
+    references for $arm1_name."""
+    text = (
+        "!USER_ENTERED_COMMAND demo\n"                       # line 0
+        "!$model:t=model,d=.m\n"                             # line 1
+        "!$arm1_name:t=string,d=arm1\n"                      # line 2
+        "!END_OF_PARAMETERS\n"                               # line 3
+        "marker create marker_name=$model.$arm1_name.pivot_I "
+        "location=0, 0, 0\n"                                 # line 4
+        "joint create joint_name=$model.pivot "
+        "i_marker=$model.$arm1_name.pivot_I\n"               # line 5
+    )
+    uri = "file:///test_pivot_refs.mac"
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._object_index = srv.ObjectIndex()
+    srv._macro_index = srv.MacroIndex()
+    srv._doc_cache.pop(uri, None)
+
+    line5 = text.splitlines()[5]
+    col = line5.rindex("pivot_I")
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=5, character=col),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result = srv.find_references(params)
+    # Should NOT return references for $arm1_name
+    if result is not None:
+        ref_lines = [loc.range.start.line for loc in result]
+        # Line 2 is !$arm1_name — must not appear
+        assert 2 not in ref_lines, (
+            "pivot_I references incorrectly included !$arm1_name definition"
+        )
+
+
 def test_goto_def_dollar_arm2_name_links_to_param(monkeypatch):
     """Cursor on '$arm2_name' in '$model.$arm2_name.spring_J' navigates to !$arm2_name."""
     uri = _setup_segment_resolution(monkeypatch)
