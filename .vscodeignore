@@ -73,3 +73,22 @@ adams-view-mcp-server/node_modules/**
 adams-view-mcp-server/tsconfig.json
 !adams-view-mcp-server/dist/**
 !adams-view-mcp-server/package.json
+
+# adams_skills submodule: exclude dev-only content, keep skill content
+resources/adams_skills/.github/**
+resources/adams_skills/.vscode/**
+resources/adams_skills/.agents/**
+resources/adams_skills/.playwright-mcp/**
+resources/adams_skills/.git/**
+resources/adams_skills/dist/**
+resources/adams_skills/adams-skills-api/**
+resources/adams_skills/*-workspace/**
+resources/adams_skills/install.ps1
+resources/adams_skills/install.sh
+resources/adams_skills/AGENTS.md
+resources/adams_skills/CLAUDE.md
+resources/adams_skills/README.md
+resources/adams_skills/LICENSE
+resources/adams_skills/.gitignore
+resources/adams_skills/.gitmodules
+resources/adams_skills/skills/*/evals/**

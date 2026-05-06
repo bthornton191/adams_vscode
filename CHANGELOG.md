@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [1.17.0 (May 6th 2026)](#1170-may-6th-2026)
   - [1.16.0 (May 5th 2026)](#1160-may-5th-2026)
   - [1.15.0 (April 20th 2026)](#1150-april-20th-2026)
   - [1.14.3 (April 17th 2026)](#1143-april-17th-2026)
@@ -65,6 +66,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 1.17.0 (May 6th 2026)
+
+- **Added** Bundled 5 Copilot agent skills (adams-cmd-model-builder, adams-python-model-builder, adams-flex, adams-simulation-debugger, adams-subroutine-writer) via `contributes.chatSkills`. Skills are automatically available in Copilot Chat for all users who install the extension.
 
 ## 1.16.0 (May 5th 2026)
 

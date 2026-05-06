@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "1.16.0",
+    "version": "1.17.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -134,6 +134,23 @@
             {
                 "id": "msc-adams.adamsViewMcp",
                 "label": "Adams View (bundled with MSC Adams)"
+            }
+        ],
+        "chatSkills": [
+            {
+                "path": "./resources/adams_skills/skills/adams-cmd-model-builder/SKILL.md"
+            },
+            {
+                "path": "./resources/adams_skills/skills/adams-python-model-builder/SKILL.md"
+            },
+            {
+                "path": "./resources/adams_skills/skills/adams-flex/SKILL.md"
+            },
+            {
+                "path": "./resources/adams_skills/skills/adams-simulation-debugger/SKILL.md"
+            },
+            {
+                "path": "./resources/adams_skills/skills/adams-subroutine-writer/SKILL.md"
             }
         ],
         "languages": [
