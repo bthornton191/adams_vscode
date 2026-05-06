@@ -714,4 +714,107 @@ suite("cmd_completion_provider", () => {
 
         assert.deepStrictEqual(completions, [], "Expected no completions on !$ lines");
     });
+
+    // ── Abbreviation-aware completion via command_tree ────────────────────────
+
+    const ABBREV_COMMAND_TREE = {
+        children: {
+            force: {
+                min_prefix: 4,
+                children: {
+                    create: {
+                        min_prefix: 2,
+                        children: {
+                            element_like: {
+                                min_prefix: 1,
+                                children: {
+                                    translational_spring_damper: {
+                                        min_prefix: 1,
+                                        children: {},
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    };
+
+    const TSD_COMMANDS = {
+        "force create element_like translational_spring_damper": [
+            "spring_damper_name",
+            "damping",
+            "stiffness",
+            "displacement_at_preload",
+            "i_marker_name",
+            "j_marker_name",
+        ],
+    };
+
+    test("should return argument completions for abbreviated command on continuation line", () => {
+        const function_names = new Map([
+            ["displacement", "displacement doc"],
+            ["damping_coeff", "damping_coeff doc"],
+        ]);
+        const provider = cmd_completion_provider(
+            function_names,
+            TSD_COMMANDS,
+            {},
+            new Map(),
+            null,
+            ABBREV_COMMAND_TREE,
+        );
+
+        // Mirrors linked_refs.mac: 'element' is an abbreviation of 'element_like'.
+        // Several args already used; cursor is at bare 'd' on the last continuation line.
+        const lines = [
+            "force create element translational_spring_damper  &",
+            "    spring_damper_name = $model.tsd1  &",
+            "    i_marker_name = $model.arm1.tip  &",
+            "    j_marker_name = $model.arm2.spring_J  &",
+            "    stiffness = (eval($model.stiffness))  &",
+            "    damping = (eval($model.damping))  &",
+            "    d",
+        ];
+        const localPosition = new vscode.Position(6, lines[6].length);
+        const doc = makeDocument("d", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const kinds = completions.map((c) => c.kind);
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            !kinds.includes(vscode.CompletionItemKind.Function),
+            "Should not return function completions when typing arg name for abbreviated command",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("displacement_at_preload")),
+            "Expected 'displacement_at_preload' argument completion for partial 'd'",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("damping")),
+            "'damping' should be excluded (already used on a previous line)",
+        );
+    });
+
+    test("should fall back to function completions when command_tree is null for abbreviated command", () => {
+        const function_names = new Map([["displacement", "displacement doc"]]);
+        // No command_tree passed — abbreviated 'element' won't resolve
+        const provider = cmd_completion_provider(function_names, TSD_COMMANDS);
+
+        const lines = [
+            "force create element translational_spring_damper  &",
+            "    spring_damper_name = $model.tsd1  &",
+            "    d",
+        ];
+        const localPosition = new vscode.Position(2, lines[2].length);
+        const doc = makeDocument("d", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const kinds = completions.map((c) => c.kind);
+        assert.ok(
+            kinds.includes(vscode.CompletionItemKind.Function),
+            "Without command_tree, abbreviated command should fall back to function completions",
+        );
+    });
 });
