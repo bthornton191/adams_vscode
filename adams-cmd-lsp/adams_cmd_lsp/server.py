@@ -1314,18 +1314,41 @@ def goto_definition(params: types.DefinitionParams):
             # e.g. cursor on '$model' in '$model.arm2_len' resolves '$model'
             # (the macro param) rather than the longer variable definition.
             cursor_prefix = full_token[:seg_end_col - tok_col]
-            def_r = _find_variable_definition_in_statements(statements, _schema, cursor_prefix)
-            if def_r is not None:
-                matched_name, def_line, def_col, def_end_col = def_r
-                # Only navigate if the match covers the cursor's segment
-                if matched_name.lower() == cursor_prefix.lower():
+            # Only attempt $variable resolution if the cursor prefix starts
+            # with '$'.  Literal suffixes like 'pivot_I' in '$arm1_name.pivot_I'
+            # are object name parts, not variable references.
+            if cursor_prefix.startswith('$'):
+                def_r = _find_variable_definition_in_statements(statements, _schema, cursor_prefix)
+                if def_r is not None:
+                    matched_name, def_line, def_col, def_end_col = def_r
+                    # Only navigate if the match covers the cursor's segment
+                    if matched_name.lower() == cursor_prefix.lower():
+                        origin_selection = types.Range(
+                            start=types.Position(line=line, character=seg_col),
+                            end=types.Position(line=line, character=seg_end_col),
+                        )
+                        target_range = types.Range(
+                            start=types.Position(line=def_line, character=def_col),
+                            end=types.Position(line=def_line, character=def_end_col),
+                        )
+                        return [types.LocationLink(
+                            target_uri=uri,
+                            target_range=target_range,
+                            target_selection_range=target_range,
+                            origin_selection_range=origin_selection,
+                        )]
+
+                # Fallback: check macro parameter definitions (exact prefix only)
+                mac_param_defs = _find_macro_param_defs_in_text(text)
+                if cursor_prefix.lower() in mac_param_defs:
+                    p_line, p_col, p_end_col = mac_param_defs[cursor_prefix.lower()]
                     origin_selection = types.Range(
                         start=types.Position(line=line, character=seg_col),
                         end=types.Position(line=line, character=seg_end_col),
                     )
                     target_range = types.Range(
-                        start=types.Position(line=def_line, character=def_col),
-                        end=types.Position(line=def_line, character=def_end_col),
+                        start=types.Position(line=p_line, character=p_col),
+                        end=types.Position(line=p_line, character=p_end_col),
                     )
                     return [types.LocationLink(
                         target_uri=uri,
@@ -1333,25 +1356,6 @@ def goto_definition(params: types.DefinitionParams):
                         target_selection_range=target_range,
                         origin_selection_range=origin_selection,
                     )]
-
-            # Fallback: check macro parameter definitions (exact prefix only)
-            mac_param_defs = _find_macro_param_defs_in_text(text)
-            if cursor_prefix.lower() in mac_param_defs:
-                p_line, p_col, p_end_col = mac_param_defs[cursor_prefix.lower()]
-                origin_selection = types.Range(
-                    start=types.Position(line=line, character=seg_col),
-                    end=types.Position(line=line, character=seg_end_col),
-                )
-                target_range = types.Range(
-                    start=types.Position(line=p_line, character=p_col),
-                    end=types.Position(line=p_line, character=p_end_col),
-                )
-                return [types.LocationLink(
-                    target_uri=uri,
-                    target_range=target_range,
-                    target_selection_range=target_range,
-                    origin_selection_range=origin_selection,
-                )]
 
     return None
 
@@ -2077,12 +2081,33 @@ def find_references(params: types.ReferenceParams):
             if var_seg is not None:
                 full_token, seg_col, seg_end_col, tok_col, tok_end_col = var_seg
                 cursor_prefix = full_token[:seg_end_col - tok_col]
-                def_r = _find_variable_definition_in_statements(statements, _schema, cursor_prefix)
-                if def_r is not None:
-                    matched_name, def_line, def_col, def_end_col = def_r
-                    if matched_name.lower() == cursor_prefix.lower():
-                        ref_locs = _find_variable_references_in_text(text, matched_name)
-                        locations = [
+                # Only attempt $variable resolution if the prefix starts with '$'.
+                # Literal suffixes like 'pivot_I' are not variable references.
+                if cursor_prefix.startswith('$'):
+                    def_r = _find_variable_definition_in_statements(statements, _schema, cursor_prefix)
+                    if def_r is not None:
+                        matched_name, def_line, def_col, def_end_col = def_r
+                        if matched_name.lower() == cursor_prefix.lower():
+                            ref_locs = _find_variable_references_in_text(text, matched_name)
+                            locations = [
+                                types.Location(
+                                    uri=uri,
+                                    range=types.Range(
+                                        start=types.Position(line=rl, character=rc),
+                                        end=types.Position(line=rl, character=re_),
+                                    ),
+                                )
+                                for rl, rc, re_ in ref_locs
+                                if include_declaration or not (rl == def_line and rc == def_col)
+                            ]
+                            return locations
+
+                    # Fallback: check macro parameter definitions (exact prefix only)
+                    mac_param_defs = _find_macro_param_defs_in_text(text)
+                    if cursor_prefix.lower() in mac_param_defs:
+                        p_line, p_col, p_end_col = mac_param_defs[cursor_prefix.lower()]
+                        ref_locs = _find_variable_references_in_text(text, cursor_prefix)
+                        return [
                             types.Location(
                                 uri=uri,
                                 range=types.Range(
@@ -2091,26 +2116,8 @@ def find_references(params: types.ReferenceParams):
                                 ),
                             )
                             for rl, rc, re_ in ref_locs
-                            if include_declaration or not (rl == def_line and rc == def_col)
+                            if include_declaration or not (rl == p_line and rc == p_col)
                         ]
-                        return locations
-
-                # Fallback: check macro parameter definitions (exact prefix only)
-                mac_param_defs = _find_macro_param_defs_in_text(text)
-                if cursor_prefix.lower() in mac_param_defs:
-                    p_line, p_col, p_end_col = mac_param_defs[cursor_prefix.lower()]
-                    ref_locs = _find_variable_references_in_text(text, cursor_prefix)
-                    return [
-                        types.Location(
-                            uri=uri,
-                            range=types.Range(
-                                start=types.Position(line=rl, character=rc),
-                                end=types.Position(line=rl, character=re_),
-                            ),
-                        )
-                        for rl, rc, re_ in ref_locs
-                        if include_declaration or not (rl == p_line and rc == p_col)
-                    ]
         else:
             # Cursor is on the definition site — return all references
             var_name, v_line, v_col, v_end_col = var_def
