@@ -4007,10 +4007,11 @@ _SEGMENT_RESOLUTION_TEXT = (
     "!$model:t=model,d=.m\n"                             # line 1
     "!$arm2_name:t=string,d=arm2\n"                      # line 2
     "!END_OF_PARAMETERS\n"                               # line 3
-    "variable create variable_name=$model.arm2_len real_value=300.0\n"  # line 4
-    "variable create variable_name=$model.arm_mass real_value=0.5\n"    # line 5
+    "variable create variable_name=$model.arm1_len real_value=300.0\n"  # line 4
+    "variable create variable_name=$model.arm2_len real_value=300.0\n"  # line 5
+    "variable create variable_name=$model.arm_mass real_value=0.5\n"    # line 6
     "marker create marker_name=$model.$arm2_name.spring_J "
-    "location=(eval($model.arm1_len + $model.arm2_len * 0.5)), 0, 0\n"  # line 6
+    "location=(eval($model.arm1_len + $model.arm2_len * 0.5)), 0, 0\n"  # line 7
 )
 
 
@@ -4028,20 +4029,20 @@ def _setup_segment_resolution(monkeypatch, uri="file:///test.mac"):
 def test_goto_def_dollar_model_in_dollar_model_dot_arm2_len(monkeypatch):
     """Cursor on '$model' in '$model.arm2_len' should navigate to !$model param, not variable."""
     uri = _setup_segment_resolution(monkeypatch)
-    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
-    # Find '$model.arm2_len' in the eval on line 6
-    tok_start = line6.index("$model.arm2_len")
+    line7 = _SEGMENT_RESOLUTION_TEXT.splitlines()[7]
+    # Find '$model.arm2_len' in the eval on line 7
+    tok_start = line7.index("$model.arm2_len")
     # Cursor on '$model' (first segment)
     col = tok_start  # on the '$'
 
     params = types.DefinitionParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
-        position=types.Position(line=6, character=col),
+        position=types.Position(line=7, character=col),
     )
     result = srv.goto_definition(params)
     assert result is not None, "Should navigate somewhere for $model"
     link = result[0]
-    # Must navigate to line 1 (!$model param), NOT line 4 (variable create)
+    # Must navigate to line 1 (!$model param), NOT line 5 (variable create)
     assert link.target_range.start.line == 1, (
         f"Expected !$model on line 1, got line {link.target_range.start.line}"
     )
@@ -4050,34 +4051,34 @@ def test_goto_def_dollar_model_in_dollar_model_dot_arm2_len(monkeypatch):
 def test_goto_def_arm2_len_in_dollar_model_dot_arm2_len(monkeypatch):
     """Cursor on 'arm2_len' in '$model.arm2_len' should navigate to variable create."""
     uri = _setup_segment_resolution(monkeypatch)
-    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
-    tok_start = line6.index("$model.arm2_len")
+    line7 = _SEGMENT_RESOLUTION_TEXT.splitlines()[7]
+    tok_start = line7.index("$model.arm2_len")
     # Cursor on 'arm2_len' — offset past '$model.' (7 chars)
     col = tok_start + 7
 
     params = types.DefinitionParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
-        position=types.Position(line=6, character=col),
+        position=types.Position(line=7, character=col),
     )
     result = srv.goto_definition(params)
     assert result is not None, "Should navigate to variable definition"
     link = result[0]
-    # Must navigate to line 4 (variable create variable_name=$model.arm2_len)
-    assert link.target_range.start.line == 4, (
-        f"Expected variable create on line 4, got line {link.target_range.start.line}"
+    # Must navigate to line 5 (variable create variable_name=$model.arm2_len)
+    assert link.target_range.start.line == 5, (
+        f"Expected variable create on line 5, got line {link.target_range.start.line}"
     )
 
 
 def test_goto_def_spring_J_does_not_link_to_arm2_name(monkeypatch):
     """Cursor on 'spring_J' in '$model.$arm2_name.spring_J' must NOT link to $arm2_name."""
     uri = _setup_segment_resolution(monkeypatch)
-    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    line7 = _SEGMENT_RESOLUTION_TEXT.splitlines()[7]
     # 'spring_J' in the marker_name value
-    col = line6.index("spring_J")
+    col = line7.index("spring_J")
 
     params = types.DefinitionParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
-        position=types.Position(line=6, character=col),
+        position=types.Position(line=7, character=col),
     )
     result = srv.goto_definition(params)
     # spring_J is a literal suffix — should NOT navigate to !$arm2_name (line 2)
@@ -4091,13 +4092,13 @@ def test_goto_def_spring_J_does_not_link_to_arm2_name(monkeypatch):
 def test_goto_def_dollar_arm2_name_links_to_param(monkeypatch):
     """Cursor on '$arm2_name' in '$model.$arm2_name.spring_J' navigates to !$arm2_name."""
     uri = _setup_segment_resolution(monkeypatch)
-    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    line7 = _SEGMENT_RESOLUTION_TEXT.splitlines()[7]
     # '$arm2_name' is in '$model.$arm2_name.spring_J'
-    col = line6.index("$arm2_name")
+    col = line7.index("$arm2_name")
 
     params = types.DefinitionParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
-        position=types.Position(line=6, character=col),
+        position=types.Position(line=7, character=col),
     )
     result = srv.goto_definition(params)
     assert result is not None, "Should navigate for $arm2_name"
@@ -4110,14 +4111,14 @@ def test_goto_def_dollar_arm2_name_links_to_param(monkeypatch):
 def test_goto_def_dollar_model_in_concatenated_token_links_to_param(monkeypatch):
     """Cursor on '$model' in '$model.$arm2_name.spring_J' navigates to !$model."""
     uri = _setup_segment_resolution(monkeypatch)
-    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    line7 = _SEGMENT_RESOLUTION_TEXT.splitlines()[7]
     # '$model' is the first part of 'marker_name=$model.$arm2_name.spring_J'
-    marker_name_start = line6.index("$model.$arm2_name")
+    marker_name_start = line7.index("$model.$arm2_name")
     col = marker_name_start  # on the '$'
 
     params = types.DefinitionParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
-        position=types.Position(line=6, character=col),
+        position=types.Position(line=7, character=col),
     )
     result = srv.goto_definition(params)
     assert result is not None, "Should navigate for $model"
@@ -4140,22 +4141,63 @@ def test_regex_does_not_include_trailing_dot_before_dollar():
 def test_find_references_dollar_model_segment_finds_param_refs(monkeypatch):
     """Find References on '$model' segment should find $model param references, not $model.arm2_len."""
     uri = _setup_segment_resolution(monkeypatch)
-    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    line7 = _SEGMENT_RESOLUTION_TEXT.splitlines()[7]
     # Cursor on '$model' in the eval part '$model.arm2_len'
-    tok_start = line6.index("$model.arm2_len")
+    tok_start = line7.index("$model.arm2_len")
     col = tok_start
 
     params = types.ReferenceParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
-        position=types.Position(line=6, character=col),
+        position=types.Position(line=7, character=col),
         context=types.ReferenceContext(include_declaration=True),
     )
     result = srv.find_references(params)
     assert result is not None, "Should find references for $model"
     # References should be for '$model' (the macro param) — line 1 contains '!$model'
-    # and line 6 uses '$model.$arm2_name...' and '$model.arm2_len', etc.
+    # and line 7 uses '$model.$arm2_name...' and '$model.arm2_len', etc.
     # The key point: the reference locations should span '$model' only,
     # NOT the longer '$model.arm2_len' or '$model.arm_mass'
     ref_lines = [loc.range.start.line for loc in result]
-    # Should include line 6 references to bare $model (in $model.$arm2_name)
-    assert 6 in ref_lines
+    # Should include line 7 references to bare $model (in $model.$arm2_name)
+    assert 7 in ref_lines
+
+
+def test_goto_def_variable_create_definition_site_shows_references(monkeypatch):
+    """Ctrl+Click on 'arm1_len' in 'variable create variable_name=$model.arm1_len'
+    should return references (inverse navigation from definition site)."""
+    uri = _setup_segment_resolution(monkeypatch)
+    line4 = _SEGMENT_RESOLUTION_TEXT.splitlines()[4]
+    # Cursor on 'arm1_len' in 'variable_name=$model.arm1_len'
+    col = line4.index("arm1_len")
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=4, character=col),
+    )
+    result = srv.goto_definition(params)
+    # Should return references to $model.arm1_len from line 7 (in the eval)
+    assert result is not None, "Definition site should show references"
+    target_lines = [link.target_range.start.line for link in result]
+    assert 7 in target_lines, (
+        f"Expected reference on line 7, got targets on lines {target_lines}"
+    )
+
+
+def test_find_references_variable_create_definition_site(monkeypatch):
+    """Shift+F12 on 'arm1_len' in 'variable create variable_name=$model.arm1_len'
+    finds references across the file."""
+    uri = _setup_segment_resolution(monkeypatch)
+    line4 = _SEGMENT_RESOLUTION_TEXT.splitlines()[4]
+    col = line4.index("arm1_len")
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=4, character=col),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result = srv.find_references(params)
+    assert result is not None, "Should find references for $model.arm1_len"
+    ref_lines = [loc.range.start.line for loc in result]
+    # Line 4 is the definition, line 7 has $model.arm1_len in the eval
+    assert 4 in ref_lines, f"Expected definition line 4 in refs, got {ref_lines}"
+    assert 7 in ref_lines, f"Expected reference line 7 in refs, got {ref_lines}"
