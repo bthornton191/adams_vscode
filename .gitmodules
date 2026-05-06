@@ -2,3 +2,6 @@
 	path = resources/adamspy
 	url = https://github.com/bthornton191/adams-python-stubs
 	branch = master
+[submodule "resources/adams_skills"]
+	path = resources/adams_skills
+	url = https://github.com/bthornton191/adams_skills.git

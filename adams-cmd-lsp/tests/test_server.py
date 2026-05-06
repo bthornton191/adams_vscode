@@ -3235,7 +3235,7 @@ def test_find_variable_references_no_false_positive_longer_name():
 # ---------------------------------------------------------------------------
 
 def test_goto_definition_dollar_var_reference_jumps_to_def(monkeypatch):
-    """Ctrl+Click on $variable reference navigates to its var set definition."""
+    """Ctrl+Click on 'model' segment in $_self.model.name navigates to var set definition."""
     uri = "file:///test.cmd"
     text = (
         "var set var=$_self.model obj=.demo_model\n"
@@ -3247,13 +3247,13 @@ def test_goto_definition_dollar_var_reference_jumps_to_def(monkeypatch):
     srv._macro_registry = None
     srv._doc_cache.pop(uri, None)
 
-    # Cursor on $_self.model in line 2 (inside the eval expression)
+    # Cursor on 'model' segment in $_self.model.name (inside the eval expression)
     line2_text = text.splitlines()[2]
-    col = line2_text.index("$_self.model")  # first occurrence is inside str=(eval(...)
+    col = line2_text.index("$_self.model")  # first occurrence is inside str=(eval(...))
 
     params = types.DefinitionParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
-        position=types.Position(line=2, character=col + 3),  # middle of the token
+        position=types.Position(line=2, character=col + 7),  # on 'model' segment
     )
     result = srv.goto_definition(params)
     assert result is not None and len(result) == 1, (
@@ -3335,7 +3335,7 @@ def test_find_references_dollar_var_from_reference(monkeypatch):
 
     params = types.ReferenceParams(
         text_document=types.TextDocumentIdentifier(uri=uri),
-        position=types.Position(line=2, character=col + 2),
+        position=types.Position(line=2, character=col + 7),  # on 'model' segment
         context=types.ReferenceContext(include_declaration=True),
     )
     result = srv.find_references(params)
@@ -3995,3 +3995,167 @@ def test_goto_definition_dollar_var_macro_param_fallback_segment_underline(monke
     assert underlined == "$model", (
         f"Expected underline '$model', got '{underlined}'"
     )
+
+
+# ---------------------------------------------------------------------------
+# Segment-aware resolution: cursor prefix determines navigation target
+# ---------------------------------------------------------------------------
+
+# Shared fixture for multi-segment resolution tests.
+_SEGMENT_RESOLUTION_TEXT = (
+    "!USER_ENTERED_COMMAND demo\n"                       # line 0
+    "!$model:t=model,d=.m\n"                             # line 1
+    "!$arm2_name:t=string,d=arm2\n"                      # line 2
+    "!END_OF_PARAMETERS\n"                               # line 3
+    "variable create variable_name=$model.arm2_len real_value=300.0\n"  # line 4
+    "variable create variable_name=$model.arm_mass real_value=0.5\n"    # line 5
+    "marker create marker_name=$model.$arm2_name.spring_J "
+    "location=(eval($model.arm1_len + $model.arm2_len * 0.5)), 0, 0\n"  # line 6
+)
+
+
+def _setup_segment_resolution(monkeypatch, uri="file:///test.mac"):
+    """Set up server state for segment resolution tests."""
+    monkeypatch.setattr(srv, "server", _make_mock_doc(_SEGMENT_RESOLUTION_TEXT, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._object_index = srv.ObjectIndex()
+    srv._macro_index = srv.MacroIndex()
+    srv._doc_cache.pop(uri, None)
+    return uri
+
+
+def test_goto_def_dollar_model_in_dollar_model_dot_arm2_len(monkeypatch):
+    """Cursor on '$model' in '$model.arm2_len' should navigate to !$model param, not variable."""
+    uri = _setup_segment_resolution(monkeypatch)
+    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    # Find '$model.arm2_len' in the eval on line 6
+    tok_start = line6.index("$model.arm2_len")
+    # Cursor on '$model' (first segment)
+    col = tok_start  # on the '$'
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=6, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Should navigate somewhere for $model"
+    link = result[0]
+    # Must navigate to line 1 (!$model param), NOT line 4 (variable create)
+    assert link.target_range.start.line == 1, (
+        f"Expected !$model on line 1, got line {link.target_range.start.line}"
+    )
+
+
+def test_goto_def_arm2_len_in_dollar_model_dot_arm2_len(monkeypatch):
+    """Cursor on 'arm2_len' in '$model.arm2_len' should navigate to variable create."""
+    uri = _setup_segment_resolution(monkeypatch)
+    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    tok_start = line6.index("$model.arm2_len")
+    # Cursor on 'arm2_len' — offset past '$model.' (7 chars)
+    col = tok_start + 7
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=6, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Should navigate to variable definition"
+    link = result[0]
+    # Must navigate to line 4 (variable create variable_name=$model.arm2_len)
+    assert link.target_range.start.line == 4, (
+        f"Expected variable create on line 4, got line {link.target_range.start.line}"
+    )
+
+
+def test_goto_def_spring_J_does_not_link_to_arm2_name(monkeypatch):
+    """Cursor on 'spring_J' in '$model.$arm2_name.spring_J' must NOT link to $arm2_name."""
+    uri = _setup_segment_resolution(monkeypatch)
+    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    # 'spring_J' in the marker_name value
+    col = line6.index("spring_J")
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=6, character=col),
+    )
+    result = srv.goto_definition(params)
+    # spring_J is a literal suffix — should NOT navigate to !$arm2_name (line 2)
+    if result is not None:
+        for link in result:
+            assert link.target_range.start.line != 2, (
+                "spring_J incorrectly navigated to !$arm2_name definition"
+            )
+
+
+def test_goto_def_dollar_arm2_name_links_to_param(monkeypatch):
+    """Cursor on '$arm2_name' in '$model.$arm2_name.spring_J' navigates to !$arm2_name."""
+    uri = _setup_segment_resolution(monkeypatch)
+    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    # '$arm2_name' is in '$model.$arm2_name.spring_J'
+    col = line6.index("$arm2_name")
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=6, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Should navigate for $arm2_name"
+    link = result[0]
+    assert link.target_range.start.line == 2, (
+        f"Expected !$arm2_name on line 2, got line {link.target_range.start.line}"
+    )
+
+
+def test_goto_def_dollar_model_in_concatenated_token_links_to_param(monkeypatch):
+    """Cursor on '$model' in '$model.$arm2_name.spring_J' navigates to !$model."""
+    uri = _setup_segment_resolution(monkeypatch)
+    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    # '$model' is the first part of 'marker_name=$model.$arm2_name.spring_J'
+    marker_name_start = line6.index("$model.$arm2_name")
+    col = marker_name_start  # on the '$'
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=6, character=col),
+    )
+    result = srv.goto_definition(params)
+    assert result is not None, "Should navigate for $model"
+    link = result[0]
+    assert link.target_range.start.line == 1, (
+        f"Expected !$model on line 1, got line {link.target_range.start.line}"
+    )
+
+
+def test_regex_does_not_include_trailing_dot_before_dollar():
+    """_DOLLAR_VAR_RE should match '$model' (no trailing dot) when followed by '.$'."""
+    line_text = "$model.$arm2_name.spring_J"
+    matches = [(m.group(0), m.start(), m.end()) for m in srv._DOLLAR_VAR_RE.finditer(line_text)]
+    # Should produce two matches: '$model' and '$arm2_name.spring_J'
+    assert len(matches) == 2, f"Expected 2 matches, got {len(matches)}: {matches}"
+    assert matches[0][0] == "$model", f"First match should be '$model', got '{matches[0][0]}'"
+    assert matches[1][0] == "$arm2_name.spring_J", f"Second match wrong: '{matches[1][0]}'"
+
+
+def test_find_references_dollar_model_segment_finds_param_refs(monkeypatch):
+    """Find References on '$model' segment should find $model param references, not $model.arm2_len."""
+    uri = _setup_segment_resolution(monkeypatch)
+    line6 = _SEGMENT_RESOLUTION_TEXT.splitlines()[6]
+    # Cursor on '$model' in the eval part '$model.arm2_len'
+    tok_start = line6.index("$model.arm2_len")
+    col = tok_start
+
+    params = types.ReferenceParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=6, character=col),
+        context=types.ReferenceContext(include_declaration=True),
+    )
+    result = srv.find_references(params)
+    assert result is not None, "Should find references for $model"
+    # References should be for '$model' (the macro param) — line 1 contains '!$model'
+    # and line 6 uses '$model.$arm2_name...' and '$model.arm2_len', etc.
+    # The key point: the reference locations should span '$model' only,
+    # NOT the longer '$model.arm2_len' or '$model.arm_mass'
+    ref_lines = [loc.range.start.line for loc in result]
+    # Should include line 6 references to bare $model (in $model.$arm2_name)
+    assert 6 in ref_lines
