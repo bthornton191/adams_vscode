@@ -1,7 +1,7 @@
 const path = require("path");
 const vscode = require("vscode");
 const fs = require("fs");
-const child_process = require("child_process");
+const { spawnDetached } = require("./spawn_helper.ts.js");
 
 function open_in_view(context, output_channel, reporter = null) {
     return (uri) => {
@@ -38,23 +38,22 @@ function open_in_view(context, output_channel, reporter = null) {
         );
         if (reporter) reporter.sendTelemetryEvent("open_in_view");
 
-        const child = child_process.spawn(
-            `"${view_launcher}"`,
-            [`"${base_name}"`, `"${adams_launch_command}"`],
-            { cwd: dir_name, shell: true, detached: true, stdio: "ignore" },
+        spawnDetached(
+            view_launcher,
+            [base_name, adams_launch_command],
+            dir_name,
+            (error) => {
+                console.log(`error: ${error.message}`);
+                output_channel.appendLine(
+                    `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
+                );
+                if (reporter)
+                    reporter.sendTelemetryErrorEvent("open_in_view", {
+                        error_type: "process_error",
+                        error_message: error.message,
+                    });
+            },
         );
-        child.unref();
-        child.on("error", (error) => {
-            console.log(`error: ${error.message}`);
-            output_channel.appendLine(
-                `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
-            );
-            if (reporter)
-                reporter.sendTelemetryErrorEvent("open_in_view", {
-                    error_type: "process_error",
-                    error_message: error.message,
-                });
-        });
     };
 }
 exports.open_in_view = open_in_view;

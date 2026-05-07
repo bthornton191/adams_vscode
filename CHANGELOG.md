@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.0.6 (May 7th 2026)](#206-may-7th-2026)
   - [2.0.5 (May 7th 2026)](#205-may-7th-2026)
   - [2.0.4 (May 7th 2026)](#204-may-7th-2026)
   - [2.0.3 (May 7th 2026)](#203-may-7th-2026)
@@ -72,6 +73,11 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.0.6 (May 7th 2026)
+
+- **Fixed** "Open Adams View" and "Open in Adams View" commands flashing multiple CMD windows when launching Adams. The commands now use `wscript.exe` + a temporary VBScript file with `Shell.Run ..., 0` (SW_HIDE), which suppresses console windows for the entire mdi.bat process tree while still allowing the Adams View GUI to appear. This matches the approach used by the MCP server tools.
+- **Improved** VBScript path quoting now uses `Chr(34)` concatenation instead of doubled-quote escaping, eliminating the VBScript "Expected end of statement" error that affected installs with spaces in the Adams path (e.g. `C:\Program Files\...`).
 
 ## 2.0.5 (May 7th 2026)
 
