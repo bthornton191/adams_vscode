@@ -158,6 +158,48 @@ describe("spawnHidden — Windows", () => {
     expect(vbsContent).toContain('""');
   });
 
+  it("escapes quotes in space-containing args so they do not break the VBS string", async () => {
+    // Regression: batch mode passes cmd="cmd.exe" with args=["/c", "C:\Program Files\...\mdi.bat", ...]
+    // The path arg contains a space, so it gets wrapped in quotes. Those quotes
+    // MUST be doubled ("") to avoid prematurely terminating the VBS string literal.
+    await spawnHidden("cmd.exe", ["/c", "C:\\Program Files\\MSC.Software\\Adams\\2023_4_1\\common\\mdi.bat", "aview", "ru-s", "-b", "model.cmd"], {
+      cwd: "C:\\work",
+      detached: true,
+      wait: true,
+    });
+
+    const [, vbsContent] = (fsMock.writeFile as ReturnType<typeof vi.fn>).mock.calls[0] as [string, string, ...unknown[]];
+    // The VBS string is delimited by the outer quotes in the template.
+    // Any inner quotes must be doubled. Verify no bare (unescaped) quotes appear
+    // inside the Shell.Run string argument by checking the structure:
+    // - Strip the known outer pattern: CreateObject(...).Run "...", 0, X
+    // - Everything between the first " after .Run and the last " before , 0 must
+    //   contain only "" (escaped) quotes, never a lone ".
+    const match = vbsContent.match(/\.Run "(.*)", 0, (True|False)$/);
+    expect(match).not.toBeNull();
+    const innerStr = match![1];
+    // Replace all "" (escaped quotes) then check no lone " remains
+    const afterEscape = innerStr.replace(/""/g, "");
+    expect(afterEscape).not.toContain('"');
+  });
+
+  it("VBS content for batch mode (cmd.exe + mdi path with spaces) is syntactically valid", async () => {
+    await spawnHidden("cmd.exe", ["/c", "C:\\Program Files\\MSC.Software\\Adams\\2023_4_1\\common\\mdi.bat", "aview", "ru-s", "-b", "model.cmd"], {
+      cwd: "C:\\work",
+      detached: true,
+      wait: true,
+    });
+
+    const [, vbsContent] = (fsMock.writeFile as ReturnType<typeof vi.fn>).mock.calls[0] as [string, string, ...unknown[]];
+    // Verify the generated VBS passes the Shell.Run the full cmd including the path
+    expect(vbsContent).toContain("cmd.exe");
+    expect(vbsContent).toContain("Program Files");
+    expect(vbsContent).toContain("mdi.bat");
+    expect(vbsContent).toContain("model.cmd");
+    // Verify the outer VBS string delimiter structure: .Run "...", 0, True/False
+    expect(vbsContent).toMatch(/\.Run ".*", 0, (True|False)$/);
+  });
+
   it("returns the child process from spawn", async () => {
     const { child } = await spawnHidden("C:\\Adams\\mdi.bat", ["aview"], {
       cwd: "C:\\work",

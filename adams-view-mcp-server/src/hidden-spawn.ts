@@ -69,9 +69,15 @@ export async function spawnHidden(
 
   // On Windows: build a VBS wrapper so Shell.Run hides all child windows.
   // The full command must be a single string passed to Shell.Run.
-  // Quotes inside the path must be escaped by doubling them for VBScript strings.
+  // ALL quotes embedded in the Shell.Run string argument must be doubled ("")
+  // to be treated as literal characters by the VBScript parser. This includes
+  // the quotes used to wrap space-containing args — using a bare " would
+  // prematurely terminate the VBS string literal.
   const cmdEscaped = cmd.replace(/"/g, '""');
-  const argsStr = args.map((a) => (a.includes(" ") ? `"${a}"` : a)).join(" ");
+  const argsStr = args.map((a) => {
+    const escaped = a.replace(/"/g, '""');
+    return a.includes(" ") ? `""${escaped}""` : escaped;
+  }).join(" ");
   const fullCmd = argsStr ? `""${cmdEscaped}"" ${argsStr}` : `""${cmdEscaped}""`;
   const waitFlag = options.wait ? "True" : "False";
   const vbs = `CreateObject("WScript.Shell").Run "${fullCmd}", 0, ${waitFlag}`;
