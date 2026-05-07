@@ -1,6 +1,6 @@
 const vscode = require("vscode");
 const fs = require("fs");
-const child_process = require("child_process");
+const { spawnDetached } = require("./spawn_helper.ts.js");
 
 function open_view_here(output_channel, reporter = null) {
     return (uri) => {
@@ -37,23 +37,22 @@ function open_view_here(output_channel, reporter = null) {
                     !!adams_launch_command && fs.existsSync(adams_launch_command),
                 ),
             });
-        const child = child_process.spawn(
-            `"${adams_launch_command}"`,
+        spawnDetached(
+            adams_launch_command,
             ["aview", "ru-s", "i"],
-            { cwd: uri.fsPath, shell: true, detached: true, stdio: "ignore" },
+            uri.fsPath,
+            (error) => {
+                console.log(`error: ${error.message}`);
+                output_channel.appendLine(
+                    `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
+                );
+                if (reporter)
+                    reporter.sendTelemetryErrorEvent("open_view_here", {
+                        error_type: "process_error",
+                        error_message: error.message,
+                    });
+            },
         );
-        child.unref();
-        child.on("error", (error) => {
-            console.log(`error: ${error.message}`);
-            output_channel.appendLine(
-                `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
-            );
-            if (reporter)
-                reporter.sendTelemetryErrorEvent("open_view_here", {
-                    error_type: "process_error",
-                    error_message: error.message,
-                });
-        });
     };
 }
 exports.open_view_here = open_view_here;

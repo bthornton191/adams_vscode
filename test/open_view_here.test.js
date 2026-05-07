@@ -1,5 +1,4 @@
 const assert = require("assert");
-const path = require("path");
 const child_process = require("child_process");
 const fs = require("fs");
 const vscode = require("vscode");
@@ -31,9 +30,18 @@ function makeMockChild() {
     };
 }
 
+/** Read the VBS file written by spawnDetached, clean it up, return content. */
+function captureVbs(capturedSpawn) {
+    const vbsPath = capturedSpawn.args[1];
+    const content = fs.readFileSync(vbsPath, "utf8");
+    try { fs.unlinkSync(vbsPath); } catch { /* ignore */ }
+    return content;
+}
+
 suite("open_view_here", () => {
     let originalSpawn;
     let originalExistsSync;
+    // Use a path with spaces â€” this is the regression case that broke repeatedly
     const FAKE_LAUNCH_CMD = "C:/Program Files/fake/mdi.bat";
 
     suiteSetup(async () => {
@@ -53,7 +61,6 @@ suite("open_view_here", () => {
     });
 
     setup(() => {
-        // By default, pretend the launch command exists on disk
         fs.existsSync = (p) => p === FAKE_LAUNCH_CMD ? true : originalExistsSync(p);
     });
 
@@ -66,8 +73,7 @@ suite("open_view_here", () => {
         child_process.spawn = () => { spawnCalled = true; return makeMockChild(); };
         fs.existsSync = () => false;
 
-        const uri = makeUri("C:/projects/mymodel");
-        open_view_here(output_channel, null)(uri);
+        open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
 
         assert.strictEqual(spawnCalled, false,
             "spawn should not be called when the launch command does not exist");
@@ -79,8 +85,7 @@ suite("open_view_here", () => {
         fs.existsSync = () => false;
 
         const reporter = makeMockReporter();
-        const uri = makeUri("C:/projects/mymodel");
-        open_view_here(output_channel, reporter)(uri);
+        open_view_here(output_channel, reporter)(makeUri("C:/projects/mymodel"));
 
         assert.strictEqual(reporter.calls.errors.length, 1);
         assert.strictEqual(reporter.calls.errors[0][0], "open_view_here");
@@ -88,63 +93,118 @@ suite("open_view_here", () => {
         done();
     });
 
-    test("should call spawn with correct arguments", (done) => {
-        const capturedArgs = {};
+    test("should spawn via wscript.exe (not the .bat directly) to suppress console windows", (done) => {
+        // spawnDetached uses wscript.exe + VBS Shell.Run style=0 so all cmd windows
+        // in the mdi.bat call chain are hidden for the entire process tree. Direct
+        // spawn with shell:true only hides the first process.
+        if (process.platform !== "win32") { done(); return; }
+
+        const capturedSpawn = {};
         child_process.spawn = (file, args, opts) => {
-            capturedArgs.file = file;
-            capturedArgs.args = args;
-            capturedArgs.opts = opts;
+            capturedSpawn.file = file;
+            capturedSpawn.args = args;
+            capturedSpawn.opts = opts;
             return makeMockChild();
         };
 
-        const uri = makeUri("C:/projects/mymodel");
-        open_view_here(output_channel, null)(uri);
+        open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
 
-        assert.strictEqual(capturedArgs.file, `"${FAKE_LAUNCH_CMD}"`);
-        assert.deepStrictEqual(capturedArgs.args, ["aview", "ru-s", "i"]);
-        assert.strictEqual(capturedArgs.opts.cwd, uri.fsPath);
+        assert.strictEqual(capturedSpawn.file, "wscript.exe",
+            "wscript.exe must be used â€” not the .bat directly â€” to suppress child console windows");
+        assert.strictEqual(capturedSpawn.args[0], "/nologo");
+        assert.match(capturedSpawn.args[1], /adams-spawn-.*\.vbs$/,
+            "Second arg must be a temp VBS file");
         done();
     });
 
-    test("should spawn with detached:true so the process gets its own window", (done) => {
-        const capturedArgs = {};
+    test("should write VBS containing the Adams launch path and args", (done) => {
+        // Read the actual VBS file from disk to validate content.
+        // This is the canonical regression test: any quoting bug that breaks
+        // VBScript parsing will cause Adams to silently not launch.
+        if (process.platform !== "win32") { done(); return; }
+
+        const capturedSpawn = {};
         child_process.spawn = (file, args, opts) => {
-            capturedArgs.opts = opts;
+            capturedSpawn.args = args;
             return makeMockChild();
         };
 
-        const uri = makeUri("C:/projects/mymodel");
-        open_view_here(output_channel, null)(uri);
+        open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
 
-        assert.strictEqual(capturedArgs.opts.detached, true,
-            "Process must be detached to get its own window on Windows");
+        const vbsContent = captureVbs(capturedSpawn);
+        assert.ok(vbsContent.includes("WScript.Shell"), "VBS must use WScript.Shell");
+        assert.ok(vbsContent.includes(FAKE_LAUNCH_CMD), "VBS must contain the Adams launch path");
+        assert.ok(vbsContent.includes("aview"), "VBS must contain 'aview'");
+        assert.ok(vbsContent.includes("ru-s"), "VBS must contain 'ru-s'");
         done();
     });
 
-    test("should spawn with shell:true so .bat files are handled correctly", (done) => {
-        const capturedArgs = {};
+    test("should use Shell.Run style=0 to suppress console windows for the full process tree", (done) => {
+        // Style 0 (SW_HIDE) propagates to all child processes spawned by the .bat
+        // chain. Style 1+ would let cmd windows appear. This regression test ensures
+        // we don't accidentally change to a visible style.
+        if (process.platform !== "win32") { done(); return; }
+
+        const capturedSpawn = {};
         child_process.spawn = (file, args, opts) => {
-            capturedArgs.opts = opts;
+            capturedSpawn.args = args;
             return makeMockChild();
         };
 
-        const uri = makeUri("C:/projects/mymodel");
-        open_view_here(output_channel, null)(uri);
+        open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
 
-        assert.strictEqual(capturedArgs.opts.shell, true,
-            "shell:true is required for .bat file execution on Windows");
+        const vbsContent = captureVbs(capturedSpawn);
+        assert.match(vbsContent, /, 0, (True|False)$/,
+            "Shell.Run must use window style 0 to suppress console windows");
+        done();
+    });
+
+    test("should use Chr(34) quoting so paths with spaces are safe in VBS", (done) => {
+        // Regression: paths like C:\Program Files\...\mdi.bat broke VBScript when
+        // embedded using doubled-quote escaping (""path"") because VBScript's parser
+        // treats "" at the start of a string as an empty string, not an escaped quote.
+        // Chr(34) concatenation is unambiguous and avoids all VBScript quoting issues.
+        if (process.platform !== "win32") { done(); return; }
+
+        const capturedSpawn = {};
+        child_process.spawn = (file, args, opts) => {
+            capturedSpawn.args = args;
+            return makeMockChild();
+        };
+
+        open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
+
+        const vbsContent = captureVbs(capturedSpawn);
+        assert.ok(vbsContent.includes("Chr(34)"),
+            "VBS must use Chr(34) â€” not doubled-quote escaping â€” for path quoting");
+        // The path must appear verbatim as a plain VBS string literal (no escaping)
+        assert.ok(vbsContent.includes(`"${FAKE_LAUNCH_CMD}"`),
+            "Adams launch path must appear verbatim inside a VBS string literal");
+        done();
+    });
+
+    test("should spawn with detached:true so Adams gets its own window station", (done) => {
+        const capturedOpts = {};
+        child_process.spawn = (file, args, opts) => {
+            capturedOpts.value = opts;
+            return makeMockChild();
+        };
+
+        open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
+
+        assert.strictEqual(capturedOpts.value.detached, true,
+            "Process must be detached to get its own window station on Windows");
         done();
     });
 
     test("should call unref so extension host does not wait for Adams to exit", (done) => {
         let mockChild;
-        child_process.spawn = (file, args, opts) => {
+        child_process.spawn = () => {
             mockChild = makeMockChild();
             return mockChild;
         };
 
-        const uri = makeUri("C:/projects/mymodel");
-        open_view_here(output_channel, null)(uri);
+        open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
 
         assert.strictEqual(mockChild.unrefCalled, true,
             "unref() must be called so the extension host can exit independently");
@@ -152,57 +212,35 @@ suite("open_view_here", () => {
     });
 
     test("should not crash when reporter is null", (done) => {
-        child_process.spawn = (file, args, opts) => makeMockChild();
-
-        const uri = makeUri("C:/projects/mymodel");
+        child_process.spawn = () => makeMockChild();
 
         assert.doesNotThrow(() => {
-            open_view_here(output_channel, null)(uri);
+            open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
         });
         done();
     });
 
     test("should send telemetry event when reporter is provided", (done) => {
-        child_process.spawn = (file, args, opts) => makeMockChild();
+        child_process.spawn = () => makeMockChild();
 
         const reporter = makeMockReporter();
-        const uri = makeUri("C:/projects/mymodel");
-
-        open_view_here(output_channel, reporter)(uri);
+        open_view_here(output_channel, reporter)(makeUri("C:/projects/mymodel"));
 
         assert.strictEqual(reporter.calls.telemetry.length, 1);
         assert.strictEqual(reporter.calls.telemetry[0][0], "open_view_here");
         done();
     });
 
-    test("should quote command path so cmd.exe /s does not discard surrounding quotes", (done) => {
-        // When shell:true is used, Node constructs: cmd.exe /d /s /c "<cmd> args"
-        // The /s flag strips the OUTER pair of quotes, so a path with spaces must
-        // have its own inner quotes to survive: cmd.exe /d /s /c "\"C:\\Program Files\\...\\mdi.bat\" aview"
-        const capturedFile = {};
-        child_process.spawn = (file) => { capturedFile.value = file; return makeMockChild(); };
-
-        const uri = makeUri("C:/projects/mymodel");
-        open_view_here(output_channel, null)(uri);
-
-        assert.strictEqual(capturedFile.value, `"${FAKE_LAUNCH_CMD}"`,
-            "Command must be wrapped in quotes so cmd.exe preserves the path after /s stripping");
-        done();
-    });
-
     test("should send error telemetry when spawn emits an error", (done) => {
         let mockChild;
-        child_process.spawn = (file, args, opts) => {
+        child_process.spawn = () => {
             mockChild = makeMockChild();
             return mockChild;
         };
 
         const reporter = makeMockReporter();
-        const uri = makeUri("C:/projects/mymodel");
+        open_view_here(output_channel, reporter)(makeUri("C:/projects/mymodel"));
 
-        open_view_here(output_channel, reporter)(uri);
-
-        // Simulate error event
         const err = new Error("spawn failed");
         mockChild.listeners.error(err);
 
@@ -215,13 +253,12 @@ suite("open_view_here", () => {
 
     test("should not crash when reporter is null and spawn emits an error", (done) => {
         let mockChild;
-        child_process.spawn = (file, args, opts) => {
+        child_process.spawn = () => {
             mockChild = makeMockChild();
             return mockChild;
         };
 
-        const uri = makeUri("C:/projects/mymodel");
-        open_view_here(output_channel, null)(uri);
+        open_view_here(output_channel, null)(makeUri("C:/projects/mymodel"));
 
         assert.doesNotThrow(() => {
             mockChild.listeners.error(new Error("spawn failed"));
