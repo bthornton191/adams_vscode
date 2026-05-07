@@ -65,7 +65,7 @@
 					]
 				}
 			},
-            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+            "dependsOn": ["Update Submodules", "Build MCP Server", "Bundle LSP Dependencies"],
 			"problemMatcher": []
 		},
 		{
@@ -84,7 +84,7 @@
 					]
 				}
 			},
-            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+            "dependsOn": ["Update Submodules", "Build MCP Server", "Bundle LSP Dependencies"],
 			"problemMatcher": []
 		},
 		{
@@ -103,7 +103,23 @@
 					]
 				}
 			},
-            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+            "dependsOn": ["Update Submodules", "Build MCP Server", "Bundle LSP Dependencies"],
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Update Submodules",
+			"command": "git submodule update --init --recursive",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": ["/c"]
+				}
+			},
 			"problemMatcher": []
 		},
 		{
@@ -155,7 +171,7 @@
 					]
 				}
 			},
-            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+            "dependsOn": ["Update Submodules", "Build MCP Server", "Bundle LSP Dependencies"],
 			"problemMatcher": []
 		},
 		{

@@ -1,6 +1,8 @@
 .vscode/**
 .vscode-test/**
 .gitignore
+node_modules/**
+package-lock.json
 vsc-extension-quickstart.md
 .mypy_cache/**
 _ADAMSDEV2_/**
