@@ -1,8 +1,8 @@
 # MSC Adams Extension for Visual Studio Code
 
-![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/savvyanalyst.msc-adams.svg?style=flat-square)
-![Visual Studio Marketplace Rating Stars](https://img.shields.io/visual-studio-marketplace/stars/savvyanalyst.msc-adams.svg?style=flat-square)
-![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/savvyanalyst.msc-adams.svg?style=flat-square)
+![Visual Studio Marketplace Installs](https://badgen.net/vs-marketplace/i/savvyanalyst.msc-adams)
+![Visual Studio Marketplace Rating](https://badgen.net/vs-marketplace/rating/savvyanalyst.msc-adams)
+![Visual Studio Marketplace Version](https://badgen.net/vs-marketplace/v/savvyanalyst.msc-adams)
 
 
 # Table of Contents
@@ -20,11 +20,12 @@
   - [Open Adams View From Explorer](#open-adams-view-from-explorer)
   - [Snippets](#snippets)
   - [CMD Linter](#cmd-linter)
+    - [Macro Scanning](#macro-scanning)
 - [Extension Settings](#extension-settings)
+  - [CMD Linter Settings](#cmd-linter-settings)
   - [Customizing Syntax Colors](#customizing-syntax-colors)
   - [Run In Adams: Substitute Params](#run-in-adams-substitute-params)
   - [Run In Adams: Substitute $\_self](#run-in-adams-substitute-_self)
-  - [CMD Linter Settings](#cmd-linter-settings)
 - [Requirements](#requirements)
 - [Known Issues](#known-issues)
   - [Attaching the Debugger to Adams View does not work in version 2023](#attaching-the-debugger-to-adams-view-does-not-work-in-version-2023)
