@@ -12,10 +12,11 @@ import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
-import { spawn, ChildProcess } from "child_process";
+import { ChildProcess } from "child_process";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { resolveMdiPath } from "../mdi.js";
+import { spawnHidden } from "../hidden-spawn.js";
 
 // ── Finish / error detection constants ───────────────────────────────────────
 
@@ -271,12 +272,16 @@ After calling this tool, use adams_batch_status to poll until status is
 
       let child: ChildProcess;
       try {
-        child = spawn(spawnCmd, spawnArgs, {
+        // Use VBS wrapper on Windows so the entire mdi.bat launch chain runs
+        // without visible console windows (windowsHide only covers the first
+        // process; Shell.Run with style 0 covers all children).
+        // wait=true: wscript stays alive until Adams exits, so child.once("exit")
+        // fires with the real exit code.
+        ({ child } = await spawnHidden(spawnCmd, spawnArgs, {
           cwd: workDir,
           detached: true,
-          stdio: "ignore",
-          windowsHide: true,
-        });
+          wait: true,
+        }));
         child.unref();
       } catch (e: unknown) {
         return errorResult(

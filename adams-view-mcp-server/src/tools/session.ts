@@ -3,15 +3,14 @@
  *   adams_launch_view
  */
 
-import * as crypto from "crypto";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
-import { spawn } from "child_process";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { checkConnection, evaluateExp, executeCmd, getPort, sendCmd } from "../client.js";
 import { resolveMdiPath } from "../mdi.js";
+import { spawnHidden } from "../hidden-spawn.js";
 
 const AVIEW_AS_CMD = "aviewAS.cmd";
 const COMMAND_SERVER_LINE = "command_server start";
@@ -100,25 +99,8 @@ async function spawnAdamsHidden(
     ? ["aview", "ru-s", "i"]
     : ["-c", "aview", "ru-s", "i", "exit"];
 
-  // On Windows, launch via wscript.exe + Shell.Run with window style 0 (hidden)
-  // so the VBScript suppresses all console windows in the mdi.bat launch chain.
-  let spawnCmd: string;
-  let spawnArgs: string[];
-
-  if (isWindows) {
-    const mdiEscaped = resolvedMdi.replace(/"/g, '""');
-    const argsStr = mdiArgs.join(" ");
-    const cmd = `""${mdiEscaped}"" ${argsStr}`;
-    const vbs = `CreateObject("WScript.Shell").Run "${cmd}", 0, False`;
-    const vbsTmp = path.join(os.tmpdir(), `adams-launch-${crypto.randomUUID()}.vbs`);
-    await fs.writeFile(vbsTmp, vbs, "utf8");
-    setTimeout(() => fs.unlink(vbsTmp).catch(() => undefined), 10_000);
-    spawnCmd = "wscript.exe";
-    spawnArgs = ["/nologo", vbsTmp];
-  } else {
-    spawnCmd = resolvedMdi;
-    spawnArgs = mdiArgs;
-  }
+  const spawnCmd = resolvedMdi;
+  const spawnArgs = mdiArgs;
 
   const aviewAsCmdPath = path.join(workDir, AVIEW_AS_CMD);
   let originalContent: string | null = null;
@@ -144,10 +126,10 @@ async function spawnAdamsHidden(
     );
   }
 
-  const adams = spawn(spawnCmd, spawnArgs, {
+  const { child: adams } = await spawnHidden(spawnCmd, spawnArgs, {
     cwd: workDir,
     detached: true,
-    stdio: "ignore",
+    wait: false,
   });
   adams.unref();
 

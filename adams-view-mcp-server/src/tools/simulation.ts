@@ -5,10 +5,10 @@
 
 import * as fs from "fs/promises";
 import * as path from "path";
-import { spawn } from "child_process";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
 import { evaluateExp, executeCmd } from "../client.js";
+import { spawnHidden } from "../hidden-spawn.js";
 
 function errorResult(message: string) {
   return {
@@ -267,13 +267,13 @@ Errors:
       }
 
       // Spawn detached solver
+      // Use VBS wrapper on Windows so all windows in the mdi.bat chain are hidden.
       let pid: number | undefined;
       try {
-        const solver = spawn(spawnCmd, spawnArgs, {
+        const { child: solver } = await spawnHidden(spawnCmd, spawnArgs, {
           cwd: workingDir,
           detached: true,
-          stdio: "ignore",
-          windowsHide: true,
+          wait: false,
         });
         solver.unref();
         pid = solver.pid;
