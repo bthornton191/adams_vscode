@@ -1,17 +1,14 @@
-const path = require("path");
 const vscode = require("vscode");
 const fs = require("fs");
 const child_process = require("child_process");
 
 function open_view_here(output_channel, reporter = null) {
     return (uri) => {
-        let dir_name = path.dirname(uri.fsPath);
-        let base_name = path.basename(uri.fsPath);
         const adams_launch_command = vscode.workspace
             .getConfiguration("msc-adams")
             .get("adamsLaunchCommand");
 
-        if (!fs.existsSync(adams_launch_command)) {
+        if (!adams_launch_command || !fs.existsSync(adams_launch_command)) {
             vscode.window
                 .showErrorMessage("Adams launch command not found!", "Open Settings")
                 .then((selection) => {
@@ -22,11 +19,12 @@ function open_view_here(output_channel, reporter = null) {
                         );
                     }
                 });
-            if (reporter && adams_launch_command) {
+            if (reporter) {
                 reporter.sendTelemetryErrorEvent("open_view_here", {
                     error_type: "config_missing",
                 });
             }
+            return;
         }
 
         console.log(`"${adams_launch_command}" aview ru-s i`);
@@ -39,41 +37,23 @@ function open_view_here(output_channel, reporter = null) {
                     !!adams_launch_command && fs.existsSync(adams_launch_command),
                 ),
             });
-        child_process.execFile(
+        const child = child_process.spawn(
             adams_launch_command,
             ["aview", "ru-s", "i"],
-            { cwd: uri.fsPath },
-            (error, stdout, stderr) => {
-                if (error) {
-                    console.log(`error: ${error.message}`);
-                    output_channel.appendLine(
-                        `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
-                    );
-                    if (reporter)
-                        reporter.sendTelemetryErrorEvent("open_view_here", {
-                            error_type: "process_error",
-                            error_message: error.message,
-                        });
-                    return;
-                }
-                if (stderr) {
-                    console.log(`stderr: ${stderr}`);
-                    output_channel.appendLine(
-                        `[${new Date().toLocaleTimeString()}]: stderr: ${stderr}`,
-                    );
-                    if (reporter)
-                        reporter.sendTelemetryErrorEvent("open_view_here", {
-                            error_type: "stderr",
-                            error_message: stderr,
-                        });
-                    return;
-                }
-                console.log(`stdout: ${stdout}`);
-                output_channel.appendLine(
-                    `[${new Date().toLocaleTimeString()}]: stdout: ${stdout}`,
-                );
-            },
+            { cwd: uri.fsPath, shell: true, detached: true, stdio: "ignore" },
         );
+        child.unref();
+        child.on("error", (error) => {
+            console.log(`error: ${error.message}`);
+            output_channel.appendLine(
+                `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
+            );
+            if (reporter)
+                reporter.sendTelemetryErrorEvent("open_view_here", {
+                    error_type: "process_error",
+                    error_message: error.message,
+                });
+        });
     };
 }
 exports.open_view_here = open_view_here;
