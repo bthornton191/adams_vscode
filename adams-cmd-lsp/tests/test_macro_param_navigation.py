@@ -7,11 +7,17 @@ Covers:
   find_references (integration)     — cursor on either position
 """
 
+from adams_cmd_lsp.schema import Schema
+from adams_cmd_lsp.server import (
+    _find_macro_param_defs_in_text,
+    _find_macro_param_def_at_position,
+)
+import adams_cmd_lsp.server as srv
+import pytest
 import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-import pytest
 
 # Guard: skip entire module if pygls/lsprotocol are not installed
 try:
@@ -22,13 +28,6 @@ except ImportError:
     _PYGLS_AVAILABLE = False
 
 pytestmark = pytest.mark.skipif(not _PYGLS_AVAILABLE, reason="pygls not installed")
-
-import adams_cmd_lsp.server as srv
-from adams_cmd_lsp.server import (
-    _find_macro_param_defs_in_text,
-    _find_macro_param_def_at_position,
-)
-from adams_cmd_lsp.schema import Schema
 
 
 # ---------------------------------------------------------------------------
@@ -287,8 +286,8 @@ def test_goto_definition_param_reference_jumps_to_definition(monkeypatch):
     )
 
 
-def test_goto_definition_from_definition_site_returns_references(monkeypatch):
-    """Ctrl+Click on !$scale definition returns all $scale body references."""
+def test_goto_definition_from_definition_site_returns_none(monkeypatch):
+    """Ctrl+Click on !$scale definition returns None (use Shift+F12 for references)."""
     uri = "file:///test.mac"
     monkeypatch.setattr(srv, "server", _make_mock_doc(_MACRO_TEXT, uri))
     srv._schema = Schema.load()
@@ -304,14 +303,10 @@ def test_goto_definition_from_definition_site_returns_references(monkeypatch):
         position=types.Position(line=def_line, character=col + 1),
     )
     result = srv.goto_definition(params)
-    assert result is not None and len(result) >= 1, f"Expected references, got: {result}"
-
-    # The target lines should include the $scale usage in the body (not the definition itself)
-    target_lines = {link.target_range.start.line for link in result}
-    body_line = next(i for i, l in enumerate(lines) if "$scale" in l and "!" not in l)
-    assert body_line in target_lines, f"Expected body reference on line {body_line}, got {target_lines}"
-    # Definition line should NOT be in results (it's excluded)
-    assert def_line not in target_lines, "Definition line should be excluded from inverse navigation"
+    assert result is None, (
+        "goto_definition at a !$param definition site should return None so VS Code "
+        "does not show 'Click to show N definitions'; use find_references (Shift+F12) instead."
+    )
 
 
 def test_goto_definition_self_not_treated_as_param(monkeypatch):

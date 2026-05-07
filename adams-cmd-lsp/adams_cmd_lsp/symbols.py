@@ -23,6 +23,13 @@ _EVAL_DETECT_RE = re.compile(r'\beval\s*\(', re.IGNORECASE)
 # to avoid matching numeric literals like the ".0" in "0.6".
 _EVAL_OBJECT_NAME_RE = re.compile(r'\.[a-zA-Z_]\w*(?:\.\w+)*')
 
+# Matches a $variable token immediately preceding a dot-path match.
+# Used to filter out partial paths that are suffixes of a $var.path token —
+# e.g. in "$model.arm1_len", the regex above would match ".arm1_len", but
+# the character just before the "." is part of a $variable identifier, so
+# it should not be returned as a standalone object name.
+_DOLLAR_IDENT_RE = re.compile(r'\$[a-zA-Z_][a-zA-Z0-9_]*$')
+
 
 def _extract_eval_object_names(value, value_line, value_column):
     """Extract Adams dot-path object names from an eval() expression value.
@@ -30,6 +37,11 @@ def _extract_eval_object_names(value, value_line, value_column):
     Scans *value* (the raw argument string, e.g. ``"(eval(.m.arm_mass * 0.6))"``
     or a compound expression) for dot-path tokens and returns their document
     positions so callers can build navigation links or record references.
+
+    Dot-path matches that are immediately preceded by a ``$identifier`` token
+    are skipped — they are suffix-of-a-$variable paths, not standalone names.
+    For example, in ``$model.arm1_len``, the regex matches ``.arm1_len`` but
+    the preceding characters ``$model`` identify it as a $variable suffix.
 
     All names are assumed to lie on *value_line* (eval expressions are always
     single-line after the parser joins continuation lines).
@@ -48,6 +60,12 @@ def _extract_eval_object_names(value, value_line, value_column):
         return []
     results = []
     for m in _EVAL_OBJECT_NAME_RE.finditer(value):
+        # Skip if the portion of the string before this match ends with a
+        # $variable identifier — the match is a suffix of "$var.path", not
+        # a standalone Adams object name.
+        prefix = value[:m.start()]
+        if _DOLLAR_IDENT_RE.search(prefix):
+            continue
         name = m.group(0)
         col = value_column + m.start()
         end_col = value_column + m.end()
