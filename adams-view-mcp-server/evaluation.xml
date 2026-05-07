@@ -1,0 +1,110 @@
+<evaluation>
+  <!--
+    Adams View MCP Server — Evaluation Questions
+    =============================================
+    Requirements:
+    - Adams View must be running with the Command Server active (Tools > Command Server > Start)
+    - Default port 5002 (or ADAMS_LISTENER_PORT env var)
+    - No user-created models are required — all questions use built-in Adams functions
+
+    Instructions for LLM:
+    Use only the adams-view-mcp-server MCP tools to answer each question.
+    Always verify the connection before evaluating expressions.
+    All expression results are read-only and do not modify Adams View state.
+  -->
+
+  <qa_pair>
+    <question>
+      First check that Adams View is running and ready. Then evaluate the Adams expression
+      MAX(9, 4, 7, 2, 8, 1, 6, 3, 5) using the expression evaluator tool.
+      What integer value does Adams View return?
+    </question>
+    <answer>9</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Confirm the Adams View connection is working, then evaluate the expression
+      MIN(3, 1, 4, 1, 5, 9, 2, 6) using the expression evaluator.
+      What integer value does Adams View return?
+    </question>
+    <answer>1</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Verify Adams View is ready, then evaluate ABS(-273) using the expression evaluator.
+      What integer value does Adams return?
+    </question>
+    <answer>273</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Check the Adams View connection, then evaluate MOD(17, 5) using the expression evaluator.
+      MOD computes the remainder of integer division.
+      What integer value does Adams return?
+    </question>
+    <answer>2</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Confirm Adams View is running, then evaluate SQRT(169).
+      The result is a perfect square root with no decimal part.
+      What integer value does Adams return?
+    </question>
+    <answer>13</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Check the connection to Adams View, then evaluate INT(PI).
+      INT() truncates a floating-point value to its integer part,
+      and PI is a built-in Adams constant equal to approximately 3.14159.
+      What integer value does Adams return?
+    </question>
+    <answer>3</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Verify Adams View is ready, then evaluate the expression db_exists('.mdi').
+      This checks whether the session database root object exists —
+      a value of 1 indicates the session is fully initialized.
+      What integer value does Adams return?
+    </question>
+    <answer>1</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Check the Adams View connection, then evaluate MAX(1, 1, 2, 3, 5, 8, 13, 21).
+      The arguments are the first eight Fibonacci numbers.
+      What integer value does Adams return?
+    </question>
+    <answer>21</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Verify Adams View is running, then evaluate two expressions in sequence:
+      first SIN(0), then COS(0). Compute their sum.
+      What numeric value does Adams return for SIN(0) + COS(0)?
+      Express your answer as a number with no trailing zeros (e.g. 1.0 should be written as 1.0).
+    </question>
+    <answer>1.0</answer>
+  </qa_pair>
+
+  <qa_pair>
+    <question>
+      Check the connection to Adams View, then evaluate the expression
+      ABS(MIN(-99, -47, -3, -67, -28)).
+      This nests MIN inside ABS: first find the minimum of the five negative numbers,
+      then take its absolute value.
+      What integer value does Adams return?
+    </question>
+    <answer>99</answer>
+  </qa_pair>
+
+</evaluation>

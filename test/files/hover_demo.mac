@@ -1,0 +1,381 @@
+! =============================================================================
+! hover_demo.mac — MSC Adams Hover Documentation Demo
+! =============================================================================
+!
+! Hover over any highlighted keyword or function name to see inline docs.
+! This file builds a spring-loaded double-pendulum to exercise a broad
+! range of Adams View commands and design functions.
+!
+! Things worth hovering over
+! ──────────────────────────
+!   Commands  : defaults  model  part  marker  constraint  force  geometry
+!               data_element  measure  variable  simulation
+!               motion_generator  translational_spring_damper
+!   Functions : loc_global  loc_relative_to  loc_along_line
+!               ori_in_plane  ori_global
+!               STEP  sin  PI  TIME
+!               DX  VX  VY  AZ  sqrt
+!               db_exists  db_count  str_sprintf  status_print
+!               rtod  dtor  rtoi
+!
+! =============================================================================
+
+! =============================================================================
+! 1. UNITS AND DEFAULTS
+!    Hover: defaults  units
+! =============================================================================
+
+defaults units  &
+   length = mm  &
+   angle  = deg  &
+   force  = newton  &
+   mass   = kg  &
+   time   = sec
+
+
+! =============================================================================
+! 2. MODEL
+!    Hover over  model  create  to see the command signature.
+! =============================================================================
+
+model create model_name = .hover_demo
+
+
+! =============================================================================
+! 3. PARAMETRIC VARIABLES
+!    Hover: variable  create  dtor
+! =============================================================================
+
+variable create  &
+   variable_name = .hover_demo.arm1_len  &
+   real_value    = 300.0
+
+variable create  &
+   variable_name = .hover_demo.arm2_len  &
+   real_value    = 250.0
+
+variable create variable_name = .hover_demo.arm_mass  &
+   real_value    = 0.8
+
+var create  &
+   variable_name = .hover_demo.spring_k  &
+   real_value    = 2.0
+
+var cre  &
+   variable_name = .hover_demo.spring_c  &
+   real_value    = 0.05
+
+var cre var=.hover_demo.init_angle real=(eval(30.0 * dtor(1.0)))  
+
+
+! =============================================================================
+! 5. GROUND MARKERS
+!    Hover: marker  loc_global  ori_global  loc_along_line
+! =============================================================================
+
+marker create  &
+   marker_name = .hover_demo.ground.pivot_top  &
+   location    = (loc_global(0.0, 0.0, 0.0))  &
+   orientation = (ori_global(0.0D, 0.0D, 0.0D))
+
+! loc_along_line: step 225 mm along {1, -0.5, 0} from pivot — hover  loc_along_line
+marker create  &
+   marker_name = .hover_demo.ground.spring_anchor  &
+   location    = (loc_along_line(.hover_demo.ground.pivot_top, {1.0, -0.5, 0.0}, 225.0))  &
+   orientation = (ori_global(0.0D, 0.0D, 0.0D))
+
+
+! =============================================================================
+! 6. UPPER ARM  (arm1)
+!    Hover: part  rigid_body  name_and_position  mass_properties
+!           loc_relative_to  ori_in_plane  center_of_mass_marker
+! =============================================================================
+
+part create rigid_body name_and_position  &
+   part_name   = .hover_demo.arm1  &
+   location    = 0.0, 0.0, 0.0  &
+   orientation = 0.0D, 0.0D, 0.0D
+
+! CM at mid-length of arm1 — hover  loc_relative_to  and  ori_in_plane
+marker create  &
+   marker_name = .hover_demo.arm1.cm  &
+   location    = (loc_relative_to({0.0, -150.0, 0.0}, .hover_demo.ground.pivot_top))  &
+   orientation = (ori_in_plane({0.0, -150.0, 0.0}, {0.0, 0.0, 0.0}, .hover_demo.ground.pivot_top))
+
+part modify rigid_body mass_properties  &
+   part_name             = .hover_demo.arm1  &
+   mass                  = (eval(.hover_demo.arm_mass))  &
+   ixx                   = (eval(.hover_demo.arm_mass * .hover_demo.arm1_len**2 / 12.0))  &
+   iyy                   = (eval(.hover_demo.arm_mass * .hover_demo.arm1_len**2 / 12.0))  &
+   izz                   = 10.0  &
+   center_of_mass_marker = .hover_demo.arm1.cm
+
+! Pin marker at top (joint with ground)
+marker create  &
+   marker_name = .hover_demo.arm1.pin_top  &
+   location    = 0.0, 0.0, 0.0  &
+   orientation = 0.0D, 0.0D, 0.0D
+
+! Elbow marker at bottom (joint with arm2)
+marker create  &
+   marker_name = .hover_demo.arm1.elbow  &
+   location    = 0.0, (eval(-.hover_demo.arm1_len)), 0.0  &
+   orientation = 0.0D, 0.0D, 0.0D
+
+marker create  &
+   marker_name = .hover_demo.arm1.spring_pt  &
+   location    = 80.0, -150.0, 0.0  &
+   orientation = 0.0D, 0.0D, 0.0D
+
+
+! =============================================================================
+! 7. LOWER ARM (ARM_2)
+! =============================================================================
+
+part create rigid_body name_and_position  &
+   part_name   = .hover_demo.arm2  &
+   location    = 0.0, (eval(-.hover_demo.arm1_len)), 0.0  &
+   orientation = 0.0D, 0.0D, 0.0D
+
+marker create  &
+   marker_name = .hover_demo.arm2.cm  &
+   location    = (loc_relative_to({0.0, -125.0, 0.0}, .hover_demo.arm1.elbow))  &
+   orientation = (ori_global(0.0D, 0.0D, 0.0D))
+
+part modify rigid_body mass_properties  &
+   part_name             = .hover_demo.arm2  &
+   mass                  = (eval(.hover_demo.arm_mass * 0.6))  &
+   ixx                   = (eval(.hover_demo.arm_mass * 0.6 * .hover_demo.arm2_len**2 / 12.0))  &
+   iyy                   = (eval(.hover_demo.arm_mass * 0.6 * .hover_demo.arm2_len**2 / 12.0))  &
+   izz                   = 6.0  &
+   center_of_mass_marker = .hover_demo.arm2.cm
+
+marker create  &
+   marker_name = .hover_demo.arm2.pin_top  &
+   location    = 0.0, 0.0, 0.0  &
+   orientation = 0.0D, 0.0D, 0.0D
+
+marker create  &
+   marker_name = .hover_demo.arm2.tip  &
+   location    = 0.0, (eval(-.hover_demo.arm2_len)), 0.0  &
+   orientation = 0.0D, 0.0D, 0.0D
+
+marker create  &
+   marker_name = .hover_demo.arm2.spring_pt  &
+   location    = (loc_relative_to({60.0, -80.0, 0.0}, .hover_demo.arm2.cm))  &
+   orientation = (ori_global(0.0D, 0.0D, 0.0D))
+
+! force application point — hover  loc_relative_to
+marker create  &
+   marker_name = .hover_demo.arm2.force_ref  &
+   location    = (loc_relative_to({50.0, 0.0, 0.0}, .hover_demo.arm2.pin_top))  &
+   orientation = (ori_global(0.0D, 0.0D, 0.0D))
+
+
+! =============================================================================
+! 8. GEOMETRY
+!    Hover: geometry  create  shape  ellipsoid  link
+! =============================================================================
+
+! Pivot sphere on ground — ellipsoid with equal radii = sphere-like
+geometry create shape ellipsoid  &
+   ellipsoid_name = .hover_demo.ground.sph_pivot  &
+   center_marker  = .hover_demo.ground.pivot_top  &
+   x_scale_factor = 12.0  &
+   y_scale_factor = 12.0  &
+   z_scale_factor = 12.0
+
+! Upper arm rod — link between pin_top and elbow
+geometry create shape link  &
+   link_name  = .hover_demo.arm1.rod  &
+   i_marker   = .hover_demo.arm1.pin_top  &
+   j_marker   = .hover_demo.arm1.elbow  &
+   width      = 16.0  &
+   depth      = 8.0
+
+! Lower arm rod
+geometry create shape link  &
+   link_name  = .hover_demo.arm2.rod  &
+   i_marker   = .hover_demo.arm2.pin_top  &
+   j_marker   = .hover_demo.arm2.tip  &
+   width      = 12.0  &
+   depth      = 6.0
+
+! Tip bob — ellipsoid
+geometry create shape ellipsoid  &
+   ellipsoid_name = .hover_demo.arm2.bob  &
+   center_marker  = .hover_demo.arm2.tip  &
+   x_scale_factor = 20.0  &
+   y_scale_factor = 20.0  &
+   z_scale_factor = 20.0
+
+
+! =============================================================================
+! 9. CONSTRAINTS
+!    Hover: constraint  create  joint  revolute
+! =============================================================================
+
+! Shoulder joint — ground to arm1
+constraint create joint revolute  &
+   joint_name    = .hover_demo.rev_shoulder  &
+   i_marker_name = .hover_demo.arm1.pin_top  &
+   j_marker_name = .hover_demo.ground.pivot_top
+
+! Elbow joint — arm1 to arm2
+const create joint rev  &
+   joint_name    = .hover_demo.rev_elbow  &
+   i_marker_name = .hover_demo.arm2.pin_top  &
+   j_marker_name = .hover_demo.arm1.elbow
+
+
+! =============================================================================
+! 10. GRAVITY
+!     Hover: force  create  body  gravitational
+! =============================================================================
+
+force create body gravitational  &
+   gravity_field_name  = .hover_demo.gravity  &
+   x_component_gravity = 0.0  &
+   y_component_gravity = -9806.65  &
+   z_component_gravity = 0.0
+
+
+! =============================================================================
+! 11. SPRING-DAMPER
+!     Hover: force  element_like  translational_spring_damper  displacement_at_preload
+! =============================================================================
+
+force create element_like translational_spring_damper  &
+   spring_damper_name      = .hover_demo.spring1  &
+   i_marker_name           = .hover_demo.arm1.spring_pt  &
+   j_marker_name           = .hover_demo.ground.spring_anchor  &
+   stiffness               = (eval(.hover_demo.spring_k))  &
+   damping                 = (eval(.hover_demo.spring_c))  &
+   displacement_at_preload = 120.0
+
+
+! =============================================================================
+! 12. APPLIED FORCE
+!     Hover: force  direct  single_component_force  STEP  sin  PI  TIME
+! =============================================================================
+
+force create direct single_component_force  &
+   single_component_force_name = .hover_demo.F_drive  &
+   i_marker_name               = .hover_demo.arm2.force_ref  &
+   j_marker_name               = .hover_demo.arm2.cm  &
+   action_only                 = on  &
+   function                    = "STEP(TIME, 0.0, 0.0, 0.5, 50.0)", &
+                                 " * sin(2.0 * PI * TIME)"
+
+
+! =============================================================================
+! 13. JOINT MOTION
+!     Hover: constraint  create  motion_generator  STEP  TIME
+! =============================================================================
+
+constraint create motion_generator  &
+   motion_name     = .hover_demo.mot_shoulder  &
+   joint_name      = .hover_demo.rev_shoulder  &
+   type_of_freedom = rotational  &
+   function        = "STEP(TIME, 0.0, 0.0D, 1.5, 90.0D)"
+
+
+! =============================================================================
+! 14. SPLINE DATA ELEMENT
+!     Hover: data_element  create  spline
+! =============================================================================
+
+data create spline  &
+   spline_name  = .hover_demo.ref_profile  &
+   x            = 0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0  &
+   y            = 0.0, 15.0, 45.0, 80.0, 90.0, 88.0, 85.0  &
+   units        = time
+
+
+! =============================================================================
+! 15. OUTPUT MEASURES
+!     Hover: measure  create  function  DX  VX  VY  AZ  sqrt
+! =============================================================================
+
+measure create function  &
+   measure_name           = .hover_demo.meas_tip_x  &
+   function               = "DX(.hover_demo.arm2.tip, .hover_demo.ground.pivot_top)"  &
+   units                  = length  &
+   create_measure_display = no
+
+measure cre func  &
+   measure_name           = .hover_demo.meas_tip_speed  &
+   function               = "sqrt(VX(.hover_demo.arm2.tip)**2 + VY(.hover_demo.arm2.tip)**2)"  &
+   units                  = velocity  &
+   create_measure_display = no
+
+measure create function  &
+   measure_name           = .hover_demo.meas_omega  &
+   function               = "AZ(.hover_demo.arm1.pin_top, .hover_demo.ground.pivot_top)"  &
+   units                  = angular_velocity  &
+   create_measure_display = no
+
+
+! =============================================================================
+! 16. MACRO SCRIPTING — VARIABLES / IF / FOR
+!     Hover: variable  set  if  for  end  condition
+!            db_exists  db_count  str_sprintf  status_print  rtoi
+! =============================================================================
+
+var cre var = .hover_demo.n_parts int = (eval(db_count(".hover_demo", "part")))      
+
+var create &
+   var = .hover_demo.msg  &
+   str  = (eval(str_sprintf("Model has %d parts", .hover_demo.n_parts))) 
+
+! status_print is a design function — hover it here
+var create  &
+   var = .hover_demo.dummy  &
+   int  = (eval(status_print(.hover_demo.msg)))        
+
+! Conditional guard — hover  db_exists  if  end
+if condition = (db_exists(".hover_demo.arm1"))
+   variable set  &
+      variable_name = .hover_demo.msg  &
+      string_value  = "arm1 confirmed"
+end
+
+! Loop — hover  for  rtoi
+variable create  &
+   variable_name = .hover_demo.i  &
+   integer_value = 0
+
+for variable_name = .hover_demo.i  &
+    start_value  = 1  &
+    end_value    = (eval(.hover_demo.n_parts))  &
+    increment    = 1
+
+   variable set  &
+      variable_name = .hover_demo.msg  &
+      string_value  = (eval(str_sprintf("Part %d of %d", .hover_demo.i, .hover_demo.n_parts)))
+
+end
+
+
+! =============================================================================
+! 17. INITIAL CONDITIONS
+!     Hover: part  modify  rigid_body  name_and_position  rtod
+! =============================================================================
+
+! Release arm1 from 30 degrees
+part modify rigid_body name_and_position  &
+   part_name   = .hover_demo.arm1  &
+   orientation = 0.0D, 0.0D, (eval(rtod(1.0) * .hover_demo.init_angle)) 
+
+
+! =============================================================================
+! 18. SIMULATION
+!     Hover: simulation  single_run  transient  auto_select
+! =============================================================================
+
+simulation single_run transient  &
+   type            = auto_select  &
+   end_time        = 3.0  &
+   number_of_steps = 300  &
+   model_name      = .hover_demo  &
+   initial_static  = no

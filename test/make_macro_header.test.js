@@ -43,6 +43,24 @@ suite("make_macro_header", () => {
 
         assert.strictEqual(reporter.calls.telemetry.length, 1);
         assert.strictEqual(reporter.calls.telemetry[0][0], "make_macro_header");
+        assert.strictEqual(reporter.calls.telemetry[0][1].editor_active, "false");
+    });
+
+    test("should send error telemetry when executeCommand throws", () => {
+        const reporter = {
+            calls: { telemetry: [], errors: [] },
+            sendTelemetryEvent: (...args) => reporter.calls.telemetry.push(args),
+            sendTelemetryErrorEvent: (...args) => reporter.calls.errors.push(args),
+        };
+        vscode.commands.executeCommand = () => {
+            throw new Error("command failed");
+        };
+
+        make_macro_header(reporter)();
+
+        assert.strictEqual(reporter.calls.errors.length, 1);
+        assert.strictEqual(reporter.calls.errors[0][0], "make_macro_header_failed");
+        assert.strictEqual(reporter.calls.errors[0][1].error_message, "command failed");
     });
 
     test("should call executeCommand to insert snippet", () => {

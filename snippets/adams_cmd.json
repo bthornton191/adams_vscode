@@ -45,12 +45,14 @@
         "body": [
             "!USER_ENTERED_COMMAND ${1:command}",
             "! -----------------------------------------------------------------",
-            "! MACRO NAME:  $TM_FILENAME",
-            "! DESCRIPTION: ${2:description}   ",
-            "! AUTHOR:      ${3:Ben Thornton (ben.thornton@hexagon.com)}",
+            "!MACRO NAME:  $TM_FILENAME",
+            "!HELP_STRING: ${2:description}   ",
+            "!AUTHOR:      ${3:author}",
+            "!\\$${4:param_name}:t=${5:type}",
+            "! ${6:Parameter description (shown on hover)}",
             "!END_OF_PARAMETERS",
             "$0"
-        ],
+        ],   
         "description": "Macro Header"        
     },
     "db_exists": {

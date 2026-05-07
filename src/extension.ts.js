@@ -12,6 +12,7 @@ const { cmd_completion_provider } = require("./cmd_completion_provider.ts");
 const { cmd_hover_provider } = require("./cmd_hover_provider.ts");
 const { link_provider } = require("./link_provider.ts.js");
 const { add_adams_site_packages } = require("../src/add_adams_site_packages.ts.js");
+const { cmd_lsp_client } = require("./cmd_lsp_client.ts.js");
 
 //Create output channel
 const output_channel = vscode.window.createOutputChannel("MSC Adams");
@@ -35,43 +36,80 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
 
     const view_functions = new Map();
     const func_dir = context.asAbsolutePath("resources/adams_design_functions");
-    const func_files = fs.readdirSync(func_dir);
-
-    for (var file of func_files) {
-        if (fs.lstatSync([func_dir, file].join("/")).isFile()) {
-            let text = fs.readFileSync([func_dir, file].join("/"), "utf8");
-            let function_name = path.parse(file).name;
-            view_functions.set(function_name, text);
+    try {
+        const func_files = fs.readdirSync(func_dir);
+        for (var file of func_files) {
+            if (fs.lstatSync([func_dir, file].join("/")).isFile()) {
+                let text = fs.readFileSync([func_dir, file].join("/"), "utf8");
+                let function_name = path.parse(file).name;
+                view_functions.set(function_name, text);
+            }
+        }
+    } catch (err) {
+        output_channel.appendLine(
+            `[${new Date().toLocaleTimeString()}]: Failed to load function docs: ${err.message}`,
+        );
+        if (reporter) {
+            reporter.sendTelemetryErrorEvent("resource_load_failed", {
+                resource_type: "function_docs",
+                error_message: err.message,
+            });
         }
     }
 
     // ---------------------------------------------------------------------------
     // Link Provider
     // ---------------------------------------------------------------------------
-    vscode.languages.registerDocumentLinkProvider("adams_cmd", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_adm", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_acf", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_msg", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_log", link_provider());
-    vscode.languages.registerDocumentLinkProvider("adams_to", link_provider());
-
-    // ---------------------------------------------------------------------------
-    // Hover Provider
-    // ---------------------------------------------------------------------------
-    vscode.languages.registerHoverProvider(
-        "adams_cmd",
-        cmd_hover_provider(view_functions, reporter),
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_cmd" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_adm" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_acf" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_msg" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_log" },
+        link_provider(reporter),
+    );
+    vscode.languages.registerDocumentLinkProvider(
+        { scheme: "file", language: "adams_to" },
+        link_provider(reporter),
     );
 
     // ---------------------------------------------------------------------------
     // Completion Provider
     // ---------------------------------------------------------------------------
-    const cmd_files_json = context.asAbsolutePath("resources/adams_view_commands/structured.json");
-    const view_commands = JSON.parse(fs.readFileSync(cmd_files_json));
-    const arg_options_json = context.asAbsolutePath(
-        "resources/adams_view_commands/argument_options.json",
-    );
-    const arg_options = JSON.parse(fs.readFileSync(arg_options_json));
+    let view_commands = {};
+    let arg_options = {};
+    try {
+        const cmd_files_json = context.asAbsolutePath(
+            "resources/adams_view_commands/structured.json",
+        );
+        view_commands = JSON.parse(fs.readFileSync(cmd_files_json));
+        const arg_options_json = context.asAbsolutePath(
+            "resources/adams_view_commands/argument_options.json",
+        );
+        arg_options = JSON.parse(fs.readFileSync(arg_options_json));
+    } catch (err) {
+        output_channel.appendLine(
+            `[${new Date().toLocaleTimeString()}]: Failed to load command definitions: ${err.message}`,
+        );
+        if (reporter) {
+            reporter.sendTelemetryErrorEvent("resource_load_failed", {
+                resource_type: "command_definitions",
+                error_message: err.message,
+            });
+        }
+    }
 
     const command_docs = new Map();
     const cmd_docs_dir = context.asAbsolutePath("resources/adams_view_commands/command_docs");
@@ -95,11 +133,58 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
         }
     }
 
+    // ---------------------------------------------------------------------------
+    // Hover Provider
+    // ---------------------------------------------------------------------------
+    const _schema_source = context.asAbsolutePath(
+        "adams-cmd-lsp/adams_cmd_lsp/data/command_schema.json",
+    );
+    const _schema_bundled = context.asAbsolutePath(
+        "bundled/libs/adams_cmd_lsp/data/command_schema.json",
+    );
+    const schema_json_path = fs.existsSync(_schema_source) ? _schema_source : _schema_bundled;
+    let command_tree = null;
+    let schema_commands = null;
+    if (fs.existsSync(schema_json_path)) {
+        try {
+            const schema = JSON.parse(fs.readFileSync(schema_json_path));
+            command_tree = schema.command_tree || null;
+            schema_commands = schema.commands || null;
+        } catch (_) {
+            // Schema unreadable — hover will fall back to exact-match
+        }
+    }
+
+    vscode.languages.registerHoverProvider(
+        { scheme: "file", language: "adams_cmd" },
+        cmd_hover_provider(
+            view_functions,
+            view_commands,
+            command_docs,
+            reporter,
+            command_tree,
+            schema_commands,
+        ),
+    );
+
     vscode.languages.registerCompletionItemProvider(
-        "adams_cmd",
-        cmd_completion_provider(view_functions, view_commands, arg_options, command_docs, reporter),
+        { scheme: "file", language: "adams_cmd" },
+        cmd_completion_provider(
+            view_functions,
+            view_commands,
+            arg_options,
+            command_docs,
+            reporter,
+            command_tree,
+        ),
         "=", // trigger value completions after arg=
     );
+
+    // ---------------------------------------------------------------------------
+    // LSP Client (Adams CMD Linter)
+    // ---------------------------------------------------------------------------
+    const lsp = cmd_lsp_client(output_channel, reporter);
+    lsp.start(context);
 
     // ---------------------------------------------------------------------------
     // Commands
@@ -182,6 +267,9 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     // Add the event listener to subscriptions so it's properly disposed
     context.subscriptions.push(configChangeListener);
 
+    const { registerMcpServerProvider } = require("./mcp_server_provider.ts.js");
+    registerMcpServerProvider(context, reporter);
+
     if (
         vscode.workspace.getConfiguration("msc-adams").get("runInAdams.autoLoadAdamsSitePackages")
     ) {
@@ -191,9 +279,22 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     vscode.window.showInformationMessage("MSC Adams Extension Activated");
     output_channel.appendLine(`[${new Date().toLocaleTimeString()}] MSC Adams Extension Activated`);
     if (enableTelemetry) {
+        const config = vscode.workspace.getConfiguration("msc-adams");
         reporter.sendTelemetryEvent(
-            "MSC Adams Extension Activated",
-            vscode.workspace.getConfiguration().get("msc-adams"),
+            "extension_activated",
+            {
+                schema_loaded: String(!!command_tree),
+                lsp_enabled: String(!!config.get("linter.enabled")),
+                has_custom_launch_command: String(!!config.get("adamsLaunchCommand")),
+                auto_load_stubfiles: String(!!config.get("runInAdams.autoLoadAdamspyStubs")),
+                auto_load_site_packages: String(
+                    !!config.get("runInAdams.autoLoadAdamsSitePackages"),
+                ),
+            },
+            {
+                function_doc_count: view_functions.size,
+                command_doc_count: command_docs.size,
+            },
         );
     }
 }
