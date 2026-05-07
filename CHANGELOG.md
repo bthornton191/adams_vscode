@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.0.2 (May 7th 2026)](#202-may-7th-2026)
   - [2.0.1 (May 7th 2026)](#201-may-7th-2026)
   - [2.0.0 (May 7th 2026)](#200-may-7th-2026)
   - [1.17.0 (May 6th 2026)](#1170-may-6th-2026)
@@ -68,6 +69,11 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.0.2 (May 7th 2026)
+
+- **Fixed** "Open Adams View" and "Open in Adams View" commands no longer launch Adams invisibly. The 1.4.0 security refactor (exec → execFile) broke visible window creation on Windows; replaced with `spawn({ detached: true, shell: true })`.
+- **Fixed** VBScript "Expected end of statement" error when launching Adams via the MCP server on systems where the Adams install path contains spaces (e.g. `C:\Program Files\...`). The generated VBS now correctly doubles all quotes within the Shell.Run string argument.
 
 ## 2.0.1 (May 7th 2026)
 
