@@ -176,3 +176,4 @@ xy_plot template &
    
    
 
+custom command param1=10 part_name="my_part"

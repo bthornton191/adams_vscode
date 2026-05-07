@@ -1,0 +1,38 @@
+!USER_ENTERED_COMMAND demo autocomplete
+! -----------------------------------------------------------------
+!MACRO NAME:  autocomplete_demo.mac
+!HELP_STRING: This macro demonstrates autocomplete for adams cmd   
+!AUTHOR:      Ben Thornton
+!$part_name:t=string
+! The name of the part that this macro will create
+!$offset:t=real
+! The distance between markers
+!$model:t=model
+! The model to apply operations to
+!END_OF_PARAMETERS
+
+
+! Create a part and give it mass
+part create rigid_body name_and_position part_name=$model.$part_name
+marker create marker_name=$model.$part_name.cm
+part modify rigid_body mass_properties center_of_mass_marker=$model.$part_name.cm mass=10
+
+! Create a geometry on the part
+marker create &
+    marker_name=$model.$part_name.box_1_ref &
+    location=-1,-1,-1
+
+geometry create shape block &
+    block_name=$model.$part_name.box_1 &
+    corner_marker=$model.$part_name.box_1_ref &
+    diag_corner_coords=2,2,2
+
+! Add some markers in a loop
+for var=$_self.idx_ start_value=1 end_value=4
+    var set var=$_self.idx int=(eval(nint($_self.idx_)))
+    
+    marker create &
+        marker_name=(eval("$model.$part_name.mkr_" // $_self.idx_)) &
+        location=(eval($_self.idx_ * $offset)), 0, 0
+    
+end

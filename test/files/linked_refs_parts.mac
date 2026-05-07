@@ -1,0 +1,21 @@
+
+
+
+model create model_name=.model_1
+
+
+part create rigid_body name_and_position part_name=.model_1.part_1
+
+
+marker create marker_name=.model_1.part_1.marker_1
+
+
+marker create &
+    marker_name=.model_1.part_1.marker_2 &
+    location=(.model_1.part_1.marker_1.location_global)
+
+
+geometry create shape block &
+    block_name=.model_1.part_1.box_1 &
+    corner_marker=.model_1.part_1.marker_2 &
+    diag_corner_coords=1,1,1
