@@ -12,6 +12,9 @@
   - [Syntax highlighting](#syntax-highlighting)
   - [Adams View Command Language Intellisense](#adams-view-command-language-intellisense)
   - [Intellisense support for Adams View Python Interface](#intellisense-support-for-adams-view-python-interface)
+  - [CMD Linter](#cmd-linter)
+    - [Macro Scanning](#macro-scanning)
+  - [Code Navigation](#code-navigation)
   - [Debugging python scripts in Adams View](#debugging-python-scripts-in-adams-view)
     - [Steps to debug a python script in Adams View](#steps-to-debug-a-python-script-in-adams-view)
   - [Run in Adams View](#run-in-adams-view)
@@ -19,8 +22,8 @@
     - [Run File in Adams View (This *works for both CMD and Python files*)](#run-file-in-adams-view-this-works-for-both-cmd-and-python-files)
   - [Open Adams View From Explorer](#open-adams-view-from-explorer)
   - [Snippets](#snippets)
-  - [CMD Linter](#cmd-linter)
-    - [Macro Scanning](#macro-scanning)
+  - [Copilot Agent Skills](#copilot-agent-skills)
+  - [MCP Servers](#mcp-servers)
 - [Extension Settings](#extension-settings)
   - [CMD Linter Settings](#cmd-linter-settings)
   - [Customizing Syntax Colors](#customizing-syntax-colors)
@@ -30,7 +33,6 @@
 - [Known Issues](#known-issues)
   - [Attaching the Debugger to Adams View does not work in version 2023](#attaching-the-debugger-to-adams-view-does-not-work-in-version-2023)
   - [Equal Sign In A String On A Continuation Line](#equal-sign-in-a-string-on-a-continuation-line)
-- [Contributing](#contributing)
 - [Support](#support)
 
 # Features
@@ -44,7 +46,6 @@
 - Adams Function Documentation Hover Provider
 - Adams Command Documentation Hover Provider (hover over a command keyword to see its description, syntax, and argument details)
 - Adams Macro Documentation Hover Provider (hover over a user-defined macro invocation to see its help string)
-- Adams Macro Parameter Navigation (Ctrl+Click on `$param_name` in a macro body to jump to its `!$param_name` definition; Shift+F12 for all references)
 
 ![Example of Adams Function Documentation Hover Provider Example](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/autocomplete_function.gif)
 
@@ -112,14 +113,53 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 The extension includes a Language Server Protocol (LSP)-based linter for Adams View CMD files.
 It flags unknown commands, invalid arguments, and other syntax errors as you type.
 
+Diagnostic codes include:
+| Code | Severity | Description |
+|------|----------|-------------|
+| E001 | Error | Unknown command |
+| E002 | Error | Invalid macro parameter |
+| E003 | Error | Invalid argument name |
+| E004 | Error | Missing required argument |
+| E005 | Error | Mutually exclusive arguments |
+| E006 | Error | Duplicate argument |
+| E105 | Error | Design function missing parentheses |
+| W103 | Warning | Dangling continuation character |
+| I202 | Info | Hardcoded Adams ID reference |
+
 ### Macro Scanning
 Enable `msc-adams.linter.scanWorkspaceMacros` to let the linter discover user-defined macro files
 (`.mac` by default) in the workspace. Once scanned, user-defined macros are recognised as valid
 commands and their declared parameters are validated when the macro is called.
 
-Go-to-definition, find-references, and hover documentation are also available for user-defined
-macros. Hover over a macro invocation to see its help string (sourced from `!HELP_STRING` in the
-macro file header or the `help_string=` argument of an inline `macro create` statement).
+The linter also scans for User-Defined Element (UDE) definitions, recognising custom UDE commands
+and their parameters.
+
+## Code Navigation
+
+- **Go to Definition** — Ctrl+Click on any macro invocation, variable, part, marker, constraint, or UDE to jump to where it's defined.
+- **Find All References** — Right-click → Find All References to see every usage across the workspace.
+- **Macro Parameter Navigation** — Ctrl+Click on `$param_name` in a macro body to jump to its definition; Shift+F12 for all references.
+- **Hover Documentation** — Hover over a macro invocation to see its help string (sourced from `!HELP_STRING` in the macro file header or the `help_string=` argument of an inline `macro create` statement). Hover over Adams commands to see argument details, types, and descriptions.
+
+## Copilot Agent Skills
+
+The extension bundles 5 domain-knowledge skills that teach GitHub Copilot how to work with Adams. These are automatically available in Copilot Chat for all users who install the extension.
+
+| Skill | Description |
+|-------|-------------|
+| **adams-cmd-model-builder** | Build models using Adams CMD syntax |
+| **adams-python-model-builder** | Build models using the Adams Python API |
+| **adams-flex** | Flexible bodies, MNF files, and rotordynamics |
+| **adams-simulation-debugger** | Diagnose convergence failures and solver issues |
+| **adams-subroutine-writer** | Write C, C++, and Fortran user subroutines |
+
+## MCP Servers
+
+The extension registers two [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) servers that allow AI assistants to interact with Adams directly:
+
+**Adams View** — Connects to a running Adams View session. Provides tools to run CMD commands, execute Python, load files, submit simulations, and read the session log.
+
+**Adams CMD Linter** — Static analysis tools that let AI agents look up command syntax (`adams_lookup_command`), lint raw CMD text (`adams_lint_cmd_text`), and lint CMD files (`adams_lint_cmd_file`). This allows agents to validate their own Adams output before showing it to you.
   
 # Extension Settings
 
@@ -233,10 +273,6 @@ highlighting for the rest of the file.
 > A workaround is to add `!"` after the line with the equal sign. As shown below.
 
 ![Animation of issue when an equal sign is in a string on a continuation line](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/issue_equal_in_continuation_line.gif)
-
-
-# Contributing
-...
 
 
 # Support
