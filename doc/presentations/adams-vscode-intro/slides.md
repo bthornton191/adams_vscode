@@ -1,6 +1,6 @@
 ---
 theme: seriph
-title: "Your Editor Should Work As Hard As You Do"
+title: "Streamlining Adams Scripting with the Adams Extension for VS Code"
 info: |
   Adams VS Code Extension — Conference Presentation
 
@@ -48,7 +48,7 @@ themeConfig:
 }
 </style>
 
-# Your Editor Should Work As Hard As You Do
+# Streamlining Adams Scripting
 
 The Adams VS Code Extension
 
@@ -62,6 +62,94 @@ The Adams VS Code Extension
 
 <!--
 Welcome everyone. I'm going to show you something that I think will change how you write Adams scripts. Whether you're a CMD power user or just getting started with scripting, this extension brings modern editor intelligence to Adams.
+-->
+
+---
+
+# Agenda
+
+<div class="mt-8 flex flex-col gap-4">
+
+<div class="agenda-item" style="--i:1">
+  <span class="agenda-num">01</span>
+  <div>
+    <div class="agenda-title">The Editor Gap</div>
+    <div class="agenda-sub">Where Adams scripting tools are today</div>
+  </div>
+</div>
+
+<div class="agenda-item" style="--i:2">
+  <span class="agenda-num">02</span>
+  <div>
+    <div class="agenda-title">Code Editing</div>
+    <div class="agenda-sub">Syntax highlighting, autocomplete, hover docs, linting, code navigation</div>
+  </div>
+</div>
+
+<div class="agenda-item" style="--i:3">
+  <span class="agenda-num">03</span>
+  <div>
+    <div class="agenda-title">Adams Integration</div>
+    <div class="agenda-sub">Run in Adams, Python debugging</div>
+  </div>
+</div>
+
+<div class="agenda-item" style="--i:4">
+  <span class="agenda-num">04</span>
+  <div>
+    <div class="agenda-title">What's Coming</div>
+    <div class="agenda-sub">Teaching AI agents to use Adams</div>
+  </div>
+</div>
+
+<div class="agenda-item" style="--i:5">
+  <span class="agenda-num">05</span>
+  <div>
+    <div class="agenda-title">Get Started</div>
+    <div class="agenda-sub">Two-minute install</div>
+  </div>
+</div>
+
+</div>
+
+<style>
+@keyframes agendaFadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.agenda-item {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.07);
+  background: rgba(255,255,255,0.03);
+  opacity: 0;
+  animation: agendaFadeUp 0.25s ease forwards;
+  animation-delay: calc(0.15s + var(--i) * 0.2s);
+}
+.agenda-num {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: #6366f1;
+  min-width: 2.5rem;
+  font-variant-numeric: tabular-nums;
+}
+.agenda-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+.agenda-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.4);
+  margin-top: 0.1rem;
+}
+</style>
+
+<!--
+Here's what we'll cover. We'll start with the current state — what we've all been working with. Then I'll walk through the everyday improvements: autocomplete, hover docs, linting. Then the bigger workflow changes: running code in Adams, Python debugging, navigating your macro library. A quick look at what's coming with AI. And then we'll get you installed.
 -->
 
 ---
@@ -83,20 +171,8 @@ layout: center
 # The Adams GUI Macro Editor
 
 <div class="text-center mt-8">
-  <div class="inline-block p-8 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-    <div class="text-6xl mb-4">📝</div>
-    <p class="text-lg font-medium">[ PLACEHOLDER: Screenshot of Adams GUI Macro Editor ]</p>
-    <p class="text-sm mt-2">Show the built-in macro editor — a plain text box with an Apply button.<br/>No syntax highlighting, no error checking, no documentation.</p>
-  </div>
+  <img src="/aview_macro_editor.png" class="rounded-lg shadow-xl mx-auto" style="max-height: 380px" alt="Adams GUI Macro Editor" />
 </div>
-
-<v-click>
-
-<div class="mt-6 text-center text-xl text-gray-500">
-  This is what we've accepted as a scripting environment.
-</div>
-
-</v-click>
 
 <!--
 This is the Adams macro editor. It's a text box. And an Apply button. That's it. No highlighting, no error checking, no docs. If you misspell an argument, you find out when you run it.
@@ -109,20 +185,9 @@ layout: center
 # The Notepad++ Upgrade
 
 <div class="text-center mt-8">
-  <div class="inline-block p-8 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-    <div class="text-6xl mb-4">🎨</div>
-    <p class="text-lg font-medium">[ PLACEHOLDER: Screenshot of Notepad++ with Adams CMD file ]</p>
-    <p class="text-sm mt-2">Show a .cmd file in Notepad++ with custom Adams syntax highlighting.<br/>Colors — but nothing else.</p>
-  </div>
+  <img src="/notepadpp.png" class="rounded-lg shadow-xl mx-auto" style="max-height: 380px" alt="Notepad++ with Adams CMD file" />
 </div>
 
-<v-click>
-
-<div class="mt-6 text-center text-xl text-gray-500">
-  This was the upgrade. Colors, but nothing else.
-</div>
-
-</v-click>
 
 <!--
 If you wanted better, you moved to Notepad++ with a custom syntax file. You got colors. That's it. No completions, no docs, no linting. Every syntax error still costs you a round-trip to Adams View.
@@ -140,16 +205,24 @@ If you wanted better, you moved to Notepad++ with a custom syntax file. You got 
 - <mdi-close-circle class="text-red-500" /> **No documentation** — constant tab-switching to the Adams help
 - <mdi-close-circle class="text-red-500" /> **No autocomplete** — memorize every command and argument name
 - <mdi-close-circle class="text-red-500" /> **No code navigation** — find your macros by searching directories
-- <mdi-close-circle class="text-red-500" /> **No debugging** — `print` statements and prayer
+- <mdi-close-circle class="text-red-500" /> **No debugging** — `print` statements
 
 </v-clicks>
 
 <v-click>
 
-<div class="mt-8 p-4 rounded-lg" style="background: rgba(239, 68, 68, 0.1)">
-  <p class="text-lg text-center">
-    Every syntax error costs a <span v-mark.underline.red="6">round-trip to Adams View</span>.
+<div class="mt-8 p-4 rounded-lg" style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99,102,241,0.2)">
+  <p class="text-lg text-center text-white/70">
+    Every modern language has all of this.
   </p>
+</div>
+
+</v-click>
+
+<v-click>
+
+<div class="p-4 rounded-lg text-center" style="background: rgba(99, 102, 241, 0.15); border: 1px solid rgba(99,102,241,0.4)">
+  <span class="text-xl text-indigo-300 font-semibold">Now Adams does too!</span>
 </div>
 
 </v-click>
@@ -164,9 +237,9 @@ Every single syntax error costs you a round-trip to Adams View. Write, run, fail
 layout: section
 ---
 
-# Your Editor Knows Adams
+# Code Editing
 
-The everyday workflow improvements
+How the MSC Adams extension for VS Code helps you *read* and *write* code
 
 <!--
 Let's see what changes when your editor actually understands Adams.
@@ -175,35 +248,25 @@ Let's see what changes when your editor actually understands Adams.
 -->
 
 ---
-layout: two-cols-header
----
 
 # Syntax Highlighting
 
-::left::
+<div class="mt-6 grid grid-cols-2 gap-6">
 
-### Notepad++
-<div class="mt-4">
-  <div class="inline-block p-6 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-    <div class="text-4xl mb-2">🎨</div>
-    <p class="text-sm font-medium">[ PLACEHOLDER: Notepad++ with CMD file ]</p>
-    <p class="text-xs mt-1">Basic keyword coloring only</p>
-  </div>
+<div>
+  <div class="text-sm text-white/50 mb-2 text-center">Dark theme</div>
+  <img src="/syntax_highlighting.png" class="rounded-lg shadow-xl" style="width: 85%; height: auto; display: block; margin: 0 auto" alt="VS Code Adams syntax highlighting — dark" />
 </div>
 
-::right::
+<div>
+  <div class="text-sm text-white/50 mb-2 text-center">Light theme</div>
+  <img src="/syntax_highlighting-light.png" class="rounded-lg shadow-xl" style="width: 85%; height: auto; display: block; margin: 0 auto" alt="VS Code Adams syntax highlighting — light" />
+</div>
 
-### VS Code + Adams Extension
-<div class="mt-4">
-  <div class="inline-block p-6 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-    <div class="text-4xl mb-2">✨</div>
-    <p class="text-sm font-medium">[ PLACEHOLDER: Screen recording — Syntax highlighting ]</p>
-    <p class="text-xs mt-1">~15s: Open .cmd file, scroll through showing semantic<br/>token colors distinguishing commands, arguments, values</p>
-  </div>
 </div>
 
 <!--
-Here's the baseline comparison. On the left, Notepad++ with basic keyword coloring. On the right, VS Code with semantic token highlighting — the editor distinguishes commands, arguments, values, and even valid vs invalid names with different colors.
+VS Code with semantic token highlighting — the editor distinguishes commands, arguments, values, and even valid vs invalid names with different colors. Works in both dark and light themes.
 
 This is just the starting point.
 -->
@@ -212,27 +275,11 @@ This is just the starting point.
 
 # Autocomplete
 
-Type less. Get it right the first time.
+Adams CMD
 
-<div class="mt-6">
-  <img src="/autocomplete_function.gif" class="rounded-lg shadow-xl mx-auto" style="max-height: 340px" alt="Adams function autocomplete" />
+<div class="mt-4" style="height: calc(100% - 5rem)">
+  <video src="/cmd_autocomplete.mp4" autoplay loop muted controls style="max-height: 100%; max-width: 100%; display: block; margin: 0 auto" />
 </div>
-
-<v-click>
-
-<div class="mt-4 text-center text-gray-500">
-  Start typing → see completions with argument signatures → tab-complete
-</div>
-
-</v-click>
-
-<v-click>
-
-<div class="mt-3 text-center text-sm text-white/50">
-  Works for built-in commands, Adams functions, <em>and</em> your own custom macros.
-</div>
-
-</v-click>
 
 <!--
 Start typing a command name, and the editor shows you completions with the full argument list. Tab-complete into a template. You don't need to memorize argument names — the editor knows them.
@@ -244,54 +291,60 @@ And it works for your custom macros. The extension discovers them in your worksp
 
 ---
 
-# Hover Documentation
+# Autocomplete
 
-Never leave your editor to look up syntax.
+Python
 
-<div class="mt-4">
-  <img src="/function_documentation_on_hover.png" class="rounded-lg shadow-xl mx-auto" style="max-height: 280px" alt="Function documentation on hover" />
+<div class="mt-4" style="height: calc(100% - 5rem)">
+  <video src="/python_autocomplete.mp4" autoplay loop muted controls style="max-height: 100%; max-width: 100%; display: block; margin: 0 auto" />
 </div>
-
-<v-click>
-
-<div class="mt-4">
-  <div class="inline-block p-4 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 w-full">
-    <p class="text-sm font-medium">[ PLACEHOLDER: Screen recording — Hover documentation ]</p>
-    <p class="text-xs mt-1">~30s: Hover over DX(), STEP(), IMPACT() to show function docs. Hover over "marker create" to show command argument details. Hover over a custom macro call to show its help string. Hover over an abbreviated command like "var set" to show full docs.</p>
-  </div>
-</div>
-
-</v-click>
-
-<v-click>
-
-<div class="mt-3 grid grid-cols-3 gap-3 text-center text-xs text-white/60">
-  <div>Built-in commands &amp; functions</div>
-  <div>Your custom macros</div>
-  <div>Abbreviated forms (<code>var set</code>, <code>mar cre</code>)</div>
-</div>
-
-</v-click>
 
 <!--
-Hover over any Adams function — DX, STEP, IMPACT, UNIQUE_NAME — and you get the full documentation inline. Arguments, format, examples.
-
-Hover over a command keyword like "marker create" and you see every argument with its type and description.
-
-Hover over one of your own custom macros and you get its help string — the same docs block you wrote at the top of your .mac file, shown inline as if it were a built-in.
-
-And it works with abbreviated commands too — hover over "var set" and you see the full "variable set" documentation. You never have to leave your editor.
+The same experience for Adams Python scripts. Full autocomplete for the Adams Python API — every class, method, and argument.
 -->
 
 ---
+
+# Hover Documentation 
+
+Adams CMD
+
+<div class="mt-4" style="height: calc(100% - 5rem)">
+  <video src="/hover_cmd.mp4" autoplay loop muted controls style="max-height: 100%; max-width: 100%; display: block; margin: 0 auto" />
+</div>
+
+<!--
+Hover over any Adams function — DX, STEP, IMPACT — and you get the full documentation inline. Arguments, format, examples.
+
+Hover over a command keyword and you see every argument with its type and description.
+
+Works for built-in commands, custom macros, and abbreviated forms.
+-->
+
+---
+
+# Hover Documentation
+
+Python
+
+<div class="mt-4" style="height: calc(100% - 5rem)">
+  <video src="/hover_python.mp4" autoplay loop muted controls style="max-height: 100%; max-width: 100%; display: block; margin: 0 auto" />
+</div>
+
+<!--
+The same hover docs experience for Adams Python scripts. Hover over any Adams Python API method and you get the full docstring inline.
+-->
+
+---
+layout: center
 clicksStart: 1
 ---
 
-# Real-Time Linting
+# Linting
 
-Can you spot the error?
+Spellcheck for code
 
-<div class="sem-block mt-8 mx-auto" style="max-width: 560px">
+<div class="sem-block mt-12 mx-auto" style="max-width: 560px">
 <v-switch>
 <template #1>
 <pre class="sem-code"><code><span class="cmd">marker</span> <span class="cmd">create</span>  &amp;
@@ -306,10 +359,6 @@ Can you spot the error?
    <span class="arg">orientation</span> = <span class="num">0, 0, 0</span></code></pre>
 </template>
 </v-switch>
-</div>
-
-<div v-click="2" class="mt-6 text-center text-sm text-red-400">
-  <mdi-alert-circle /> <code>locaton</code> — the editor catches it before you ever hit run
 </div>
 
 <style>
@@ -344,62 +393,77 @@ The editor uses semantic tokens to color valid and invalid argument names differ
 
 ---
 
-# Real-Time Linting
+# Linting
 
-<span v-mark.highlight.yellow="1">Every red squiggle is a round-trip to Adams View you just saved.</span>
+Adams CMD
 
-<div class="mt-6">
-  <div class="inline-block p-6 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 w-full">
-    <div class="text-4xl mb-2">🔴</div>
-    <p class="text-lg font-medium">[ PLACEHOLDER: Screen recording — Real-time linting ]</p>
-    <p class="text-sm mt-2">~45s demonstration:</p>
-    <ul class="text-xs mt-2 text-left list-disc ml-4">
-      <li>Type a CMD script with an unknown command → E001 error squiggle appears</li>
-      <li>Type an invalid argument name → E003 error appears</li>
-      <li>Show the Problems panel with all diagnostics listed</li>
-      <li>Fix errors in real-time — squiggles disappear as you correct the code</li>
-    </ul>
+<div class="mt-4 flex gap-4 items-center" style="height: calc(100% - 4rem)">
+  <video src="/linting.mp4" autoplay loop muted controls style="flex: 1; min-width: 0; max-height: 100%" />
+
+  <div class="flex flex-col gap-3 text-center text-sm" style="width: 180px; flex-shrink: 0">
+    <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
+      <div class="font-bold text-red-600">Error</div>
+      <div>E000</div>
+      <div class="text-xs opacity-60">(e.g. unknown command)</div>
+    </div>
+    <div class="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
+      <div class="font-bold text-yellow-600">Warning</div>
+      <div>W000</div>
+      <div class="text-xs opacity-60">(e.g. object name omitted)</div>
+    </div>
+    <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+      <div class="font-bold text-blue-600">Information</div>
+      <div>I000</div>
+      <div class="text-xs opacity-60">(e.g. hardcoded adams id)</div>
+    </div>
   </div>
 </div>
-
-<v-click>
-
-<div class="mt-4 grid grid-cols-3 gap-4 text-center text-sm">
-  <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
-    <div class="font-bold text-red-600">E001</div>
-    <div>Unknown command</div>
-  </div>
-  <div class="p-3 rounded-lg bg-orange-50 dark:bg-orange-900/20">
-    <div class="font-bold text-orange-600">E003</div>
-    <div>Invalid argument</div>
-  </div>
-  <div class="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-900/20">
-    <div class="font-bold text-yellow-600">W001</div>
-    <div>Syntax warning</div>
-  </div>
-</div>
-
-</v-click>
 
 <!--
-This is the game changer. The linter checks your code as you type. Unknown command? Red squiggle. Invalid argument name? Error immediately. You see the problem before you ever hit run.
+The linter checks your code as you type. Unknown command? Red squiggle. Invalid argument name? Error immediately. You see the problem before you ever hit run.
 
-Every red squiggle is a round-trip to Adams View you just saved. For complex scripts, this can save dozens of iterations.
-
-[click] The linter knows the full Adams command vocabulary — commands, arguments, and their valid values.
+Every red squiggle is a round-trip to Adams View you just saved.
 -->
 
 ---
 
-# It All Works for Your Custom Macros
+# Linting
+
+Python
+
+<div class="mt-4" style="height: calc(100% - 4rem)">
+  <video src="/python_linting.mp4" autoplay loop muted controls style="max-height: 100%; max-width: 100%; display: block; margin: 0 auto" />
+</div>
+
+<!--
+Python scripts get the same treatment via Pylance — type errors, missing attributes, and invalid API usage surfaced as you write.
+-->
+
+---
+
+# Code Navigation
+
+Adams CMD
+
+<div class="mt-4" style="height: calc(100% - 5rem)">
+  <video src="/cmd_linked_refs.mp4" autoplay loop muted controls style="max-height: 100%; max-width: 100%; display: block; margin: 0 auto" />
+</div>
+
+<!--
+Click on any name — a part, a marker, a variable, a macro — and Go to Definition jumps straight to where it's defined. Find All References shows every place it's used across the entire workspace.
+
+The extension indexes everything: macros, variables, parts, markers, constraints, and UDEs.
+-->
+
+
+---
+
+# Compatible with Custom Macros
 
 <div class="custom-macro-slide">
 
 <div class="custom-macro-video">
-  <div class="w-full h-full rounded-xl border border-white/10 bg-white/5 flex flex-col items-center justify-center text-gray-400">
-    <div class="text-5xl mb-3">🎬</div>
-    <p class="text-sm font-medium">[ PLACEHOLDER: Screen recording — Custom macros ]</p>
-  </div>
+  <video src="/works_with_custom_macros.mp4" autoplay loop muted class="w-full h-full rounded-xl object-contain" />
 </div>
 
 <div class="custom-macro-chips">
@@ -485,8 +549,8 @@ It discovers .mac files automatically. You don't configure anything.
   <td class="py-2 pr-4"><mdi-language-python class="text-green-400 inline" /> <span class="font-mono font-bold text-green-400">.py</span></td>
   <td class="text-center"><mdi-check class="text-green-400" /></td>
   <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
+  <td class="text-center"><mdi-check class="text-green-400" /></td>
+  <td class="text-center"><mdi-check class="text-green-400" /></td>
   <td class="text-center"><mdi-check class="text-green-400" /></td>
 </tr>
 <tr class="border-b border-white/5 ft-row" style="--i:2">
@@ -531,30 +595,30 @@ It discovers .mac files automatically. You don't configure anything.
 </style>
 
 <!--
-Quick reference: .cmd and .mac files get the full treatment — highlighting, autocomplete, hover docs, linting, code navigation, and direct execution in Adams View.
+Quick reference: .cmd and .mac files get the everything (highlighting, autocomplete, hover docs, linting, code navigation, and direct execution in Adams View).
 
-Python gets the same, minus the Adams-specific linter — Pylance handles Python linting.
+Python gets the same, but Pylance handles Python linting and code navigation
 
-Solver files and output files get syntax highlighting only. That's useful enough — reading a .msg file in VS Code is already a better experience than opening it in Notepad.
+Solver files and output files get syntax highlighting only.
 -->
 
 ---
 layout: section
 ---
 
-# Beyond a Text Editor
+# Adams Integration
 
-Features that change how you work
+Connect to a running Adams Session
 
 <!--
-Those features save you time on every script. Now let's look at features that fundamentally change your workflow.
+You can actually connect to adams view in several ways to run and debug code
 -->
 
 ---
 
 # Run in Adams View
 
-Your editor IS your Adams console.
+Run files or selected code.
 
 <div class="mt-4">
   <img src="/run_selection_in_adams.gif" class="rounded-lg shadow-xl mx-auto" style="max-height: 380px" alt="Run selection in Adams View" />
@@ -565,7 +629,7 @@ Your editor IS your Adams console.
 <div class="mt-4 text-center">
   <kbd class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-sm font-mono">Ctrl+K</kbd>
   <kbd class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-sm font-mono ml-1">Ctrl+R</kbd>
-  <span class="ml-3 text-gray-500">→ Executes directly in Adams View. No copy-paste.</span>
+  <span class="ml-3 text-gray-500">→ Executes directly in Adams View</span>
 </div>
 
 </v-click>
@@ -592,82 +656,6 @@ Full Python debugging inside Adams View. Set a breakpoint, click "Debug in Adams
 No more print statements and prayer.
 -->
 
----
-
-# Python Intellisense
-
-Full type information for a closed-source API.
-
-<div class="mt-4">
-  <img src="/adams_python_autocomplete.gif" class="rounded-lg shadow-xl mx-auto" style="max-height: 340px" alt="Adams Python autocomplete" />
-</div>
-
-<v-click>
-
-<div class="mt-4 grid grid-cols-3 gap-4 text-center text-sm">
-  <div class="p-3 rounded-lg bg-white/5 border border-white/10">
-    <mdi-check-circle class="text-green-500 text-xl" />
-    <div class="mt-1 text-xs">Type annotations</div>
-  </div>
-  <div class="p-3 rounded-lg bg-white/5 border border-white/10">
-    <mdi-check-circle class="text-green-500 text-xl" />
-    <div class="mt-1 text-xs">Inline docstrings</div>
-  </div>
-  <div class="p-3 rounded-lg bg-white/5 border border-white/10">
-    <mdi-check-circle class="text-green-500 text-xl" />
-    <div class="mt-1 text-xs">Signature help</div>
-  </div>
-</div>
-
-</v-click>
-
-<v-click>
-
-<div class="mt-4 p-3 rounded-lg text-sm text-center" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3)">
-  Powered by hand-written <code>.pyi</code> stub files — intellisense for an API you can't read the source of.
-</div>
-
-</v-click>
-
-<!--
-The Adams Python API is closed-source. You can't read the module code. Normally that means you get no autocomplete, no type hints, no docs — you're writing against a black box.
-
-The extension ships .pyi stub files that describe the entire Adams Python API — every class, every method, every argument. Pylance picks these up automatically. So you get full type annotations, inline docstrings, and parameter signature help, for an API you couldn't otherwise inspect.
-
-Same quality of intellisense you'd expect for any well-typed Python library. For Adams.
--->
-
----
-
-# Code Navigation
-
-Click anything. Jump to its definition. Find everywhere it's used.
-
-<div class="mt-4">
-  <div class="inline-block p-6 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 w-full">
-    <div class="text-4xl mb-2">🔗</div>
-    <p class="text-lg font-medium">[ PLACEHOLDER: Screen recording — Code navigation ]</p>
-    <p class="text-sm mt-2">~45s demonstration:</p>
-    <ul class="text-xs mt-2 text-left list-disc ml-4">
-      <li>Click a macro invocation → Go to Definition jumps to the .mac file</li>
-      <li>Right-click a variable or part name → Find All References across the workspace</li>
-      <li>Hover over a custom macro call → shows the help string from its header</li>
-      <li>Show UDE go-to-definition and find-references</li>
-      <li>Problems panel: linter recognizes all custom objects as valid — no false errors</li>
-    </ul>
-  </div>
-</div>
-
-<v-clicks>
-
-- <mdi-arrow-right-bold class="text-blue-500" /> **Go to Definition** — macros, variables, parts, markers, constraints, UDEs
-- <mdi-arrow-right-bold class="text-blue-500" /> **Find All References** — every use, across the entire workspace
-
-</v-clicks>
-
-<!--
-The extension indexes your entire workspace. Every macro, variable, part, marker, constraint, and UDE. Click on any name and Go to Definition takes you straight to where it's defined. Find All References shows every place it's used across every file.
--->
 
 ---
 layout: section
@@ -683,59 +671,140 @@ We've seen what the extension does today. Let me give you a glimpse of what's co
 
 ---
 
-# AI Agents That Understand Adams
+# Teaching AI Agents to Use Adams
 
-<div class="mt-6">
-  <div class="inline-block p-4 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 w-full">
-    <p class="text-sm font-medium">[ PLACEHOLDER: Screen recording — MCP / AI demo ]</p>
-    <p class="text-xs mt-1">~30s: Chat panel open. User asks Copilot: "Write a STEP function for a soft stop at 45°, 5° ramp." Copilot calls <code>adams_lookup_command</code> to check the STEP syntax → calls <code>adams_lint_cmd_text</code> to validate the draft → returns a correct STEP expression, not generic Python.</p>
+<div class="mt-3 grid grid-cols-2 gap-5">
+
+<!-- MCP Servers -->
+<div>
+  <div class="section-label">Bundled MCP Servers</div>
+  <div class="def-box">
+    <span class="def-term">MCP</span> (Model Context Protocol) is an open standard that
+    lets AI agents call external tools — like running Adams commands — from
+    inside the chat window. The extension ships two MCP servers:
+  </div>
+  <div class="mcp-panel">
+    <div class="mcp-server-name">Adams View <span class="mcp-server-tag">live session</span></div>
+    <div class="tool-grid">
+      <span class="tool-chip">adams_run_cmd</span>
+      <span class="tool-chip">adams_run_python</span>
+      <span class="tool-chip">adams_load_file</span>
+      <span class="tool-chip">adams_evaluate_expression</span>
+      <span class="tool-chip">adams_export_model_cmd</span>
+      <span class="tool-chip">adams_create_simulation_script</span>
+      <span class="tool-chip">adams_submit_simulation</span>
+      <span class="tool-chip">adams_run_batch</span>
+      <span class="tool-chip">adams_batch_status</span>
+      <span class="tool-chip">adams_read_session_log</span>
+      <span class="tool-chip">adams_get_model_names</span>
+      <span class="tool-chip">adams_launch_view</span>
+    </div>
+  </div>
+  <div class="mcp-panel mt-2">
+    <div class="mcp-server-name">Adams CMD Linter <span class="mcp-server-tag">static analysis</span></div>
+    <div class="tool-grid">
+      <span class="tool-chip accent">adams_lint_cmd_text</span>
+      <span class="tool-chip accent">adams_lint_cmd_file</span>
+      <span class="tool-chip accent">adams_lookup_command</span>
+    </div>
   </div>
 </div>
 
-<v-click>
-
-<div class="mt-6 p-4 rounded-lg text-sm" style="background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.3)">
-
-**What makes this different from generic AI code generation:**
-
-Copilot calls the extension's MCP tools to look up Adams command syntax and validate the output against the real command vocabulary — before it shows you the answer. The AI checks its own work.
+<!-- Agent Skills -->
+<div>
+  <div class="section-label">Bundled Agent Skills</div>
+  <div class="def-box">
+    <span class="def-term">Agent skills</span> are domain knowledge packs that teach
+    Copilot Adams-specific concepts, patterns, syntax, and best practices. The agent reads these
+    whenever they become relevant to the task at hand.
+  </div>
+  <div class="skills-list">
+    <div class="skill-row">
+      <span class="skill-icon">🏗️</span>
+      <div><div class="skill-name">adams-cmd-model-builder</div><div class="skill-desc">Build models in Adams CMD syntax</div></div>
+    </div>
+    <div class="skill-row">
+      <span class="skill-icon">🐍</span>
+      <div><div class="skill-name">adams-python-model-builder</div><div class="skill-desc">Build models with the Adams Python API</div></div>
+    </div>
+    <div class="skill-row">
+      <span class="skill-icon">🌀</span>
+      <div><div class="skill-name">adams-flex</div><div class="skill-desc">Flexible bodies and MNF files</div></div>
+    </div>
+    <div class="skill-row">
+      <span class="skill-icon">🔍</span>
+      <div><div class="skill-name">adams-simulation-debugger</div><div class="skill-desc">Diagnose convergence failures</div></div>
+    </div>
+    <div class="skill-row">
+      <span class="skill-icon">⚙️</span>
+      <div><div class="skill-name">adams-subroutine-writer</div><div class="skill-desc">Fortran &amp; C user subroutines</div></div>
+    </div>
+  </div>
+</div>
 
 </div>
 
-</v-click>
-
-<v-click>
-
-<div class="mt-4 grid grid-cols-3 gap-3 text-center text-xs text-white/60">
-  <div><code>adams_lookup_command</code><br/>Resolve any abbreviation, get argument list</div>
-  <div><code>adams_lint_cmd_text</code><br/>Validate CMD before suggesting it</div>
-  <div><code>adams_run_cmd</code><br/>Execute directly in the running Adams session</div>
-</div>
-
-</v-click>
+<style>
+.def-box { font-size: 0.62rem; color: rgba(255,255,255,0.5); background: rgba(255,255,255,0.03); border-left: 2px solid rgba(165,180,252,0.4); border-radius: 0 4px 4px 0; padding: 0.3rem 0.5rem; margin-bottom: 0.4rem; line-height: 1.5; }
+.def-term { color: #a5b4fc; font-weight: 600; }
+.section-label { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: rgba(255,255,255,0.4); margin-bottom: 0.4rem; }
+.mcp-panel { background: rgba(15,15,30,0.7); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 0.6rem 0.75rem; }
+.mcp-server-name { font-size: 0.63rem; font-weight: 700; color: rgba(165,180,252,0.9); margin-bottom: 0.35rem; }
+.mcp-server-tag { font-size: 0.55rem; font-weight: 400; background: rgba(165,180,252,0.12); border: 1px solid rgba(165,180,252,0.25); border-radius: 3px; padding: 0.05rem 0.3rem; margin-left: 0.3rem; color: rgba(165,180,252,0.6); vertical-align: middle; }
+.tool-grid { display: flex; flex-wrap: wrap; gap: 0.25rem; }
+.tool-chip { font-family: monospace; font-size: 0.57rem; background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 4px; padding: 0.15rem 0.4rem; color: rgba(255,255,255,0.6); white-space: nowrap; }
+.tool-chip.accent { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.35); color: #a5b4fc; }
+.mt-2 { margin-top: 0.5rem; }
+.skills-list { display: flex; flex-direction: column; gap: 0.4rem; }
+.skill-row { display: flex; align-items: flex-start; gap: 0.5rem; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; padding: 0.4rem 0.6rem; }
+.skill-icon { font-size: 1rem; line-height: 1.2; flex-shrink: 0; }
+.skill-name { font-size: 0.65rem; font-weight: 600; font-family: monospace; color: #e0e7ff; }
+.skill-desc { font-size: 0.6rem; color: rgba(255,255,255,0.45); margin-top: 0.1rem; }
+</style>
 
 <!--
-The extension ships an MCP server — Model Context Protocol — that exposes Adams knowledge to AI assistants like GitHub Copilot.
+The extension ships two MCP servers — Model Context Protocol — which let AI assistants like GitHub Copilot call into Adams directly.
 
-Here's what that looks like in practice. You ask Copilot: "Write a STEP function for a soft stop at 45 degrees with a 5 degree ramp." Without the MCP server, you'd get a plausible-looking expression that may or may not use the right argument order.
+The Adams View server gives agents a live connection to a running Adams session: they can run commands, execute Python, load files, submit simulations, and read the log.
 
-With the MCP server, Copilot calls adams_lookup_command to check the STEP function signature, drafts an expression, then calls adams_lint_cmd_text to validate it. It catches its own mistakes before showing you the answer. You get valid Adams syntax, not generic code.
+The CMD Linter server gives agents static analysis tools — they can look up command syntax and validate their own output before showing it to you.
 
-This is early, and it's the direction we're heading.
+On top of that, the extension bundles five agent skills — domain knowledge packs that teach Copilot how to think like an Adams engineer for specific tasks.
 -->
 
 ---
-layout: statement
----
 
-# The scripting experience<br/>Adams users deserve.
+# Copilot Agent Example
 
-<div class="mt-8 text-lg text-gray-500">
-  Free. Open source. And it keeps getting better.
+<div class="mt-2 grid grid-cols-2 gap-4" style="height: calc(100% - 4rem); grid-template-rows: 1fr; align-items: stretch">
+
+<!-- Left: Chat panel (Vue component) -->
+<CopilotChat style="height: 100%; min-height: 0" />
+
+<!-- Right: click-through **images** -->
+<div class="flex flex-col gap-2" style="height: 100%; min-height: 0; overflow: hidden">
+  <div class="text-xs text-white/30 text-center mb-1">Model progress</div>
+  <div style="flex: 1; min-height: 0; position: relative; overflow: hidden">
+    <v-switch style="position: absolute; inset: 0; height: 100%; width: 100%">
+      <template #1>
+        <img src="/wind_turbine_model.png" class="rounded-lg shadow-xl w-full h-full object-contain" alt="Wind turbine Adams model" />
+      </template>
+      <template #2>
+        <img src="/wind_turbine_fail.png" class="rounded-lg shadow-xl w-full h-full object-contain" alt="Wind turbine simulation failure" />
+      </template>
+      <template #3>
+        <video src="/wind_turbine.mp4" autoplay loop muted class="rounded-lg shadow-xl w-full h-full object-contain" />
+      </template>
+    </v-switch>
+  </div>
+</div>
+
 </div>
 
 <!--
-This is the scripting experience Adams users deserve. A modern editor that understands your language, catches your mistakes, and helps you work faster. And it keeps getting better — every release adds new capabilities.
+Here's what it looks like in practice. You describe what you want in plain English. Copilot looks up the Adams command syntax, validates the expressions, and executes them in the running Adams session — all without you leaving the chat panel.
+
+The images on the right show the model building up as the conversation progresses.
 -->
 
 ---
@@ -756,25 +825,20 @@ It takes two minutes.
 
 ### From VS Code
 
-<v-clicks>
 
 1. Open **Extensions** panel <kbd>Ctrl+Shift+X</kbd>
 2. Search **"MSC Adams"**
 3. Click **Install**
 4. Done.
 
-</v-clicks>
 
-<v-click>
 
 <div class="mt-4">
-  <div class="inline-block p-4 rounded-xl border-2 border-gray-400 border-dashed bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-    <p class="text-sm font-medium">[ PLACEHOLDER: QR code ]</p>
-    <p class="text-xs mt-1">Link to VS Code Marketplace listing</p>
-  </div>
+  <a href="https://marketplace.visualstudio.com/items?itemName=savvyanalyst.msc-adams" target="_blank">
+    <img src="/vs_marketplace.png" class="rounded-lg shadow-xl" style="max-height: 100px" alt="MSC Adams on VS Code Marketplace" />
+  </a>
 </div>
 
-</v-click>
 
 </div>
 
@@ -787,7 +851,7 @@ It takes two minutes.
 {
   // Point to Adams installation
   "msc-adams.adamsLaunchCommand":
-    "C:\\MSC\\Adams\\mdi.bat",
+    "C:\\Program Files\\MSC.Software\\Adams\\2024_2\\common\\mdi.bat",
 
   // Enable the CMD linter
   "msc-adams.linter.enabled": true,
