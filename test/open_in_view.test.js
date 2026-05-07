@@ -38,7 +38,7 @@ function makeMockChild() {
 suite("open_in_view", () => {
     let originalSpawn;
     let originalExistsSync;
-    const FAKE_LAUNCH_CMD = "C:/fake/mdi.bat";
+    const FAKE_LAUNCH_CMD = "C:/Program Files/fake/mdi.bat";
 
     suiteSetup(async () => {
         await vscode.workspace
@@ -110,9 +110,9 @@ suite("open_in_view", () => {
 
         handler(uri);
 
-        assert.strictEqual(capturedArgs.file, launcher);
-        assert.strictEqual(capturedArgs.args[0], path.basename(uri.fsPath));
-        assert.strictEqual(capturedArgs.args[1], FAKE_LAUNCH_CMD);
+        assert.strictEqual(capturedArgs.file, `"${launcher}"`);
+        assert.strictEqual(capturedArgs.args[0], `"${path.basename(uri.fsPath)}"`);
+        assert.strictEqual(capturedArgs.args[1], `"${FAKE_LAUNCH_CMD}"`);
         assert.strictEqual(capturedArgs.opts.cwd, path.dirname(uri.fsPath));
         done();
     });
@@ -194,6 +194,26 @@ suite("open_in_view", () => {
 
         assert.strictEqual(reporter.calls.telemetry.length, 1);
         assert.strictEqual(reporter.calls.telemetry[0][0], "open_in_view");
+        done();
+    });
+
+    test("should quote command and args so cmd.exe /s does not discard surrounding quotes", (done) => {
+        // shell:true makes Node construct: cmd.exe /d /s /c "<cmd> args"
+        // /s strips the outer pair, so every space-containing token needs its own quotes.
+        const capturedArgs = {};
+        child_process.spawn = (file, args) => { capturedArgs.file = file; capturedArgs.args = args; return makeMockChild(); };
+
+        const launcher = "C:/Program Files/fake/launcher.bat";
+        const context = makeContext(launcher);
+        const uri = makeUri("C:/models/my model.cmd");
+        open_in_view(context, output_channel, null)(uri);
+
+        assert.strictEqual(capturedArgs.file, `"${launcher}"`,
+            "Launcher path must be quoted");
+        assert.strictEqual(capturedArgs.args[0], `"${path.basename(uri.fsPath)}"`,
+            "Filename arg must be quoted");
+        assert.strictEqual(capturedArgs.args[1], `"${FAKE_LAUNCH_CMD}"`,
+            "Adams launch command arg must be quoted");
         done();
     });
 

@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.0.5 (May 7th 2026)](#205-may-7th-2026)
   - [2.0.4 (May 7th 2026)](#204-may-7th-2026)
   - [2.0.3 (May 7th 2026)](#203-may-7th-2026)
   - [2.0.2 (May 7th 2026)](#202-may-7th-2026)
@@ -71,6 +72,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.0.5 (May 7th 2026)
+
+- **Fixed** "Open Adams View" and "Open in Adams View" commands failing to launch Adams when the installation path contains spaces (e.g. `C:\Program Files\...`). When `shell: true` is used, Windows cmd.exe's `/s` flag strips the outer quote pair — leaving the path unquoted and silently failing. The command path is now wrapped in its own quotes so the path is preserved after `/s` stripping.
 
 ## 2.0.4 (May 7th 2026)
 

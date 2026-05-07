@@ -39,8 +39,8 @@ function open_in_view(context, output_channel, reporter = null) {
         if (reporter) reporter.sendTelemetryEvent("open_in_view");
 
         const child = child_process.spawn(
-            view_launcher,
-            [base_name, adams_launch_command],
+            `"${view_launcher}"`,
+            [`"${base_name}"`, `"${adams_launch_command}"`],
             { cwd: dir_name, shell: true, detached: true, stdio: "ignore" },
         );
         child.unref();
