@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.0.3 (May 7th 2026)](#203-may-7th-2026)
   - [2.0.2 (May 7th 2026)](#202-may-7th-2026)
   - [2.0.1 (May 7th 2026)](#201-may-7th-2026)
   - [2.0.0 (May 7th 2026)](#200-may-7th-2026)
@@ -69,6 +70,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.0.3 (May 7th 2026)
+
+- **Fixed** Extension failed to activate with `Cannot find module '@vscode/extension-telemetry'` due to a vsce 3.x breaking change. vsce 3.x respects `node_modules/**` in `.vscodeignore` literally (previously it overrode the pattern for production dependencies). Removed `node_modules/**` from `.vscodeignore` so vsce's built-in `npm ls --production` filtering includes production dependencies correctly. Added `vscode:prepublish` script (`npm ci --omit=dev`) to guarantee a clean, reproducible production `node_modules` state before packaging.
 
 ## 2.0.2 (May 7th 2026)
 
