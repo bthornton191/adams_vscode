@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.0.4 (May 7th 2026)](#204-may-7th-2026)
   - [2.0.3 (May 7th 2026)](#203-may-7th-2026)
   - [2.0.2 (May 7th 2026)](#202-may-7th-2026)
   - [2.0.1 (May 7th 2026)](#201-may-7th-2026)
@@ -70,6 +71,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.0.4 (May 7th 2026)
+
+- **Improved** Reduced VSIX package size by ~14 MB by excluding `doc/` from the packaged extension. README images are served via absolute GitHub raw URLs and are unaffected.
 
 ## 2.0.3 (May 7th 2026)
 
