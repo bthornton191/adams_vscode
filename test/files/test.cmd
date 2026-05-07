@@ -1,7 +1,7 @@
 !USER_ENTERED_COMMAND command
 ! -----------------------------------------------------------------
 ! MACRO NAME:  test.cmd
-! DESCRIPTION: description   
+! HELP_STRING: description   
 ! AUTHOR:      Ben Thornton (ben.thornton@hexagon.com)
 !END_OF_PARAMETERS
 
@@ -176,3 +176,4 @@ xy_plot template &
    
    
 
+custom command param1=10 part_name="my_part"

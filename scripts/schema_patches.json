@@ -1,0 +1,577 @@
+{
+    "_comment": [
+    "Manual patches applied on top of the generated command_schema.json.",
+    "Use 'python scripts/generate_command_schema.py ... --patches scripts/schema_patches.json'",
+    "to regenerate with these fixes preserved.",
+    "",
+    "Each entry under 'commands' REPLACES the corresponding key in the generated command.",
+    "Only the listed keys are overwritten; all other generated data is preserved.",
+    "",
+    "Patch categories:",
+    "",
+    "  1) Joint i/j marker groups: language.src incorrectly groups i_marker_name,",
+    "     i_part_name, j_marker_name, j_part_name into a single 4-member exclusive group.",
+    "     The correct Adams semantics are TWO independent groups: {i_marker_name, i_part_name}",
+    "     and {j_marker_name, j_part_name}. Using both i_marker and j_marker is normal.",
+    "",
+    "  2) Force/function groups: language.src omits the {function, user_function} exclusive",
+    "     group for force and data element commands. Without the group the linter fires E005",
+    "     for the unused alternative.",
+    "",
+    "  3) user_function is almost always optional: it lets users replace built-in behaviour",
+    "     with a custom subroutine. commands.exp marks it required, but in practice the",
+    "     built-in function= (or force-function args) is the normal usage. Exceptions:",
+    "     constraint create user_defined and simulation single_run subroutine consub,",
+    "     where user_function IS the element.",
+    "",
+    "  4) j_floating_marker_name vs j_part_name: these are two alternative ways to specify",
+    "     the J-body on direct forces. commands.exp marks both required with no group.",
+    "",
+    "  5) Spline file_name vs x/y: splines can be defined inline (x=..., y=...) or loaded",
+    "     from a file (file_name=...). These are mutually exclusive. Result-set component",
+    "     names are only needed when extracting data from result sets, not for inline data.",
+    "",
+    "  6) Spring/damper i/j marker vs part groups and coupler/motion_generator details.",
+     "     See individual entries for rationale.",
+     "",
+     "  7) material create: language.src incorrectly marks youngs_modulus and poissons_ratio",
+     "     as mutually exclusive. They are complementary elastic constants used together.",
+     "",
+    "  8) interface field set: database_fields and strings are mutually exclusive.",
+     "     language.src omits this group.",
+     "",
+     "  9) xy_plots curve create: commands.exp marks all 8 dependent-axis args as required",
+     "     with no exclusive groups, causing false-positive E005 for every alternative when",
+     "     any one alternative is used. Fix: put all 8 in one exclusive group so providing",
+     "     any one suppresses the others. Also: plot_name is derivable from the curve_name",
+     "     path (e.g. .plot_1.curve_1), so it is not truly required.",
+     "",
+     " 10) mdi gui_utl_alert_box_1: this command is absent from commands.exp entirely.",
+     "     It is a built-in Adams MDI alert-dialog command.  Arguments: type (enum:",
+     "     ERROR/WARNING/INFO/QUESTION, required), text (string, required).",
+     "",
+     " 11) view management orient: this command is absent from commands.exp entirely.",
+     "     It is a valid Adams View command for setting the view orientation (up/forward axis).",
+     "     Added as a new entry with: view (existing_object/View/required),",
+     "     up_axis (enum, optional), forward_axis (enum, optional).",
+     "     Also added to command_tree under view -> management.",
+     "",
+     " 12) data_element create matrix full: 'values' and 'result_set_component_names' are",
+     "     mutually exclusive data sources (inline values vs result-set reference).",
+     "     commands.exp marks both required with no exclusive groups.",
+     "",
+     " 12) i_marker_name / i_part_name / location and j_marker_name / j_part_name groups:",
+     "     Providing an existing marker (i_marker_name or j_marker_name) already encodes",
+     "     both the part and the location. commands.exp marks all alternatives required with",
+     "     no exclusive groups on primitive joints, higher_pair_contact, and element_like",
+     "     forces. Fix: {i_marker_name, i_part_name} and {j_marker_name, j_part_name} groups",
+     "     on primitive joints and element_like forces; additionally {i_marker_name, location}",
+     "     on higher_pair_contact point_curve (which has no j-body)."
+   ],
+  "commands": {
+    "constraint create joint rigid": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint translational": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint revolute": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint cylindrical": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint universal": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint spherical": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint planar": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint rackpin": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint screw": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint convel": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint fixed": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create joint hooke": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint modify joint general": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create higher_pair_contact point_curve": {
+      "_comment": "i_marker_name encodes both part and location. {i_marker_name, i_part_name} and {i_marker_name, location} are two independent exclusive pairs. No j-body on this command.",
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["i_marker_name", "location"]}
+      ]
+    },
+    "constraint create primitive_joint at_point": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create primitive_joint inline": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create primitive_joint inplane": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create primitive_joint orientation": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create primitive_joint parallel_axis": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create primitive_joint perpendicular": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "constraint create primitive_joint point_point": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "force create element_like beam": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "force create element_like bushing": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "force create element_like field": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "force create element_like rotational_spring_damper": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ]
+    },
+    "force create direct single_component_force": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]},
+        {"group": 2, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 3, "members": ["j_marker_name", "j_part_name"]}
+      ],
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "force create direct general_force": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["j_floating_marker_name", "j_part_name"]}
+      ],
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "force create direct force_vector": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["j_floating_marker_name", "j_part_name"]}
+      ],
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "force create direct torque_vector": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["j_floating_marker_name", "j_part_name"]}
+      ],
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "force create direct modal_force": {
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "part create equation differential_equation": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]}
+      ],
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "part create equation general_state_equation": {
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "constraint create motion_generator": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]},
+        {"group": 2, "members": ["joint_name", "i_marker_name"]},
+        {"group": 3, "members": ["joint_name", "j_marker_name"]}
+      ],
+      "required_overrides": {
+        "axis": false,
+        "user_function": false
+      }
+    },
+    "constraint create complex_joint coupler": {
+      "required_overrides": {
+        "user_function": false
+      },
+      "arg_overrides": {
+        "joint_name": {
+          "array": true,
+          "min_values": 2,
+          "max_values": 3
+        }
+      }
+    },
+    "data_element create variable": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]}
+      ],
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "data_element create curve": {
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "data_element create spline": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["file_name", "x"]},
+        {"group": 2, "members": ["file_name", "y"]}
+      ],
+      "required_overrides": {
+        "x_result_set_component_name": false,
+        "y_result_set_component_name": false
+      }
+    },
+    "data_element create matrix full": {
+      "_comment": "'values' and 'result_set_component_names' are mutually exclusive data sources. commands.exp marks both required with no exclusive groups.",
+      "exclusive_groups": [
+        {"group": 1, "members": ["values", "result_set_component_names"]}
+      ]
+    },
+    "executive_control create sensor": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["function", "user_function"]}
+      ],
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "output_control create request": {
+      "required_overrides": {
+        "user_function": false
+      }
+    },
+    "force create element_like translational_spring_damper": {
+      "exclusive_groups": [
+        {"group": 1, "members": ["i_marker_name", "i_part_name"]},
+        {"group": 2, "members": ["j_marker_name", "j_part_name"]}
+      ],
+      "required_overrides": {
+        "i_marker_name": false,
+        "j_marker_name": false,
+        "i_part_name": false,
+        "j_part_name": false
+      }
+    },
+    "material create": {
+      "_comment": "youngs_modulus and poissons_ratio are NOT mutually exclusive — both are needed together to define elastic properties. language.src incorrectly groups them.",
+      "exclusive_groups": []
+    },
+    "interface field set": {
+      "_comment": "database_fields and strings are mutually exclusive — the field is populated either from a database query or from a literal string list, not both.",
+      "exclusive_groups": [
+        {"group": 1, "members": ["database_fields", "strings"]}
+      ]
+    },
+    "xy_plots curve create": {
+      "_comment": "All 8 dependent-axis args (v*/y_*/d*) are alternative ways to provide the same data. commands.exp marks all as required with no exclusive groups. plot_name is also falsely required — it is derivable from the curve_name hierarchical path.",
+      "exclusive_groups": [
+        {
+          "group": 1,
+          "members": [
+            "vaxis_data", "vmeasure", "y_expression_text", "y_values",
+            "ddata", "dmeasure", "dexpression_text", "dvalues"
+          ]
+        }
+      ],
+      "required_overrides": {
+        "plot_name": false
+      }
+    }
+  },
+  "new_commands": {
+    "mdi gui_utl_alert_box_1": {
+      "_comment": "Absent from commands.exp entirely. Built-in Adams MDI alert dialog command.",
+      "args": {
+        "type": {
+          "type": "string",
+          "required": true,
+          "enum_values": ["error", "warning", "info", "question"],
+          "min_prefix": 2
+        },
+        "text": {
+          "type": "string",
+          "required": true,
+          "min_prefix": 2
+        }
+      },
+      "exclusive_groups": []
+    },
+    "view management orient": {
+      "_comment": "Absent from commands.exp entirely. Valid Adams View command for setting view orientation.",
+      "args": {
+        "view": {
+          "type": "existing_object",
+          "object_type": "View",
+          "db_type": "DB_VIEW",
+          "required": true,
+          "min_prefix": 2
+        },
+        "up_axis": {
+          "type": "unknown",
+          "raw_type": "AXIS_DIRECTION",
+          "required": false,
+          "enum_values": ["X_pos", "X_neg", "Y_pos", "Y_neg", "Z_pos", "Z_neg"],
+          "min_prefix": 2
+        },
+        "forward_axis": {
+          "type": "unknown",
+          "raw_type": "AXIS_DIRECTION",
+          "required": false,
+          "enum_values": ["X_pos", "X_neg", "Y_pos", "Y_neg", "Z_pos", "Z_neg"],
+          "min_prefix": 2
+        }
+      },
+      "exclusive_groups": []
+    },
+    "mdi toolbar display": {
+      "_comment": "Absent from commands.exp entirely. MDI command to show/hide a toolbar by name.",
+      "args": {
+        "toolbar": {
+          "type": "string",
+          "required": true,
+          "min_prefix": 1
+        },
+        "state": {
+          "type": "boolean",
+          "required": false,
+          "enum_values": ["on", "off"],
+          "min_prefix": 1
+        },
+        "top": {
+          "type": "boolean",
+          "required": false,
+          "enum_values": ["yes", "no", "same"],
+          "min_prefix": 1
+        }
+      },
+      "exclusive_groups": []
+    }
+  },
+
+  "_comment_batch2": [
+    " 13) contact create / contact modify: commands.exp incorrectly marks normal_function",
+    "     and normal_routine as mutually exclusive, and similarly friction_function and",
+    "     friction_routine. In Adams these are complementary pairs: normal_function provides",
+    "     the force-vs-penetration parameters while normal_routine names the DLL subroutine",
+    "     that implements the custom contact law — both must be supplied together.",
+    "     Same applies to friction_function / friction_routine. These two groups are removed",
+    "     from both contact create and contact modify.",
+    "     Additionally, contact create: commands.exp incorrectly puts stiffness/damping/dmax/exponent",
+    "     in an exclusive group. These are all penalty-method parameters used together.",
+    "     Similarly coulomb_friction/mu_static/mu_dynamic/etc. are friction params used",
+    "     together. Both groups removed from contact create only (contact modify does not",
+    "     have these groups in commands.exp). penalty vs restitution_coefficient (group 6)",
+    "     remains correct.",
+    "",
+    " 14) section create / section modify: cross-section dimension args (cyl_radius,",
+    "     rect_height, rect_base, major_radius, minor_radius, ib_height, ib_base,",
+    "     ib_flange, ib_web, xy_points, zy_points) are conditional on section_type.",
+    "     commands.exp marks all as required, causing E005 for every unused shape.",
+    "     Fix: set all to required=false.",
+    "",
+    " 15) geometry create shape force: joint_name, jprim_name, curve_curve_name,",
+    "     point_curve_name are four alternative entity references (you use the one",
+    "     matching the force element type). Added as exclusive group.",
+    "",
+    " 16) clearance create: i_flex is for flexible-body contacts; i_geometry + i_part",
+    "     are for rigid-body contacts. They are mutually exclusive. Added exclusive",
+    "     groups [i_flex, i_geometry], [i_flex, i_part] (and j equivalents).",
+    "",
+    " 17) file geometry write: type_of_geometry enum was missing catiav4, catiav5,",
+    "     acis, vda — formats that Adams can export to.",
+    "",
+    " 18) part copy: part_name and new_part_name were incorrectly in an exclusive group.",
+    "     Both must be provided simultaneously (source and destination names).",
+    "",
+    " 19) geometry create shape extrusion: profile_curve vs points_for_profile and",
+    "     path_curve vs path_points vs length_along_z_axis etc. are alternative",
+    "     definition methods. Added as exclusive groups.",
+    "",
+    " 20) geometry create shape revolution: profile_curve vs points_for_profile.",
+    "     Added as exclusive group."
+  ],
+
+  "commands2": {
+    "contact create": {
+      "exclusive_groups_remove": [
+        ["stiffness", "damping", "dmax", "exponent"],
+        ["coulomb_friction", "mu_static", "mu_dynamic",
+         "friction_transition_velocity", "stiction", "max_stiction_deformation"],
+        ["normal_function", "normal_routine"],
+        ["friction_function", "friction_routine"]
+      ]
+    },
+    "contact modify": {
+      "exclusive_groups_remove": [
+        ["normal_function", "normal_routine"],
+        ["friction_function", "friction_routine"]
+      ]
+    },
+    "section create": {
+      "args_set_required_false": [
+        "cyl_radius", "cyl_thickness",
+        "rect_height", "rect_base", "rect_thickness",
+        "major_radius", "minor_radius",
+        "ib_height", "ib_base", "ib_flange", "ib_web",
+        "xy_points", "zy_points"
+      ]
+    },
+    "geometry create shape force": {
+      "exclusive_groups_add": [
+        ["joint_name", "jprim_name", "curve_curve_name", "point_curve_name"]
+      ]
+    },
+    "clearance create": {
+      "exclusive_groups_add": [
+        ["i_flex", "i_geometry"],
+        ["i_flex", "i_part"],
+        ["j_flex", "j_geometry"],
+        ["j_flex", "j_part"]
+      ]
+    },
+    "file geometry write": {
+      "args_add_enum_values": {
+        "type_of_geometry": ["catiav4", "catiav5", "acis", "vda"]
+      }
+    },
+    "geometry create shape extrusion": {
+      "exclusive_groups_add": [
+        ["profile_curve", "points_for_profile"],
+        ["path_curve", "path_points", "length_along_z_axis", "profiles_loft", "centerline_loft"]
+      ]
+    },
+    "geometry create shape revolution": {
+      "exclusive_groups_add": [
+        ["profile_curve", "points_for_profile"]
+      ]
+    },
+
+    "_comment_batch6": [
+      "Batch-6: false-positive E005/E006 fixes applied directly to command_schema.json.",
+      "  panel set twindow_function step — various args required=false, 4 exclusive groups",
+      "  animation add_simulation — page_name required=false",
+      "  part create stress_body — part_name required=false",
+      "  numeric_results create modal_polyline — exclusive group for state equation args",
+      "  part create point_mass mass_properties — exclusive group",
+      "  panel set acf_twindow reload — exclusive group {file_name, buffer}",
+      "  panel set twindow_function _cosine/_sine_fourier_series — exclusive groups",
+      "  panel set twindow_function impact — exclusive groups",
+      "  panel set twindow_function simple_harmonic_function — exclusive groups",
+      "  geometry create curve curve_trace — removed false exclusive group {trace_marker, base_marker}",
+      "  force create direct modal_force — exclusive groups",
+      "  interface data_table set row — range required=false; exclusive group {range, use_row_selected}",
+      "  interface object_table set cell — exclusive groups",
+      "  variable create — required=false for value args (real_value, integer_value, etc.)"
+    ],
+
+    "_comment_batch7": [
+      "Batch-7: stub commands added to suppress false-positive E001 for valid but undocumented commands.",
+      "  file temporary_settings apply/revert/read/write",
+      "  part modify flexible_body modal_content",
+      "  mdi durability nodal_plot/export_unit_matrix/import_fef/export_q/fsi_recovery/hotspots write/fepart",
+      "  mdi vibration modal_info_display/vibration_analysis_linear solve/multirun_full_solve/modal_energy set/eigen_info_display/export_q/forced_vibration_analysis create",
+      "  mdi marker delete_unused",
+      "  mdi flx_unv2mnf",
+      "  files delete/chmod",
+      "  vflex make flex",
+      "  vibration actuator create/input_channel create/output_channel create/vibration_analysis create/modify"
+    ]
+  }
+}

@@ -22,13 +22,23 @@ function open_view_here(output_channel, reporter = null) {
                         );
                     }
                 });
+            if (reporter && adams_launch_command) {
+                reporter.sendTelemetryErrorEvent("open_view_here", {
+                    error_type: "config_missing",
+                });
+            }
         }
 
         console.log(`"${adams_launch_command}" aview ru-s i`);
         output_channel.appendLine(
             `[${new Date().toLocaleTimeString()}]: "${adams_launch_command}" aview ru-s i`,
         );
-        if (reporter) reporter.sendTelemetryEvent("open_view_here");
+        if (reporter)
+            reporter.sendTelemetryEvent("open_view_here", {
+                launch_command_configured: String(
+                    !!adams_launch_command && fs.existsSync(adams_launch_command),
+                ),
+            });
         child_process.execFile(
             adams_launch_command,
             ["aview", "ru-s", "i"],
@@ -41,7 +51,8 @@ function open_view_here(output_channel, reporter = null) {
                     );
                     if (reporter)
                         reporter.sendTelemetryErrorEvent("open_view_here", {
-                            error: error.message,
+                            error_type: "process_error",
+                            error_message: error.message,
                         });
                     return;
                 }
@@ -51,7 +62,10 @@ function open_view_here(output_channel, reporter = null) {
                         `[${new Date().toLocaleTimeString()}]: stderr: ${stderr}`,
                     );
                     if (reporter)
-                        reporter.sendTelemetryErrorEvent("open_view_here", { error: stderr });
+                        reporter.sendTelemetryErrorEvent("open_view_here", {
+                            error_type: "stderr",
+                            error_message: stderr,
+                        });
                     return;
                 }
                 console.log(`stdout: ${stdout}`);

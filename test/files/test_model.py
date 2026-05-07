@@ -1,4 +1,4 @@
-import Adams  # type: ignore
+import Adams
 
 mod = Adams.Models.create(name='test_model')
 part = mod.Parts.createRigidBody(name='PART_2')

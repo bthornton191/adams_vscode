@@ -532,6 +532,154 @@ suite("cmd_completion_provider", () => {
         );
     });
 
+    test("should not add leading space to label when partial arg name is typed", () => {
+        const function_names = new Map();
+        const commands = {
+            "marker create": ["marker_name", "location"],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = ["marker create &", "    marker_"];
+        const localPosition = new vscode.Position(1, lines[1].length);
+        const doc = makeDocument("marker_", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const match = completions.find((c) => c.label.includes("marker_name"));
+        assert.ok(match, "Expected 'marker_name' completion");
+        assert.ok(
+            !String(match.label).startsWith(" "),
+            "Label should not start with a space when partial arg is typed",
+        );
+    });
+
+    test("should return filtered argument completions when typing partial arg name on continuation line", () => {
+        const function_names = new Map([
+            ["min", "min doc"],
+            ["max", "max doc"],
+        ]);
+        const commands = {
+            "marker create": ["marker_name", "marker", "location", "orientation", "relative_to"],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        // Simulates: "marker create &\n    m" (cursor after "m")
+        const lines = ["marker create &", "    m"];
+        const localPosition = new vscode.Position(1, lines[1].length);
+        const doc = makeDocument("m", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("marker_name")),
+            "Expected 'marker_name' (starts with 'm')",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("marker")),
+            "Expected 'marker' (starts with 'm')",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("location")),
+            "'location' should be excluded (does not start with 'm')",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("orientation")),
+            "'orientation' should be excluded (does not start with 'm')",
+        );
+    });
+
+    test("should not return function completions when typing partial arg name on continuation line", () => {
+        const function_names = new Map([
+            ["min", "min doc"],
+            ["max", "max doc"],
+        ]);
+        const commands = {
+            "marker create": ["marker_name", "location"],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = ["marker create &", "    m"];
+        const localPosition = new vscode.Position(1, lines[1].length);
+        const doc = makeDocument("m", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const kinds = completions.map((c) => c.kind);
+        assert.ok(
+            !kinds.includes(vscode.CompletionItemKind.Function),
+            "Should not return function completions when typing arg name on continuation line",
+        );
+    });
+
+    test("should not return function completions when typing partial arg name on first line", () => {
+        const function_names = new Map([
+            ["min", "min doc"],
+            ["max", "max doc"],
+        ]);
+        const commands = {
+            "marker create": ["marker_name", "location"],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        // Single line: "marker create m" (no continuation)
+        const lineText = "marker create m";
+        const localPosition = new vscode.Position(0, lineText.length);
+        const doc = makeDocument("m", lineText);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const kinds = completions.map((c) => c.kind);
+        assert.ok(
+            !kinds.includes(vscode.CompletionItemKind.Function),
+            "Should not return function completions when typing arg name on first line",
+        );
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("marker_name")),
+            "Expected 'marker_name' argument completion",
+        );
+    });
+
+    test("should not return function completions when on continuation line with no partial arg", () => {
+        const function_names = new Map([["abs", "abs doc"]]);
+        const commands = {
+            "marker create": ["marker_name", "location"],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lines = ["marker create &", "    "];
+        const localPosition = new vscode.Position(1, lines[1].length);
+        const doc = makeDocument("", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const kinds = completions.map((c) => c.kind);
+        assert.ok(
+            !kinds.includes(vscode.CompletionItemKind.Function),
+            "Should not return function completions when on continuation line (no partial)",
+        );
+    });
+
+    test("should exclude already-used args when typing partial arg name on continuation line", () => {
+        const function_names = new Map();
+        const commands = {
+            "marker create": ["marker_name", "marker", "location"],
+        };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        // marker_name already used; typing "m" — should get "marker" but not "marker_name"
+        const lines = ["marker create marker_name=.model.part.mkr &", "    m"];
+        const localPosition = new vscode.Position(1, lines[1].length);
+        const doc = makeDocument("m", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("marker")),
+            "Expected 'marker' completion",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("marker_name")),
+            "'marker_name' should be excluded (already used)",
+        );
+    });
+
     test("should filter argument value completions by partial input", () => {
         const function_names = new Map();
         const commands = { "simulation single_run transient": ["type", "initial_static"] };
@@ -551,5 +699,122 @@ suite("cmd_completion_provider", () => {
         assert.ok(labels.includes("dynamic"), "Expected 'dynamic'");
         assert.ok(!labels.includes("kinematic"), "'kinematic' should not match 'dy'");
         assert.ok(!labels.includes("static"), "'static' should not match 'dy'");
+    });
+
+    test("should return no completions on macro parameter definition lines", () => {
+        const function_names = new Map([["mod", "mod doc"], ["mode", "mode doc"]]);
+        const commands = {};
+        const provider = cmd_completion_provider(function_names, commands);
+
+        // Typing 'm' after 't=' on a !$param definition line
+        const lineText = "!$model:t=m";
+        const localPosition = new vscode.Position(0, lineText.length);
+        const doc = makeDocument("", lineText);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        assert.deepStrictEqual(completions, [], "Expected no completions on !$ lines");
+    });
+
+    // ── Abbreviation-aware completion via command_tree ────────────────────────
+
+    const ABBREV_COMMAND_TREE = {
+        children: {
+            force: {
+                min_prefix: 4,
+                children: {
+                    create: {
+                        min_prefix: 2,
+                        children: {
+                            element_like: {
+                                min_prefix: 1,
+                                children: {
+                                    translational_spring_damper: {
+                                        min_prefix: 1,
+                                        children: {},
+                                    },
+                                },
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    };
+
+    const TSD_COMMANDS = {
+        "force create element_like translational_spring_damper": [
+            "spring_damper_name",
+            "damping",
+            "stiffness",
+            "displacement_at_preload",
+            "i_marker_name",
+            "j_marker_name",
+        ],
+    };
+
+    test("should return argument completions for abbreviated command on continuation line", () => {
+        const function_names = new Map([
+            ["displacement", "displacement doc"],
+            ["damping_coeff", "damping_coeff doc"],
+        ]);
+        const provider = cmd_completion_provider(
+            function_names,
+            TSD_COMMANDS,
+            {},
+            new Map(),
+            null,
+            ABBREV_COMMAND_TREE,
+        );
+
+        // Mirrors linked_refs.mac: 'element' is an abbreviation of 'element_like'.
+        // Several args already used; cursor is at bare 'd' on the last continuation line.
+        const lines = [
+            "force create element translational_spring_damper  &",
+            "    spring_damper_name = $model.tsd1  &",
+            "    i_marker_name = $model.arm1.tip  &",
+            "    j_marker_name = $model.arm2.spring_J  &",
+            "    stiffness = (eval($model.stiffness))  &",
+            "    damping = (eval($model.damping))  &",
+            "    d",
+        ];
+        const localPosition = new vscode.Position(6, lines[6].length);
+        const doc = makeDocument("d", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const kinds = completions.map((c) => c.kind);
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            !kinds.includes(vscode.CompletionItemKind.Function),
+            "Should not return function completions when typing arg name for abbreviated command",
+        );
+        assert.ok(
+            labels.some((l) => l.includes("displacement_at_preload")),
+            "Expected 'displacement_at_preload' argument completion for partial 'd'",
+        );
+        assert.ok(
+            !labels.some((l) => l.includes("damping")),
+            "'damping' should be excluded (already used on a previous line)",
+        );
+    });
+
+    test("should fall back to function completions when command_tree is null for abbreviated command", () => {
+        const function_names = new Map([["displacement", "displacement doc"]]);
+        // No command_tree passed — abbreviated 'element' won't resolve
+        const provider = cmd_completion_provider(function_names, TSD_COMMANDS);
+
+        const lines = [
+            "force create element translational_spring_damper  &",
+            "    spring_damper_name = $model.tsd1  &",
+            "    d",
+        ];
+        const localPosition = new vscode.Position(2, lines[2].length);
+        const doc = makeDocument("d", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const kinds = completions.map((c) => c.kind);
+        assert.ok(
+            kinds.includes(vscode.CompletionItemKind.Function),
+            "Without command_tree, abbreviated command should fall back to function completions",
+        );
     });
 });

@@ -1,117 +1,189 @@
 {
 	"version": "2.0.0",
 	"tasks": [
-        {
-            "type": "shell",
-            "label": "Publish",
-            "command": "echo Published!",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "options": {
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": [
-                        "/c"
-                    ]
-                }
-            },
-            "problemMatcher": [],
-            "dependsOn": ["Publish to VS Code Marketplace", "Publish to Open VSX Registry"]
-        },
-        {
-            "type": "shell",
-            "label": "Publish to VS Code Marketplace",
-            "command": "vsce publish",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "options": {
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": [
-                        "/c"
-                    ]
-                }
-            },
-            "problemMatcher": []
-        },
-        {
-            "type": "shell",
-            "label": "Publish to Open VSX Registry",
-            "command": "npx ovsx publish --pat ${env:OVSX_PAT}",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "options": {
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": [
-                        "/c"
-                    ]
-                }
-            },
-            "problemMatcher": []
-        },
-        {
-            "type": "shell",
-            "label": "Publish to VS Code Marketplace (Pre-Release)",
-            "command": "vsce publish --pre-release",
-            "group": {
-                "kind": "build",
-                "isDefault": false
-            },
-            "options": {
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": [
-                        "/c"
-                    ]
-                }
-            },
-            "problemMatcher": []
-        },
-        {
-            "type": "shell",
-            "label": "Build Locally",
-            "command": "vsce package -o adams_vscode.vsix --pre-release",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            },
-            "options": {
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": [
-                        "/c"
-                    ]
-                }
-            },
-            "problemMatcher": []
-        },
 		{
-            "type": "npm",
-            "script": "watch",
-            "problemMatcher": "$tsc-watch",
-            "isBackground": true,
-            "presentation": {
-                "reveal": "never"
-            },
-            "options": {
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": [
-                        "/c"
-                    ]
-                }
-            },
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        }
-    ]
+			"type": "shell",
+			"label": "Presentation: Dev Server",
+			"command": "npm run dev",
+			"isBackground": true,
+			"group": "build",
+			"options": {
+				"cwd": "${workspaceFolder}/doc/presentations/adams-vscode-intro",
+				"shell": {
+					"executable": "cmd.exe",
+					"args": ["/c"]
+				}
+			},
+			"problemMatcher": {
+				"pattern": {
+					"regexp": "^$"
+				},
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "starting",
+					"endsPattern": "localhost"
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"type": "shell",
+			"label": "Publish",
+			"command": "echo Published!",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+			"problemMatcher": [],
+			"dependsOrder": "sequence",
+            "dependsOn": ["Publish to VS Code Marketplace", "Publish to Open VSX Registry"]
+		},
+		{
+			"type": "shell",
+			"label": "Publish to VS Code Marketplace",
+			"command": "vsce publish",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Publish to Open VSX Registry",
+			"command": "npx ovsx publish --pat ${env:OVSX_PAT}",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Publish to VS Code Marketplace (Pre-Release)",
+			"command": "vsce publish --pre-release",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Build MCP Server",
+			"command": "npm run build",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"options": {
+				"cwd": "${workspaceFolder}/adams-view-mcp-server",
+				"shell": {
+					"executable": "cmd.exe",
+                    "args": ["/c"]
+				}
+			},
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Bundle LSP Dependencies",
+			"command": "python -c \"import shutil;shutil.rmtree('bundled\\\\libs', ignore_errors=True)\" && python -m pip install --target .\\bundled\\libs --no-cache-dir .\\adams-cmd-lsp",
+			"group": {
+				"kind": "build",
+				"isDefault": false
+			},
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+                    "args": ["/c"]
+				}
+			},
+			"problemMatcher": []
+		},
+		{
+			"type": "shell",
+			"label": "Build Locally",
+			"command": "vsce package -o adams_vscode.vsix --pre-release",
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+            "dependsOn": ["Build MCP Server", "Bundle LSP Dependencies"],
+			"problemMatcher": []
+		},
+		{
+			"type": "npm",
+			"script": "watch",
+			"problemMatcher": "$tsc-watch",
+			"isBackground": true,
+			"presentation": {
+				"reveal": "never"
+			},
+			"options": {
+				"shell": {
+					"executable": "cmd.exe",
+					"args": [
+						"/c"
+					]
+				}
+			},
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			}
+		},
+		{
+			"label": "pytest adams-cmd-lsp",
+			"type": "shell",
+			"command": "cd adams-cmd-lsp && python -m pytest --tb=short -q 2>&1",
+			"group": "test"
+		}
+	]
 }

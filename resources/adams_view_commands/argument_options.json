@@ -10039,5 +10039,460 @@
       "on",
       "off"
     ]
+  },
+  "mdi gui_utl_alert_box_1": {
+    "type": [
+      "error",
+      "warning",
+      "info",
+      "question"
+    ]
+  },
+  "list_info aggregate_mass": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info analysis": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info constraint": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info curves": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info data_element": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info defaults": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info eigen_values": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info entity": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info executive_control equilibrium_parameters": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info executive_control initial_conditions_parameters": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info executive_control integrator_parameters": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info executive_control kinematics_parameters": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info executive_control numeric_integration_parameters": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info executive_control sensor": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info executive_control solver_parameters": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info files": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info force": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info geometry": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info group": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info linear_mode_shapes": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ],
+    "normalize": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info macro": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info marker": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info measure": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info memory_usage parasolid": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info model": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info name_generation": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info names": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info notes": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info output_control debug": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info output_control femdata": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info output_control madata": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info output_control mrequest": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info output_control output": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info output_control request": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info output_control results": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info part": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info plots": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info results": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info statistics": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info topology": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ],
+    "output_by": [
+      "topology_output"
+    ]
+  },
+  "list_info triglue": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info undo": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info variable": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
+  },
+  "list_info views": {
+    "brief": [
+      "on",
+      "off"
+    ],
+    "write_to_terminal": [
+      "on",
+      "off"
+    ]
   }
 }

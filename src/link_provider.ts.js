@@ -5,7 +5,7 @@ const fs = require("fs");
 /**
  * @returns {vscode.DocumentLinkProvider}
  */
-function link_provider() {
+function link_provider(reporter = null) {
     return {
         /**
          * Provide links for all windows and linux file paths. Paths with spaces will need to be
@@ -29,7 +29,7 @@ function link_provider() {
 
                 const range = new vscode.Range(
                     document.positionAt(match.index),
-                    document.positionAt(match.index + match[0].length)
+                    document.positionAt(match.index + match[0].length),
                 );
 
                 // Add the link if the file exists and isn't already in the links
@@ -39,7 +39,7 @@ function link_provider() {
                         (link) =>
                             link.range.isEqual(range) ||
                             link.range.contains(range) ||
-                            range.contains(link.range)
+                            range.contains(link.range),
                     )
                 ) {
                     var uri = vscode.Uri.file(file);
@@ -51,6 +51,14 @@ function link_provider() {
                     }
                     links.push(new vscode.DocumentLink(range, uri));
                 }
+            }
+
+            if (reporter) {
+                reporter.sendTelemetryEvent(
+                    "link_provider_links_found",
+                    { document_language: document.languageId },
+                    { link_count: links.length },
+                );
             }
 
             return links;
@@ -68,7 +76,7 @@ function link_provider() {
 function addLink(document, match, file, links) {
     const range = new vscode.Range(
         document.positionAt(match.index),
-        document.positionAt(match.index + match[0].length)
+        document.positionAt(match.index + match[0].length),
     );
 
     // Add the link if the file exists and isn't already in the links
@@ -78,7 +86,7 @@ function addLink(document, match, file, links) {
             (link) =>
                 link.range.isEqual(range) ||
                 link.range.contains(range) ||
-                range.contains(link.range)
+                range.contains(link.range),
         )
     ) {
         links.push(new vscode.DocumentLink(range, vscode.Uri.file(file)));

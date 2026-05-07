@@ -1,6 +1,7 @@
 const assert = require("assert");
 const path = require("path");
 const child_process = require("child_process");
+const vscode = require("vscode");
 const { open_view_here } = require("../src/open_view_here.ts.js");
 
 // Minimal fakes
@@ -22,7 +23,11 @@ function makeMockReporter() {
 suite("open_view_here", () => {
     let originalExecFile;
 
-    suiteSetup(() => {
+    suiteSetup(async () => {
+        // Reset adamsLaunchCommand so tests aren't polluted by config changes from other suites
+        await vscode.workspace
+            .getConfiguration("msc-adams")
+            .update("adamsLaunchCommand", null, vscode.ConfigurationTarget.Workspace);
         originalExecFile = child_process.execFile;
     });
 
@@ -83,7 +88,8 @@ suite("open_view_here", () => {
 
         assert.strictEqual(reporter.calls.errors.length, 1);
         assert.strictEqual(reporter.calls.errors[0][0], "open_view_here");
-        assert.strictEqual(reporter.calls.errors[0][1].error, err.message);
+        assert.strictEqual(reporter.calls.errors[0][1].error_type, "process_error");
+        assert.strictEqual(reporter.calls.errors[0][1].error_message, err.message);
         done();
     });
 

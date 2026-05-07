@@ -1,8 +1,8 @@
 # MSC Adams Extension for Visual Studio Code
 
-![Visual Studio Marketplace Installs](https://img.shields.io/visual-studio-marketplace/i/savvyanalyst.msc-adams.svg?style=flat-square)
-![Visual Studio Marketplace Rating Stars](https://img.shields.io/visual-studio-marketplace/stars/savvyanalyst.msc-adams.svg?style=flat-square)
-![Visual Studio Marketplace Version](https://img.shields.io/visual-studio-marketplace/v/savvyanalyst.msc-adams.svg?style=flat-square)
+![Visual Studio Marketplace Installs](https://badgen.net/vs-marketplace/i/savvyanalyst.msc-adams)
+![Visual Studio Marketplace Rating](https://badgen.net/vs-marketplace/rating/savvyanalyst.msc-adams)
+![Visual Studio Marketplace Version](https://badgen.net/vs-marketplace/v/savvyanalyst.msc-adams)
 
 
 # Table of Contents
@@ -19,7 +19,10 @@
     - [Run File in Adams View (This *works for both CMD and Python files*)](#run-file-in-adams-view-this-works-for-both-cmd-and-python-files)
   - [Open Adams View From Explorer](#open-adams-view-from-explorer)
   - [Snippets](#snippets)
+  - [CMD Linter](#cmd-linter)
+    - [Macro Scanning](#macro-scanning)
 - [Extension Settings](#extension-settings)
+  - [CMD Linter Settings](#cmd-linter-settings)
   - [Customizing Syntax Colors](#customizing-syntax-colors)
   - [Run In Adams: Substitute Params](#run-in-adams-substitute-params)
   - [Run In Adams: Substitute $\_self](#run-in-adams-substitute-_self)
@@ -39,6 +42,9 @@
 ## Adams View Command Language Intellisense
 - Adams Function Completion Provider
 - Adams Function Documentation Hover Provider
+- Adams Command Documentation Hover Provider (hover over a command keyword to see its description, syntax, and argument details)
+- Adams Macro Documentation Hover Provider (hover over a user-defined macro invocation to see its help string)
+- Adams Macro Parameter Navigation (Ctrl+Click on `$param_name` in a macro body to jump to its `!$param_name` definition; Shift+F12 for all references)
 
 ![Example of Adams Function Documentation Hover Provider Example](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/autocomplete_function.gif)
 
@@ -101,6 +107,19 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 ## Snippets
 - Adams View Command Language Snippets
 - Adams View Python Interface Snippets
+
+## CMD Linter
+The extension includes a Language Server Protocol (LSP)-based linter for Adams View CMD files.
+It flags unknown commands, invalid arguments, and other syntax errors as you type.
+
+### Macro Scanning
+Enable `msc-adams.linter.scanWorkspaceMacros` to let the linter discover user-defined macro files
+(`.mac` by default) in the workspace. Once scanned, user-defined macros are recognised as valid
+commands and their declared parameters are validated when the macro is called.
+
+Go-to-definition, find-references, and hover documentation are also available for user-defined
+macros. Hover over a macro invocation to see its help string (sourced from `!HELP_STRING` in the
+macro file header or the `help_string=` argument of an inline `macro create` statement).
   
 # Extension Settings
 
@@ -113,6 +132,22 @@ This extension contributes the following settings:
   * `msc-adams.runInAdams.substituteParams`: Substitute macro parameters with their default values.
   * `msc-adams.runInAdams.autoLoadAdamspyStubs`: Automatically add adamspy stub files to the Python intellisense path.
   * `msc-adams.runInAdams.autoLoadAdamsSitePackages`: Automatically add Adams site-packages to the Python intellisense path.
+
+## CMD Linter Settings
+
+  * `msc-adams.linter.scanWorkspaceMacros`: When enabled, the CMD linter scans the workspace for
+    macro files and uses them to suppress false "unknown command" errors for user-defined macros.
+    Disabled by default.
+  * `msc-adams.linter.macroPaths`: Glob patterns used to discover macro files when
+    `scanWorkspaceMacros` is enabled. Defaults to `["**/*.mac"]`.
+  * `msc-adams.linter.macroIgnorePaths`: Glob patterns for files or folders to exclude from macro
+    scanning. Defaults to `[]`.
+  * `msc-adams.linter.showMacroHint`: When a user-defined macro call triggers an E001 error, show
+    a hint suggesting that `scanWorkspaceMacros` can be enabled. Defaults to `true`.
+  * `msc-adams.linter.udePaths`: Glob patterns used to discover UDE definition files when
+    `scanWorkspaceMacros` is enabled. Defaults to `["**/*.cmd"]`.
+  * `msc-adams.linter.udeIgnorePaths`: Glob patterns for files or folders to exclude from UDE
+    definition scanning. Defaults to `[]`.
 
 ## Customizing Syntax Colors
 

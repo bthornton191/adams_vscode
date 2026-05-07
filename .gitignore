@@ -1,5 +1,9 @@
 /node_modules
 **.pyc
+__pycache__/
+.pytest_cache/
+/adams-cmd-lsp/build/
+/adams-cmd-lsp/*.egg-info/
 **pythonctl_*.bat
 /_ADAMSDEV2_
 **aview.log*
@@ -19,3 +23,17 @@ test/working_directory/aview.bin_d.*
 test_output.txt
 test/.vscode/settings.json
 .vscode/settings.json
+/bundled/libs/
+**/adamsctl_*.bat
+/adams-view-mcp-server/dist/
+/adams-view-mcp-server/node_modules/
+adams-view-mcp-server/tests/e2e_working_directory/mylog.log
+doc/presentations/adams-vscode-intro/node_modules
+.agents/skills/slidev/references
+.playwright-mcp
+doc/presentations/adams-vscode-intro/openscreen
+**.mp4
+**.docx
+doc/presentations
+**.avi
+test/files/agent_demo/mylog.log
