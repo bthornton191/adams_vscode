@@ -27,7 +27,7 @@ AGENTS.md
 adams-cmd-lsp-plan.md
 adams-view-mcp-server-plan.md
 macro-hover-plan.md
-doc/presentations/**
+doc/**
 qa_lint_results.csv
 skills-lock.json
 adams-cmd-lsp/**
