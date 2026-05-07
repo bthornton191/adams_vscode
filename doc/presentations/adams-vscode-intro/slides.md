@@ -884,32 +884,32 @@ Open your next `.cmd` file in VS Code.
 <div class="mt-4 text-gray-500">Let me know what breaks.</div>
 
 <div class="mt-10 grid grid-cols-4 gap-6 text-sm">
-  <div class="text-center">
+  <a href="https://marketplace.visualstudio.com/items?itemName=savvyanalyst.msc-adams" target="_blank" class="text-center !border-none !no-underline hover:opacity-80">
     <mdi-store class="text-3xl text-blue-500" />
     <div class="mt-2 font-medium">VS Code Marketplace</div>
-    <div class="text-gray-500">Search "MSC Adams"</div>
-  </div>
-  <div class="text-center">
+    <div class="text-gray-500 text-xs">Search "MSC Adams"</div>
+  </a>
+  <a href="https://github.com/bthornton191/adams_vscode" target="_blank" class="text-center !border-none !no-underline hover:opacity-80">
     <mdi-github class="text-3xl" />
     <div class="mt-2 font-medium">GitHub</div>
-    <div class="text-gray-500">bthornton191/adams_vscode</div>
-  </div>
-  <div class="text-center">
+    <div class="text-gray-500 text-xs">bthornton191/adams_vscode</div>
+  </a>
+  <a href="https://github.com/bthornton191/adams_vscode/issues" target="_blank" class="text-center !border-none !no-underline hover:opacity-80">
     <mdi-email class="text-3xl text-green-500" />
     <div class="mt-2 font-medium">Feedback</div>
-    <div class="text-gray-500">GitHub Issues</div>
-  </div>
-  <div class="text-center">
+    <div class="text-gray-500 text-xs">GitHub Issues</div>
+  </a>
+  <a href="https://github.com/bthornton191/adams_vscode/pulls" target="_blank" class="text-center !border-none !no-underline hover:opacity-80">
     <mdi-source-branch class="text-3xl text-purple-400" />
     <div class="mt-2 font-medium">Contributions welcome</div>
-    <div class="text-gray-500">PRs open</div>
-  </div>
+    <div class="text-gray-500 text-xs">Open source</div>
+  </a>
 </div>
 
 <!--
 Install it today. Open your next .cmd file in VS Code. And let me know what breaks.
 
-You can find it on the VS Code Marketplace — just search "MSC Adams". The source is on GitHub. If something doesn't work right, open a GitHub issue and I'll fix it. And if you want to contribute, pull requests are very welcome.
+You can find it on the VS Code Marketplace — just search "MSC Adams". The source is on GitHub. If something doesn't work right, open a GitHub issue and I'll fix it. And if you want to contribute, it's fully open source — jump in.
 
 Thank you.
 -->
