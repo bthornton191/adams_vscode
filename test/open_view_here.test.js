@@ -34,7 +34,7 @@ function makeMockChild() {
 suite("open_view_here", () => {
     let originalSpawn;
     let originalExistsSync;
-    const FAKE_LAUNCH_CMD = "C:/fake/mdi.bat";
+    const FAKE_LAUNCH_CMD = "C:/Program Files/fake/mdi.bat";
 
     suiteSetup(async () => {
         await vscode.workspace
@@ -100,7 +100,7 @@ suite("open_view_here", () => {
         const uri = makeUri("C:/projects/mymodel");
         open_view_here(output_channel, null)(uri);
 
-        assert.strictEqual(capturedArgs.file, FAKE_LAUNCH_CMD);
+        assert.strictEqual(capturedArgs.file, `"${FAKE_LAUNCH_CMD}"`);
         assert.deepStrictEqual(capturedArgs.args, ["aview", "ru-s", "i"]);
         assert.strictEqual(capturedArgs.opts.cwd, uri.fsPath);
         done();
@@ -172,6 +172,21 @@ suite("open_view_here", () => {
 
         assert.strictEqual(reporter.calls.telemetry.length, 1);
         assert.strictEqual(reporter.calls.telemetry[0][0], "open_view_here");
+        done();
+    });
+
+    test("should quote command path so cmd.exe /s does not discard surrounding quotes", (done) => {
+        // When shell:true is used, Node constructs: cmd.exe /d /s /c "<cmd> args"
+        // The /s flag strips the OUTER pair of quotes, so a path with spaces must
+        // have its own inner quotes to survive: cmd.exe /d /s /c "\"C:\\Program Files\\...\\mdi.bat\" aview"
+        const capturedFile = {};
+        child_process.spawn = (file) => { capturedFile.value = file; return makeMockChild(); };
+
+        const uri = makeUri("C:/projects/mymodel");
+        open_view_here(output_channel, null)(uri);
+
+        assert.strictEqual(capturedFile.value, `"${FAKE_LAUNCH_CMD}"`,
+            "Command must be wrapped in quotes so cmd.exe preserves the path after /s stripping");
         done();
     });
 

@@ -38,7 +38,7 @@ function open_view_here(output_channel, reporter = null) {
                 ),
             });
         const child = child_process.spawn(
-            adams_launch_command,
+            `"${adams_launch_command}"`,
             ["aview", "ru-s", "i"],
             { cwd: uri.fsPath, shell: true, detached: true, stdio: "ignore" },
         );
