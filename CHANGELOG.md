@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.0.0 (May 7th 2026)](#200-may-7th-2026)
   - [1.17.0 (May 6th 2026)](#1170-may-6th-2026)
   - [1.16.0 (May 5th 2026)](#1160-may-5th-2026)
   - [1.15.0 (April 20th 2026)](#1150-april-20th-2026)
@@ -66,6 +67,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.0.0 (May 7th 2026)
+
+- **Fixed** W103 linter rule: false negatives when comment-only lines are interleaved within a continuation group ending with a dangling `&`.
 
 ## 1.17.0 (May 6th 2026)
 
