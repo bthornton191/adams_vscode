@@ -1,8 +1,11 @@
 const assert = require("assert");
 const child_process = require("child_process");
 const fs = require("fs");
+const path = require("path");
+const os = require("os");
 const vscode = require("vscode");
 const { open_view_here } = require("../src/open_view_here.ts.js");
+const { killAdamsIfRunningInDir } = require("./global_fixture.cjs");
 
 // Minimal fakes
 const output_channel = { appendLine: () => {} };
@@ -264,5 +267,77 @@ suite("open_view_here", () => {
             mockChild.listeners.error(new Error("spawn failed"));
         });
         done();
+    });
+});
+
+suite("open_view_here (integration)", () => {
+    // This suite exercises the full VS Code command registration path:
+    // vscode.commands.executeCommand -> registered handler -> spawnDetached -> Adams View
+    // Requires Adams to be installed (env var _ADAMS_LAUNCH_COMMAND set).
+    const adamsLaunchCmd = process.env._ADAMS_LAUNCH_COMMAND;
+    const testDir = path.join(os.tmpdir(), "adams_open_view_here_test_" + process.pid);
+
+    suiteSetup(async function () {
+        if (!adamsLaunchCmd || !fs.existsSync(adamsLaunchCmd)) {
+            this.skip();
+            return;
+        }
+        if (!fs.existsSync(testDir)) {
+            fs.mkdirSync(testDir, { recursive: true });
+        }
+        // Point the config at the real Adams launch command
+        await vscode.workspace
+            .getConfiguration("msc-adams")
+            .update("adamsLaunchCommand", adamsLaunchCmd, vscode.ConfigurationTarget.Workspace);
+    });
+
+    suiteTeardown(async function () {
+        if (!adamsLaunchCmd || !fs.existsSync(adamsLaunchCmd)) return;
+        // Kill Adams launched by this test
+        await new Promise((resolve) => killAdamsIfRunningInDir(testDir, resolve));
+        // Restore config
+        await vscode.workspace
+            .getConfiguration("msc-adams")
+            .update("adamsLaunchCommand", null, vscode.ConfigurationTarget.Workspace);
+        // Clean up temp dir
+        try { fs.rmSync(testDir, { recursive: true, force: true }); } catch { /* ignore */ }
+    });
+
+    test("executeCommand msc_adams.openViewHere launches Adams View", function (done) {
+        if (!adamsLaunchCmd || !fs.existsSync(adamsLaunchCmd)) { this.skip(); return; }
+        this.timeout(90000); // Adams can take a while to start
+
+        // Write a startup script so Adams produces a log file we can detect
+        fs.writeFileSync(path.join(testDir, "aviewBS.cmd"), "");
+        fs.writeFileSync(path.join(testDir, "aview.cmd"), "command_server start");
+        fs.writeFileSync(path.join(testDir, "aviewAS.cmd"), "");
+
+        const logFile = path.join(testDir, "aview.log");
+        if (fs.existsSync(logFile)) fs.unlinkSync(logFile);
+
+        // Execute the VS Code command (goes through the full registration path)
+        vscode.commands.executeCommand("msc_adams.openViewHere", { fsPath: testDir });
+
+        // Poll for the log file to appear, proving Adams actually launched
+        let attempts = 0;
+        const maxAttempts = 120;
+        const interval = 500;
+
+        function poll() {
+            attempts++;
+            try {
+                if (fs.existsSync(logFile) && fs.readFileSync(logFile, "utf8").includes("command_server start")) {
+                    done();
+                    return;
+                }
+            } catch { /* file may be locked */ }
+
+            if (attempts >= maxAttempts) {
+                done(new Error("Adams View did not start within timeout (log file never appeared)"));
+                return;
+            }
+            setTimeout(poll, interval);
+        }
+        setTimeout(poll, 1000); // initial delay before first check
     });
 });
