@@ -12,16 +12,16 @@
   - [Syntax highlighting](#syntax-highlighting)
   - [Adams View Command Language Intellisense](#adams-view-command-language-intellisense)
   - [Intellisense support for Adams View Python Interface](#intellisense-support-for-adams-view-python-interface)
-  - [CMD Linter](#cmd-linter)
-    - [Macro Scanning](#macro-scanning)
-  - [Code Navigation](#code-navigation)
   - [Debugging python scripts in Adams View](#debugging-python-scripts-in-adams-view)
     - [Steps to debug a python script in Adams View](#steps-to-debug-a-python-script-in-adams-view)
   - [Run in Adams View](#run-in-adams-view)
     - [Run selection in Adams View (*works for both CMD and Python files*)](#run-selection-in-adams-view-works-for-both-cmd-and-python-files)
-    - [Run File in Adams View (This *works for both CMD and Python files*)](#run-file-in-adams-view-this-works-for-both-cmd-and-python-files)
+    - [Run File in Adams View (*works for both CMD and Python files*)](#run-file-in-adams-view-works-for-both-cmd-and-python-files)
   - [Open Adams View From Explorer](#open-adams-view-from-explorer)
   - [Snippets](#snippets)
+  - [CMD Linter](#cmd-linter)
+    - [Macro Scanning](#macro-scanning)
+  - [Code Navigation](#code-navigation)
   - [Copilot Agent Skills](#copilot-agent-skills)
   - [MCP Servers](#mcp-servers)
 - [Extension Settings](#extension-settings)
@@ -37,31 +37,29 @@
 
 # Features
 ## Syntax highlighting
-- Adams View Command Languange (.cmd)
-- Adams Solver Dataset Files (.adm)
-- Adams Solver Command Files (.acf)
-``
-## Adams View Command Language Intellisense
-- Adams Function Completion Provider
-- Adams Function Documentation Hover Provider
-- Adams Command Documentation Hover Provider (hover over a command keyword to see its description, syntax, and argument details)
-- Adams Macro Documentation Hover Provider (hover over a user-defined macro invocation to see its help string)
+Full syntax highlighting for `.cmd`, `.mac`, `.adm`, and `.acf` files.
 
-![Example of Adams Function Documentation Hover Provider Example](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/autocomplete_function.gif)
+| Dark | Light |
+|---|---|
+| ![Syntax highlighting dark theme](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/syntax_highlighting.png) | ![Syntax highlighting light theme](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/syntax_highlighting-light.png) |
+
+## Adams View Command Language Intellisense
+- Autocomplete for Adams commands and functions
+- Inline documentation on hover for commands, functions, and user macros
+
+![Adams CMD autocomplete and hover documentation](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/cmd_autocomplete.gif)
 
 
 ## Intellisense support for Adams View Python Interface
-* Completion provider
-* Function signature help provider
-* Type hinting
+- Autocomplete for the Adams Python API
+- Inline documentation and type hints on hover
 
-![adams python autocomplete](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/adams_python_autocomplete.gif)
+![Adams Python autocomplete](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/python_autocomplete.gif)
 
 ## Debugging python scripts in Adams View
 You can debug python scripts in Adams View using the [Python Extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python). This extension provides a convenient button to attach the debugger to an existing Adams View process. 
 
-> [!NOTE]
-> Debugging ***is supported*** in Adams Car too! See 
+> **Note:** Debugging ***is supported*** in Adams Car too! See 
 > [Debugger not breaking when attached to Adams Car](https://github.com/bthornton191/adams_vscode/issues/9#issuecomment-2332435544) 
 > if you are having trouble getting the debugger to break in Adams Car.
 
@@ -79,24 +77,21 @@ You can debug python scripts in Adams View using the [Python Extension](https://
 
 ## Run in Adams View
 
-> [!IMPORTANT]
-> **The command server must be running for these features to work**. The demos below show how to 
-> start the command server. 
+> **Important:** The command server must be running for these features to work. The demos below show how to
+> start the command server.
 
-> [!TIP]
-> Add `command_server start` to your startup macro (*aviewAS.cmd* or *aview.cmd*) to automatically 
+> **Tip:** Add `command_server start` to your startup macro (*aviewAS.cmd* or *aview.cmd*) to automatically 
 > start the command server when Adams View is opened. This will allow you to run python scripts in  
 > Adams View without having to manually start the command server.
 
 ### Run selection in Adams View (*works for both CMD and Python files*)
 ![Run CMD Selection in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_selection_in_adams.gif)
 
-### Run File in Adams View (This *works for both CMD and Python files*)
+### Run File in Adams View (*works for both CMD and Python files*)
 ![Run CMD File in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_file_in_adams.gif)
 
-> [!NOTE] 
-> For python files, the button is located within the existing python run button stack.
-> ![Alt text](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_python_file_in_adams.png)
+> **Note:** For python files, the button is located within the existing python run button stack.
+> ![Run Python file in Adams View](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/run_python_file_in_adams.png)
 
 ## Open Adams View From Explorer
 * Open Adams View in a directory from the Explorer by right clicking and selecting **Open View**
@@ -106,12 +101,15 @@ You can debug python scripts in Adams View using the [Python Extension](https://
   ![Example of opening adams view in a directory](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/open_in_view.gif)
 
 ## Snippets
-- Adams View Command Language Snippets
-- Adams View Python Interface Snippets
+Snippets for common Adams CMD and Python patterns.
+
+![Adams CMD snippet expansion](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/int_for_loop_snippet.gif)
 
 ## CMD Linter
 The extension includes a Language Server Protocol (LSP)-based linter for Adams View CMD files.
 It flags unknown commands, invalid arguments, and other syntax errors as you type.
+
+![CMD linter in action](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/linting.gif)
 
 Diagnostic codes include:
 | Code | Severity | Description |
@@ -134,12 +132,16 @@ commands and their declared parameters are validated when the macro is called.
 The linter also scans for User-Defined Element (UDE) definitions, recognising custom UDE commands
 and their parameters.
 
+![Linting and autocomplete working with custom macros](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/works_with_custom_macros.gif)
+
 ## Code Navigation
 
 - **Go to Definition** — Ctrl+Click on any macro invocation, variable, part, marker, constraint, or UDE to jump to where it's defined.
 - **Find All References** — Right-click → Find All References to see every usage across the workspace.
 - **Macro Parameter Navigation** — Ctrl+Click on `$param_name` in a macro body to jump to its definition; Shift+F12 for all references.
 - **Hover Documentation** — Hover over a macro invocation to see its help string (sourced from `!HELP_STRING` in the macro file header or the `help_string=` argument of an inline `macro create` statement). Hover over Adams commands to see argument details, types, and descriptions.
+
+![Code navigation with Go to Definition and Find All References](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/cmd_linked_refs.gif)
 
 ## Copilot Agent Skills
 
@@ -173,6 +175,9 @@ This extension contributes the following settings:
   * `msc-adams.runInAdams.autoLoadAdamspyStubs`: Automatically add adamspy stub files to the Python intellisense path.
   * `msc-adams.runInAdams.autoLoadAdamsSitePackages`: Automatically add Adams site-packages to the Python intellisense path.
 
+<details>
+<summary>CMD Linter Settings</summary>
+
 ## CMD Linter Settings
 
   * `msc-adams.linter.scanWorkspaceMacros`: When enabled, the CMD linter scans the workspace for
@@ -188,6 +193,14 @@ This extension contributes the following settings:
     `scanWorkspaceMacros` is enabled. Defaults to `["**/*.cmd"]`.
   * `msc-adams.linter.udeIgnorePaths`: Glob patterns for files or folders to exclude from UDE
     definition scanning. Defaults to `[]`.
+  * `msc-adams.linter.enabled`: Enable or disable the CMD linter. Defaults to `true`.
+  * `msc-adams.linter.pythonPath`: Path to the Python interpreter used to run the linter server. Leave empty to use the workspace Python.
+  * `msc-adams.linter.severity`: Minimum diagnostic severity to report (`"error"`, `"warning"`, or `"info"`). Defaults to `"info"`.
+
+</details>
+
+<details>
+<summary>Customizing Syntax Colors</summary>
 
 ## Customizing Syntax Colors
 
@@ -219,10 +232,15 @@ The example below would change the color and font style of the `variable` scope
 }
 ```
 
+</details>
+
+<details>
+<summary>Run In Adams: Substitute Params</summary>
+
 ## Run In Adams: Substitute Params
 When enabled (default), the extension will substitute macro parameters (i.e. variables prefixed 
 with `$`) in the macro/selection before running it in Adams View. This will only work if the 
-parameter is defined in the the macro with a default value 
+parameter is defined in the macro with a default value 
 
 For example, the following macro will run in Adams View with the parameter `$part` substituted with
  `PART_1` and `$mass` substituted with `1`.
@@ -240,30 +258,38 @@ defined with a default value.
 part modify rigid_body mass_properties part=$part mass=$mass
 ```
 
+</details>
+
+<details>
+<summary>Run In Adams: Substitute $_self</summary>
+
 ## Run In Adams: Substitute $_self
 When running a macro or a selection of a macro, the extension will substitute `$_self` with the 
 a user defined value. The default is `.mdi`. This is useful when the macro uses local variables.
 
-> [!NOTE]
-> It is common convention to clear out local variables at the end of a macro using 
+> **Note:** It is common convention to clear out local variables at the end of a macro using 
 > `var del var=$_self.*`. If using this convention, you should not use the default `.mdi`. Instead,
 > it is recommended to create an empty library in adams view and set the value of 
 > `msc-adams.runInAdams.substituteSelf` to the name of the library.
 
+</details>
+
 # Requirements
 
-- [MSC Adams](https://hexagon.com/products/product-groups/computer-aided-engineering-software/adams)
+- [MSC Adams](https://www.cadence.com/en_US/home/tools/msc-software/adams.html)
 
 # Known Issues
+
+<details>
+<summary>Show known issues</summary>
 
 ## Attaching the Debugger to Adams View does not work in version 2023
 The debugger appears to attach but fails to stop at break points.
 
-> [!TIP]
-> A workaround is to simply import the threading module before attaching the debugger. The easiest 
+> **Tip:** A workaround is to simply import the threading module before attaching the debugger. The easiest 
 > way to do this is to open the adams view command line, switch to python, and run 
 > `import threading`. You can also automate this by adding 
-> `var set var=.mdi.tmp_int int=(eval(run_python_code("import threading")))` to aviewAS.cmd. 
+> `var set var=.mdi.tmp_int int=(eval(run_python_code("import threading")))` to aviewAS.cmd.
 
 
 ## Equal Sign In A String On A Continuation Line
@@ -274,6 +300,7 @@ highlighting for the rest of the file.
 
 ![Animation of issue when an equal sign is in a string on a continuation line](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/issue_equal_in_continuation_line.gif)
 
+</details>
 
 # Support
 Submit issues to https://github.com/bthornton191/adams_vscode/issues

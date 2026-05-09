@@ -644,7 +644,7 @@ This works for both CMD and Python files.
 
 # Python Debugging in Adams
 
-Set breakpoints. Inspect variables. Step through code. <span class="text-gray-500">Inside Adams.</span>
+Set breakpoints. Inspect variables. Step through code. <span class="text-gray-500">Running inside Adams.</span>
 
 <div class="mt-4">
   <img src="/debug_adams.gif" class="rounded-lg shadow-xl mx-auto" style="max-height: 380px" alt="Debug Python in Adams View" />

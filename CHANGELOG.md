@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.0.7 (May 8th 2026)](#207-may-8th-2026)
   - [2.0.6 (May 7th 2026)](#206-may-7th-2026)
   - [2.0.5 (May 7th 2026)](#205-may-7th-2026)
   - [2.0.4 (May 7th 2026)](#204-may-7th-2026)
@@ -73,6 +74,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.0.7 (May 8th 2026)
+
+- **Improved** README overhaul: replaced all outdated screenshots and GIFs with higher-quality, up-to-date recordings; rewrote internal bullet lists as user-facing prose; added collapsible `<details>` blocks for Extension Settings subsections and Known Issues; fixed alert syntax for VS Marketplace compatibility.
 
 ## 2.0.6 (May 7th 2026)
 
