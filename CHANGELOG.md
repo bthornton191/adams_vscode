@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.0.8 (May 27th 2026)](#208-may-27th-2026)
   - [2.0.7 (May 8th 2026)](#207-may-8th-2026)
   - [2.0.6 (May 7th 2026)](#206-may-7th-2026)
   - [2.0.5 (May 7th 2026)](#205-may-7th-2026)
@@ -74,6 +75,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.0.8 (May 27th 2026)
+
+- **Fixed** Adams CMD Language Server failing to start with `ModuleNotFoundError: No module named 'adams_cmd_lsp'`. The bundled Python dependencies (`bundled/libs/`) were missing from the published v2.0.7 `.vsix` because the `vscode:prepublish` script did not run `bundle-lsp` before packaging. The prepublish script now automatically bundles the LSP Python package so this cannot recur.
 
 ## 2.0.7 (May 8th 2026)
 
