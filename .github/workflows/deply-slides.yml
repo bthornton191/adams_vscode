@@ -1,0 +1,48 @@
+name: Deploy Slides to GitHub Pages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+    paths:
+      - 'doc/presentations/adams-vscode-intro/**'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 'lts/*'
+      - name: Install dependencies
+        run: npm install
+        working-directory: doc/presentations/adams-vscode-intro
+      - name: Build slides
+        run: npx slidev build --base /adams_vscode/
+        working-directory: doc/presentations/adams-vscode-intro
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: doc/presentations/adams-vscode-intro/dist
+
+  deploy:
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

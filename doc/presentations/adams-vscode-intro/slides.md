@@ -18,7 +18,7 @@ drawings:
   enabled: false
 aspectRatio: 16/9
 canvasWidth: 980
-download: true
+download: false
 colorSchema: dark
 themeConfig:
   primary: '#6366f1'
