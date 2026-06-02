@@ -23,9 +23,16 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: doc/presentations/adams-vscode-intro/node_modules
+          key: slidev-${{ hashFiles('doc/presentations/adams-vscode-intro/package-lock.json') }}
+          restore-keys: slidev-
       - name: Install dependencies
-        run: npm install --omit=dev
+        run: npm ci --omit=dev
         working-directory: doc/presentations/adams-vscode-intro
+        timeout-minutes: 10
       - name: Build slides
         run: npx slidev build --base /adams_vscode/
         working-directory: doc/presentations/adams-vscode-intro
