@@ -23,7 +23,7 @@ jobs:
         with:
           node-version: 'lts/*'
       - name: Install dependencies
-        run: npm install
+        run: npm install --omit=dev
         working-directory: doc/presentations/adams-vscode-intro
       - name: Build slides
         run: npx slidev build --base /adams_vscode/
