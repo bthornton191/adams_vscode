@@ -6,6 +6,7 @@ on:
     branches: [main, master]
     paths:
       - 'doc/presentations/adams-vscode-intro/**'
+      - '.github/workflows/deply-slides.yml'
 
 permissions:
   contents: read
