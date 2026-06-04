@@ -31,6 +31,24 @@
 		},
 		{
 			"type": "shell",
+			"label": "Presentation: deploy",
+			"command": "npm run deploy",
+			"isBackground": true,
+			"group": "build",
+			"options": {
+				"cwd": "${workspaceFolder}/doc/presentations/adams-vscode-intro",
+				"shell": {
+					"executable": "cmd.exe",
+					"args": ["/c"]
+				}
+			},
+			"presentation": {
+				"reveal": "always",
+				"panel": "dedicated"
+			}
+		},
+		{
+			"type": "shell",
 			"label": "Publish",
 			"command": "echo Published!",
 			"group": {
