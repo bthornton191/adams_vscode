@@ -286,8 +286,8 @@ def test_goto_definition_param_reference_jumps_to_definition(monkeypatch):
     )
 
 
-def test_goto_definition_from_definition_site_returns_none(monkeypatch):
-    """Ctrl+Click on !$scale definition returns None (use Shift+F12 for references)."""
+def test_goto_definition_from_definition_site_returns_references(monkeypatch):
+    """Ctrl+Click on !$scale definition navigates to all body references of $scale."""
     uri = "file:///test.mac"
     monkeypatch.setattr(srv, "server", _make_mock_doc(_MACRO_TEXT, uri))
     srv._schema = Schema.load()
@@ -303,9 +303,48 @@ def test_goto_definition_from_definition_site_returns_none(monkeypatch):
         position=types.Position(line=def_line, character=col + 1),
     )
     result = srv.goto_definition(params)
+    assert result is not None, (
+        "goto_definition at a !$param definition site should return LocationLinks to "
+        "body references so Ctrl+click navigates to usages."
+    )
+    target_lines = [link.target_range.start.line for link in result]
+    body_ref_line = next(
+        i for i, l in enumerate(lines) if "$scale" in l and not l.strip().startswith("!")
+    )
+    assert body_ref_line in target_lines, (
+        f"Expected a reference on line {body_ref_line} but got target lines {target_lines}"
+    )
+    assert def_line not in target_lines, (
+        "goto_definition must not include the definition site itself in the results"
+    )
+
+
+def test_goto_definition_from_definition_site_no_references_returns_none(monkeypatch):
+    """Ctrl+Click on !$unused definition with zero body refs returns None."""
+    uri = "file:///test.mac"
+    text = (
+        "!USER_ENTERED_COMMAND mylib m\n"
+        "!$unused:t=real\n"
+        "!END_OF_PARAMETERS\n"
+        "\n"
+        "variable set variable_name=.model.v integer_value=1\n"
+    )
+    monkeypatch.setattr(srv, "server", _make_mock_doc(text, uri))
+    srv._schema = Schema.load()
+    srv._macro_registry = None
+    srv._doc_cache.pop(uri, None)
+
+    lines = text.splitlines()
+    def_line = next(i for i, l in enumerate(lines) if l.strip().startswith("!$unused"))
+    col = lines[def_line].index("$unused")
+
+    params = types.DefinitionParams(
+        text_document=types.TextDocumentIdentifier(uri=uri),
+        position=types.Position(line=def_line, character=col + 1),
+    )
+    result = srv.goto_definition(params)
     assert result is None, (
-        "goto_definition at a !$param definition site should return None so VS Code "
-        "does not show 'Click to show N definitions'; use find_references (Shift+F12) instead."
+        "goto_definition on a declared-but-unreferenced param must return None"
     )
 
 

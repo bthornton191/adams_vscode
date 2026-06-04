@@ -1253,11 +1253,33 @@ def goto_definition(params: types.DefinitionParams):
     lines_text = text.splitlines()
     if 0 <= line < len(lines_text):
         # Is the cursor on a !$param_name definition in a macro header?
-        # Return None so VS Code does not show "Click to show N definitions" in the
-        # hover tooltip.  Use Shift+F12 (textDocument/references) to find usages.
+        # Navigate to all body references of that parameter (Ctrl+click "jumps to
+        # usages" since there is no deeper definition to navigate to).
         mac_param_def = _find_macro_param_def_at_position(text, line, character)
         if mac_param_def is not None:
-            return None
+            param_token, p_line, p_col, p_end_col = mac_param_def
+            origin_selection = types.Range(
+                start=types.Position(line=p_line, character=p_col),
+                end=types.Position(line=p_line, character=p_end_col),
+            )
+            ref_locs = _find_variable_references_in_text(text, param_token)
+            locations = [
+                types.LocationLink(
+                    target_uri=uri,
+                    target_range=types.Range(
+                        start=types.Position(line=rl, character=rc),
+                        end=types.Position(line=rl, character=re_),
+                    ),
+                    target_selection_range=types.Range(
+                        start=types.Position(line=rl, character=rc),
+                        end=types.Position(line=rl, character=re_),
+                    ),
+                    origin_selection_range=origin_selection,
+                )
+                for rl, rc, re_ in ref_locs
+                if not (rl == p_line and rc == p_col)  # exclude the definition itself
+            ]
+            return locations if locations else None
 
         # Is the cursor on the variable_name arg of 'variable set'? → definition site
         var_def = _find_variable_def_at_position(statements, _schema, line, character)
