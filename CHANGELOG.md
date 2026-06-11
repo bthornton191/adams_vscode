@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.1.1 (June 11th 2026)](#211-june-11th-2026)
   - [2.0.8 (May 27th 2026)](#208-may-27th-2026)
   - [2.0.7 (May 8th 2026)](#207-may-8th-2026)
   - [2.0.6 (May 7th 2026)](#206-may-7th-2026)
@@ -75,6 +76,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.1.1 (June 11th 2026)
+
+- **Added** Link to the SDA User Conference 2026 presentation in the README.
 
 ## 2.0.8 (May 27th 2026)
 

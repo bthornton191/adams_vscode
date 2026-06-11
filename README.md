@@ -4,6 +4,8 @@
 ![Visual Studio Marketplace Rating](https://badgen.net/vs-marketplace/rating/savvyanalyst.msc-adams)
 ![Visual Studio Marketplace Version](https://badgen.net/vs-marketplace/v/savvyanalyst.msc-adams)
 
+> 📊 **Presentation:** [View the SDA User Conference 2026 presentation](https://bthornton191.github.io/adams_vscode/) for an overview of the extension's features.
+
 
 # Table of Contents
 - [MSC Adams Extension for Visual Studio Code](#msc-adams-extension-for-visual-studio-code)
