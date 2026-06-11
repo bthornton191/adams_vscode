@@ -3,7 +3,8 @@
   "private": true,
   "scripts": {
     "dev": "slidev",
-    "build": "slidev build",
+    "build": "slidev build --base /adams_vscode/",
+    "deploy": "slidev build --base /adams_vscode/ && node deploy.mjs",
     "export": "slidev export"
   },
   "dependencies": {
@@ -12,6 +13,7 @@
     "@slidev/theme-seriph": "latest"
   },
   "devDependencies": {
+    "gh-pages": "^6.3.0",
     "playwright-chromium": "^1.49.0"
   }
 }

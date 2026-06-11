@@ -46,6 +46,7 @@ themeConfig:
   border: 1px solid rgba(255,255,255,0.1);
   backdrop-filter: blur(4px);
 }
+
 </style>
 
 # Streamlining Adams Scripting
@@ -61,14 +62,23 @@ The Adams VS Code Extension
 <div class="mt-6 text-sm text-white/50">Ben Thornton</div>
 
 <!--
-Welcome everyone. I'm going to show you something that I think will change how you write Adams scripts. Whether you're a CMD power user or just getting started with scripting, this extension brings modern editor intelligence to Adams.
+Good morning everyone. I'm Ben Thornton. I'm a consultant at Cadence. Which means 
+my primary role is to help customers like you with Adams projects. Those projects 
+vary in shape and size, but I've carved out a bit of a niche in building large 
+adams automation frameworks. In doing so, I've learned a lot about software 
+development and the tools that developers used and I recognized a gap in the 
+tooling we have around adams scripting. So I went to work trying to build a tool
+to fill the gap, originally just for my own use. But I put it on the vs markeplace, 
+mostly just for fun, and other people seemed to find it useful. So I'm here today
+to tell you about this tool and what features it has so that hopefully you will find
+it useful as well. 
 -->
 
 ---
 
 # Agenda
 
-<div class="mt-8 flex flex-col gap-4">
+<div class="mt-4 flex flex-col gap-2">
 
 <div class="agenda-item" style="--i:1">
   <span class="agenda-num">01</span>
@@ -81,29 +91,37 @@ Welcome everyone. I'm going to show you something that I think will change how y
 <div class="agenda-item" style="--i:2">
   <span class="agenda-num">02</span>
   <div>
-    <div class="agenda-title">Code Editing</div>
-    <div class="agenda-sub">Syntax highlighting, autocomplete, hover docs, linting, code navigation</div>
+    <div class="agenda-title">The Extension</div>
+    <div class="agenda-sub">VS Code and the Adams plugin</div>
   </div>
 </div>
 
 <div class="agenda-item" style="--i:3">
   <span class="agenda-num">03</span>
   <div>
-    <div class="agenda-title">Adams Integration</div>
-    <div class="agenda-sub">Run in Adams, Python debugging</div>
+    <div class="agenda-title">Code Editing</div>
+    <div class="agenda-sub">Syntax highlighting, autocomplete, hover docs, linting, code navigation</div>
   </div>
 </div>
 
 <div class="agenda-item" style="--i:4">
   <span class="agenda-num">04</span>
   <div>
-    <div class="agenda-title">What's Coming</div>
-    <div class="agenda-sub">Teaching AI agents to use Adams</div>
+    <div class="agenda-title">Adams Integration</div>
+    <div class="agenda-sub">Run in Adams, Python debugging</div>
   </div>
 </div>
 
 <div class="agenda-item" style="--i:5">
   <span class="agenda-num">05</span>
+  <div>
+    <div class="agenda-title">What's Coming</div>
+    <div class="agenda-sub">Teaching AI agents to use Adams</div>
+  </div>
+</div>
+
+<div class="agenda-item" style="--i:6">
+  <span class="agenda-num">06</span>
   <div>
     <div class="agenda-title">Get Started</div>
     <div class="agenda-sub">Two-minute install</div>
@@ -149,7 +167,18 @@ Welcome everyone. I'm going to show you something that I think will change how y
 </style>
 
 <!--
-Here's what we'll cover. We'll start with the current state — what we've all been working with. Then I'll walk through the everyday improvements: autocomplete, hover docs, linting. Then the bigger workflow changes: running code in Adams, Python debugging, navigating your macro library. A quick look at what's coming with AI. And then we'll get you installed.
+Here's what we'll cover. 
+- We'll start with the current state — what we've all been working with. 
+- Then I'll walk through the code editing features: 
+  - autocomplete
+  - hover docs
+  - linting. 
+- Then the bigger integration features: 
+  - running code in Adams, 
+  - Python debugging, 
+  - navigating your macro library. 
+- A quick look at what's coming with AI. 
+- And then we'll talk about installation.
 -->
 
 ---
@@ -161,7 +190,7 @@ layout: section
 Where Adams scripting tools are today
 
 <!--
-Let's start by talking about what we've all been working with.
+Let's start by talking about what I used before I built the extension.
 -->
 
 ---
@@ -175,7 +204,8 @@ layout: center
 </div>
 
 <!--
-This is the Adams macro editor. It's a text box. And an Apply button. That's it. No highlighting, no error checking, no docs. If you misspell an argument, you find out when you run it.
+This is the Adams macro editor that ships with Adams View. It's a text box. It's basically
+the minimum you would need to edit a macro.
 -->
 
 ---
@@ -190,7 +220,9 @@ layout: center
 
 
 <!--
-If you wanted better, you moved to Notepad++ with a custom syntax file. You got colors. That's it. No completions, no docs, no linting. Every syntax error still costs you a round-trip to Adams View.
+If you do a lot of macro editing, you might discover you can create a synatx file
+in notepad++. This gives you synax highlighting. This *is* an improvement. This 
+highlighting is a genuine productivity boost.
 -->
 
 ---
@@ -228,11 +260,196 @@ If you wanted better, you moved to Notepad++ with a custom syntax file. You got 
 </v-click>
 
 <!--
-Let's be honest about what's missing. No error checking — you find typos at runtime. No docs — you're constantly switching to the help browser. No autocomplete — you have to memorize command names and argument lists. No navigation — finding a macro means searching folders. And debugging? Print statements and prayer.
+But theres still a lot missing when we compare this to writing python or c++
+in a modern code editor.
 
-Every single syntax error costs you a round-trip to Adams View. Write, run, fail, fix, repeat. What if your editor could catch those problems before you ever hit run?
+- no error checking
+- no in-editor documentation
+- no autocomplete
+- no code navigation
+- no debugging
+
+-->
+---
+layout: section
+---
+
+# The Extension
+
+VS Code and the Adams Extension
+
+<!--
 -->
 
+---
+
+# <mdi-microsoft-visual-studio-code class="text-blue-400 mr-2" style="vertical-align: middle" /> Visual Studio Code
+
+<div class="vscode-slide">
+
+  <div class="vscode-screenshot">
+    <img src="/stock-vscode.png" class="rounded-lg shadow-2xl" alt="Visual Studio Code" />
+  </div>
+
+  <div class="vscode-chips">
+    <div class="vscode-chip">
+      <mdi-open-source-initiative class="text-green-400 mr-2 flex-shrink-0" />
+      <span>Free &amp; open source</span>
+    </div>
+    <div class="vscode-chip">
+      <mdi-puzzle-outline class="text-blue-400 mr-2 flex-shrink-0" />
+      <span>Extensible</span>
+    </div>
+    <button class="vscode-chip vscode-chip--clickable" @click="showSurvey = true">
+      <mdi-account-group class="text-indigo-400 mr-2 flex-shrink-0" />
+      <span>Used by 76% of developers</span>
+      <mdi-information-outline class="text-white/30 ml-2 flex-shrink-0" />
+    </button>
+  </div>
+
+  <!-- Survey modal -->
+  <Teleport to="body">
+    <div v-if="showSurvey" class="survey-overlay" @click.self="showSurvey = false">
+      <div class="survey-modal">
+        <button class="survey-close" @click="showSurvey = false"><mdi-close /></button>
+        <img src="/stackoverflow-dev-survey-2025-technology-most-popular-technologies-dev-envs-dev-envs-social.png"
+             class="survey-img" alt="Stack Overflow Dev Survey 2025 — Dev IDEs" />
+        <div class="survey-attribution">
+          Source: <a href="https://survey.stackoverflow.co/2025/technology#1-dev-id-es" target="_blank" class="survey-link">survey.stackoverflow.co/2025</a>
+          &nbsp;·&nbsp; Stack Overflow Developer Survey 2025
+          &nbsp;·&nbsp; Data licensed under ODbL
+        </div>
+      </div>
+    </div>
+  </Teleport>
+
+</div>
+
+<script setup>
+import { ref } from 'vue'
+const showSurvey = ref(false)
+</script>
+
+<style>
+.vscode-slide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  height: calc(100% - 3.5rem);
+}
+.vscode-screenshot {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.vscode-screenshot img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+}
+.vscode-chips {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  padding-bottom: 0.5rem;
+}
+.vscode-chip {
+  display: flex;
+  align-items: center;
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 9999px;
+  padding: 0.3rem 0.9rem;
+}
+.vscode-chip--clickable {
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.vscode-chip--clickable:hover {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.4);
+  color: rgba(255,255,255,0.85);
+}
+.survey-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0,0,0,0.75);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+.survey-modal {
+  position: relative;
+  background: #1e1e2e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  padding: 1rem;
+  max-width: 560px;
+  width: 90%;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+}
+.survey-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  background: rgba(255,255,255,0.08);
+  border: none;
+  border-radius: 9999px;
+  color: rgba(255,255,255,0.5);
+  width: 1.75rem;
+  height: 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: background 0.15s;
+}
+.survey-close:hover {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+.survey-img {
+  width: 100%;
+  border-radius: 8px;
+  display: block;
+}
+.survey-attribution {
+  margin-top: 0.6rem;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.35);
+  text-align: center;
+}
+.survey-link {
+  color: rgba(165,180,252,0.8);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+</style>
+
+<!--
+-->
+
+---
+layout: center
+---
+
+# The Adams Extension
+
+<div class="flex justify-center items-center mt-4" style="height: calc(100% - 4rem)">
+  <img src="/vscode-adams-extension-page.png" class="rounded-lg shadow-2xl" style="max-height: 100%; max-width: 100%; width: auto; height: auto" alt="MSC Adams Extension marketplace page" />
+</div>
+
+<!--
+-->
 ---
 layout: section
 ---
@@ -242,9 +459,7 @@ layout: section
 How the MSC Adams extension for VS Code helps you *read* and *write* code
 
 <!--
-Let's see what changes when your editor actually understands Adams.
-
-[click] These are the features that save you time on every single script.
+So I'm going to talk about the features of extension
 -->
 
 ---
@@ -336,62 +551,6 @@ The same hover docs experience for Adams Python scripts. Hover over any Adams Py
 -->
 
 ---
-layout: center
-clicksStart: 1
----
-
-# Linting
-
-Spellcheck for code
-
-<div class="sem-block mt-12 mx-auto" style="max-width: 560px">
-<v-switch>
-<template #1>
-<pre class="sem-code"><code><span class="cmd">marker</span> <span class="cmd">create</span>  &amp;
-   <span class="arg">marker_name</span> = <span class="val">.model.PART_1.cm</span>  &amp;
-   <span class="arg">locaton</span> = <span class="num">0, 0, 0</span>  &amp;
-   <span class="arg">orientation</span> = <span class="num">0, 0, 0</span></code></pre>
-</template>
-<template #2>
-<pre class="sem-code"><code><span class="cmd">marker</span> <span class="cmd">create</span>  &amp;
-   <span class="arg">marker_name</span> = <span class="val">.model.PART_1.cm</span>  &amp;
-   <span class="arg-bad">locaton</span> = <span class="num">0, 0, 0</span>  &amp;
-   <span class="arg">orientation</span> = <span class="num">0, 0, 0</span></code></pre>
-</template>
-</v-switch>
-</div>
-
-<style>
-.sem-block {
-  background: #1e1e2e;
-  border-radius: 8px;
-  padding: 20px 24px;
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.sem-code {
-  margin: 0;
-  font-family: 'Fira Code', monospace;
-  font-size: 0.95em;
-  line-height: 1.8;
-  white-space: pre;
-  color: #cdd6f4;
-}
-.sem-code .cmd     { color: #89b4fa; }
-.sem-code .arg     { color: #89dceb; }
-.sem-code .arg-bad {
-  color: #89dceb;
-  text-decoration: underline wavy #f38ba8;
-  text-underline-offset: 3px;
-}
-.sem-code .val     { color: #a6e3a1; }
-.sem-code .num     { color: #fab387; }
-</style>
-
-<!--
-The editor uses semantic tokens to color valid and invalid argument names differently. On the left, everything is correct — clean colors. On the right, "locaton" is misspelled. Before the linter even runs, the color difference makes the error obvious at a glance. The wavy red underline is the linter kicking in too.
--->
-
----
 
 # Linting
 
@@ -463,7 +622,7 @@ The extension indexes everything: macros, variables, parts, markers, constraints
 <div class="custom-macro-slide">
 
 <div class="custom-macro-video">
-  <video src="/works_with_custom_macros.mp4" autoplay loop muted class="w-full h-full rounded-xl object-contain" />
+  <video src="/works_with_custom_macros.mp4" autoplay loop muted controls class="w-full h-full rounded-xl object-contain" />
 </div>
 
 <div class="custom-macro-chips">
@@ -520,89 +679,6 @@ It discovers .mac files automatically. You don't configure anything.
 -->
 
 ---
-
-# Supported File Types
-
-<div class="mt-6">
-
-<table class="w-full text-sm border-collapse">
-<thead>
-<tr class="border-b border-white/10">
-  <th class="text-left py-2 pr-4 text-white/50 font-normal">Extension</th>
-  <th class="py-2 px-3 text-white/50 font-normal text-center">Syntax<br/>Highlighting</th>
-  <th class="py-2 px-3 text-white/50 font-normal text-center">Autocomplete<br/>&amp; Hover</th>
-  <th class="py-2 px-3 text-white/50 font-normal text-center">Linting</th>
-  <th class="py-2 px-3 text-white/50 font-normal text-center">Code<br/>Navigation</th>
-  <th class="py-2 px-3 text-white/50 font-normal text-center">Run in<br/>Adams</th>
-</tr>
-</thead>
-<tbody>
-<tr class="border-b border-white/5 ft-row" style="--i:0">
-  <td class="py-2 pr-4 font-mono font-bold text-blue-400">.cmd / .mac</td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-</tr>
-<tr class="border-b border-white/5 ft-row" style="--i:1">
-  <td class="py-2 pr-4"><mdi-language-python class="text-green-400 inline" /> <span class="font-mono font-bold text-green-400">.py</span></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-</tr>
-<tr class="border-b border-white/5 ft-row" style="--i:2">
-  <td class="py-2 pr-4"><mdi-cog class="text-purple-400 inline" /> <span class="font-mono font-bold text-purple-400">.adm / .acf</span></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-</tr>
-<tr class="border-b border-white/5 ft-row" style="--i:3">
-  <td class="py-2 pr-4"><mdi-email-outline class="text-yellow-400 inline" /> <span class="font-mono font-bold text-yellow-400">.msg / aview.log</span></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-</tr>
-<tr class="ft-row" style="--i:4">
-  <td class="py-2 pr-4 font-mono font-bold text-orange-300">Template Files <span class="text-white/30 font-normal text-xs">(Time Orbit)</span></td>
-  <td class="text-center"><mdi-check class="text-green-400" /></td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-  <td class="text-center text-white/20 text-xs">—</td>
-</tr>
-</tbody>
-</table>
-
-</div>
-
-<style>
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(12px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.ft-row {
-  opacity: 0;
-  animation: fadeUp 0.18s ease forwards;
-  animation-delay: calc(0.15s + var(--i) * 0.18s);
-}
-</style>
-
-<!--
-Quick reference: .cmd and .mac files get the everything (highlighting, autocomplete, hover docs, linting, code navigation, and direct execution in Adams View).
-
-Python gets the same, but Pylance handles Python linting and code navigation
-
-Solver files and output files get syntax highlighting only.
--->
-
----
 layout: section
 ---
 
@@ -621,10 +697,9 @@ You can actually connect to adams view in several ways to run and debug code
 Run files or selected code.
 
 <div class="mt-4">
-  <img src="/run_selection_in_adams.gif" class="rounded-lg shadow-xl mx-auto" style="max-height: 380px" alt="Run selection in Adams View" />
+  <video src="/run_in_view.mp4" autoplay loop muted controls class="rounded-lg shadow-xl mx-auto" style="max-height: 380px" />
 </div>
 
-<v-click>
 
 <div class="mt-4 text-center">
   <kbd class="px-2 py-1 rounded bg-gray-200 dark:bg-gray-700 text-sm font-mono">Ctrl+K</kbd>
@@ -632,7 +707,6 @@ Run files or selected code.
   <span class="ml-3 text-gray-500">→ Executes directly in Adams View</span>
 </div>
 
-</v-click>
 
 <!--
 Select code in VS Code, press Ctrl+K Ctrl+R, and it executes directly in Adams View. No copy-paste. No switching windows. Your editor is your Adams console now.
@@ -647,7 +721,7 @@ This works for both CMD and Python files.
 Set breakpoints. Inspect variables. Step through code. <span class="text-gray-500">Running inside Adams.</span>
 
 <div class="mt-4">
-  <img src="/debug_adams.gif" class="rounded-lg shadow-xl mx-auto" style="max-height: 380px" alt="Debug Python in Adams View" />
+  <video src="/python_debugging.mp4" autoplay loop muted controls class="rounded-lg shadow-xl mx-auto" style="max-height: 380px" />
 </div>
 
 <!--
@@ -661,9 +735,17 @@ No more print statements and prayer.
 layout: section
 ---
 
-# What's Coming
+<div class="flex flex-col items-center justify-center gap-3 text-center">
+  <h1 class="text-5xl font-bold" style="margin: 0">What's <span class="relative inline-block" style="white-space: nowrap">
+    <span style="font-family: 'Caveat', cursive; color: #f87171; font-size: 0.65em; position: absolute; top: -1em; left: 50%; transform: translateX(-50%) rotate(-3deg); white-space: nowrap; line-height: 1">just released</span>
+    <span>Coming</span>
+    <svg style="position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none"><line x1="-4" y1="55%" x2="104%" y2="45%" stroke="#f87171" stroke-width="3" stroke-linecap="round" /></svg>
+  </span></h1>
+  <p class="text-xl text-white/60" style="margin: 0">AI-powered Adams scripting</p>
+</div>
 
-AI-powered Adams scripting
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&display=swap" rel="stylesheet">
 
 <!--
 We've seen what the extension does today. Let me give you a glimpse of what's coming.
@@ -776,35 +858,12 @@ On top of that, the extension bundles five agent skills — domain knowledge pac
 
 # Copilot Agent Example
 
-<div class="mt-2 grid grid-cols-2 gap-4" style="height: calc(100% - 4rem); grid-template-rows: 1fr; align-items: stretch">
-
-<!-- Left: Chat panel (Vue component) -->
-<CopilotChat style="height: 100%; min-height: 0" />
-
-<!-- Right: click-through **images** -->
-<div class="flex flex-col gap-2" style="height: 100%; min-height: 0; overflow: hidden">
-  <div class="text-xs text-white/30 text-center mb-1">Model progress</div>
-  <div style="flex: 1; min-height: 0; position: relative; overflow: hidden">
-    <v-switch style="position: absolute; inset: 0; height: 100%; width: 100%">
-      <template #1>
-        <img src="/wind_turbine_model.png" class="rounded-lg shadow-xl w-full h-full object-contain" alt="Wind turbine Adams model" />
-      </template>
-      <template #2>
-        <img src="/wind_turbine_fail.png" class="rounded-lg shadow-xl w-full h-full object-contain" alt="Wind turbine simulation failure" />
-      </template>
-      <template #3>
-        <video src="/wind_turbine.mp4" autoplay loop muted class="rounded-lg shadow-xl w-full h-full object-contain" />
-      </template>
-    </v-switch>
-  </div>
-</div>
-
+<div class="mt-2" style="height: calc(100% - 4rem)">
+  <video src="/trebuchet.mp4" autoplay loop muted controls class="rounded-lg shadow-xl w-full h-full object-contain" />
 </div>
 
 <!--
 Here's what it looks like in practice. You describe what you want in plain English. Copilot looks up the Adams command syntax, validates the expressions, and executes them in the running Adams session — all without you leaving the chat panel.
-
-The images on the right show the model building up as the conversation progresses.
 -->
 
 ---
@@ -883,7 +942,7 @@ Open your next `.cmd` file in VS Code.
 
 <div class="mt-4 text-gray-500">Let me know what breaks.</div>
 
-<div class="mt-10 grid grid-cols-4 gap-6 text-sm">
+<div class="mt-10 grid grid-cols-3 gap-8 text-sm">
   <a href="https://marketplace.visualstudio.com/items?itemName=savvyanalyst.msc-adams" target="_blank" class="text-center !border-none !no-underline hover:opacity-80">
     <mdi-store class="text-3xl text-blue-500" />
     <div class="mt-2 font-medium">VS Code Marketplace</div>
@@ -899,11 +958,6 @@ Open your next `.cmd` file in VS Code.
     <div class="mt-2 font-medium">Feedback</div>
     <div class="text-gray-500 text-xs">GitHub Issues</div>
   </a>
-  <a href="https://github.com/bthornton191/adams_vscode/pulls" target="_blank" class="text-center !border-none !no-underline hover:opacity-80">
-    <mdi-source-branch class="text-3xl text-purple-400" />
-    <div class="mt-2 font-medium">Contributions welcome</div>
-    <div class="text-gray-500 text-xs">Open source</div>
-  </a>
 </div>
 
 <!--
@@ -912,4 +966,39 @@ Install it today. Open your next .cmd file in VS Code. And let me know what brea
 You can find it on the VS Code Marketplace — just search "MSC Adams". The source is on GitHub. If something doesn't work right, open a GitHub issue and I'll fix it. And if you want to contribute, it's fully open source — jump in.
 
 Thank you.
+-->
+
+---
+
+# Copilot Agent Example
+
+<div class="mt-2 grid grid-cols-2 gap-4" style="height: calc(100% - 4rem); grid-template-rows: 1fr; align-items: stretch">
+
+<!-- Left: Chat panel (Vue component) -->
+<CopilotChat style="height: 100%; min-height: 0" />
+
+<!-- Right: click-through **images** -->
+<div class="flex flex-col gap-2" style="height: 100%; min-height: 0; overflow: hidden">
+  <div class="text-xs text-white/30 text-center mb-1">Model progress</div>
+  <div style="flex: 1; min-height: 0; position: relative; overflow: hidden">
+    <v-switch style="position: absolute; inset: 0; height: 100%; width: 100%">
+      <template #1>
+        <img src="/wind_turbine_model.png" class="rounded-lg shadow-xl w-full h-full object-contain" alt="Wind turbine Adams model" />
+      </template>
+      <template #2>
+        <img src="/wind_turbine_fail.png" class="rounded-lg shadow-xl w-full h-full object-contain" alt="Wind turbine simulation failure" />
+      </template>
+      <template #3>
+        <video src="/wind_turbine.mp4" autoplay loop muted class="rounded-lg shadow-xl w-full h-full object-contain" />
+      </template>
+    </v-switch>
+  </div>
+</div>
+
+</div>
+
+<!--
+Here's what it looks like in practice. You describe what you want in plain English. Copilot looks up the Adams command syntax, validates the expressions, and executes them in the running Adams session — all without you leaving the chat panel.
+
+The images on the right show the model building up as the conversation progresses.
 -->
