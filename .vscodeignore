@@ -24,8 +24,6 @@ run-tests.js
 .claude
 test_output.txt
 AGENTS.md
-adams-cmd-lsp-plan.md
-adams-view-mcp-server-plan.md
 macro-hover-plan.md
 doc/**
 qa_lint_results.csv
@@ -43,7 +41,7 @@ bundled/libs/**/__pycache__/**
 bundled/libs/**/*.dist-info/**
 bundled/libs/bin/**
 
-# pywin32 — Windows COM/API bindings, not needed by LSP or MCP server
+# pywin32 — Windows COM/API bindings, not needed by the LSP
 bundled/libs/win32/**
 bundled/libs/win32com/**
 bundled/libs/win32comext/**
@@ -67,29 +65,3 @@ node_modules/@microsoft/**/dist-es5/**
 node_modules/@microsoft/**/types/**
 node_modules/@nevware21/**/bundle/**
 
-# MCP server: include only the bundled dist output
-adams-view-mcp-server/src/**
-adams-view-mcp-server/tests/**
-adams-view-mcp-server/node_modules/**
-adams-view-mcp-server/tsconfig.json
-!adams-view-mcp-server/dist/**
-!adams-view-mcp-server/package.json
-
-# adams_skills submodule: exclude dev-only content, keep skill content
-resources/adams_skills/.github/**
-resources/adams_skills/.vscode/**
-resources/adams_skills/.agents/**
-resources/adams_skills/.playwright-mcp/**
-resources/adams_skills/.git/**
-resources/adams_skills/dist/**
-resources/adams_skills/adams-skills-api/**
-resources/adams_skills/*-workspace/**
-resources/adams_skills/install.ps1
-resources/adams_skills/install.sh
-resources/adams_skills/AGENTS.md
-resources/adams_skills/CLAUDE.md
-resources/adams_skills/README.md
-resources/adams_skills/LICENSE
-resources/adams_skills/.gitignore
-resources/adams_skills/.gitmodules
-resources/adams_skills/skills/*/evals/**

@@ -22,8 +22,6 @@
   - [CMD Linter](#cmd-linter)
     - [Macro Scanning](#macro-scanning)
   - [Code Navigation](#code-navigation)
-  - [Copilot Agent Skills](#copilot-agent-skills)
-  - [MCP Servers](#mcp-servers)
 - [Extension Settings](#extension-settings)
   - [CMD Linter Settings](#cmd-linter-settings)
   - [Customizing Syntax Colors](#customizing-syntax-colors)
@@ -143,26 +141,6 @@ and their parameters.
 
 ![Code navigation with Go to Definition and Find All References](https://github.com/bthornton191/adams_vscode/raw/HEAD/doc/cmd_linked_refs.gif)
 
-## Copilot Agent Skills
-
-The extension bundles 5 domain-knowledge skills that teach GitHub Copilot how to work with Adams. These are automatically available in Copilot Chat for all users who install the extension.
-
-| Skill | Description |
-|-------|-------------|
-| **adams-cmd-model-builder** | Build models using Adams CMD syntax |
-| **adams-python-model-builder** | Build models using the Adams Python API |
-| **adams-flex** | Flexible bodies, MNF files, and rotordynamics |
-| **adams-simulation-debugger** | Diagnose convergence failures and solver issues |
-| **adams-subroutine-writer** | Write C, C++, and Fortran user subroutines |
-
-## MCP Servers
-
-The extension registers two [Model Context Protocol](https://modelcontextprotocol.io/) (MCP) servers that allow AI assistants to interact with Adams directly:
-
-**Adams View** — Connects to a running Adams View session. Provides tools to run CMD commands, execute Python, load files, submit simulations, and read the session log.
-
-**Adams CMD Linter** — Static analysis tools that let AI agents look up command syntax (`adams_lookup_command`), lint raw CMD text (`adams_lint_cmd_text`), and lint CMD files (`adams_lint_cmd_file`). This allows agents to validate their own Adams output before showing it to you.
-  
 # Extension Settings
 
 This extension contributes the following settings:

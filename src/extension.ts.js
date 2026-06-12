@@ -267,9 +267,6 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
     // Add the event listener to subscriptions so it's properly disposed
     context.subscriptions.push(configChangeListener);
 
-    const { registerMcpServerProvider } = require("./mcp_server_provider.ts.js");
-    registerMcpServerProvider(context, reporter);
-
     if (
         vscode.workspace.getConfiguration("msc-adams").get("runInAdams.autoLoadAdamsSitePackages")
     ) {

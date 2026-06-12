@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.2.0 (June 12th 2026)](#220-june-12th-2026)
   - [2.1.2 (June 11th 2026)](#212-june-11th-2026)
   - [2.0.8 (May 27th 2026)](#208-may-27th-2026)
   - [2.0.7 (May 8th 2026)](#207-may-8th-2026)
@@ -76,6 +77,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.2.0 (June 12th 2026)
+
+- **Removed** The bundled MCP servers and agent skills. The CMD linter, syntax highlighting, Python intellisense, and all other editor features are unaffected.
 
 ## 2.1.2 (June 11th 2026)
 
