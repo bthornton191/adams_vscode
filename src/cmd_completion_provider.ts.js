@@ -144,7 +144,17 @@ function cmd_completion_provider(
 
             // Suppress function completions when typing an argument name for a known command
             // (not a value after '='). Applies on both first and continuation lines.
-            const typing_arg_value = /(\w+)=(\w*)$/.test(current_line);
+            // paren_depth > 0 means the cursor is inside a parenthesized expression —
+            // always an argument value context, never an argument name. full_text spans
+            // all continuation lines up to the cursor, so this correctly handles parens
+            // that open on a prior continuation line. Note: counts parens inside quoted
+            // strings too, but the resulting false-positive (offering functions) is benign
+            // — VS Code's client-side filtering suppresses non-matching items.
+            const paren_depth = [...full_text].reduce(
+                (d, ch) => (ch === "(" ? d + 1 : ch === ")" ? d - 1 : d),
+                0,
+            );
+            const typing_arg_value = /(\w+)=(\w*)$/.test(current_line) || paren_depth > 0;
             const in_arg_name_context =
                 commands.hasOwnProperty(resolved_command_key) && !typing_arg_value;
 

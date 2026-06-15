@@ -23,6 +23,9 @@ This is a VS Code extension for MSC Adams multi-body dynamics simulation softwar
 - **Configuration access**: use `vscode.workspace.getConfiguration("msc-adams").get(...)` — always read at call time (not cached at startup) so VS Code setting changes are honored without restart.
 
 ## Testing
+
+Always add tests for new features and bug fixes. Tests should cover both expected functionality and edge cases. Follow the existing test patterns
+
 - Tests are Mocha integration tests and require a running Adams View process. The global setup in `test/global_fixture.cjs` launches Adams before tests run.
 - Use `suite()` / `test()` (not `describe()` / `it()`).
 - Use `test/utils.js` helpers (`waitForAdamsConnection`, socket helpers) rather than reimplementing connection logic.

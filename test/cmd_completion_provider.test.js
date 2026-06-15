@@ -797,6 +797,123 @@ suite("cmd_completion_provider", () => {
         );
     });
 
+    test("should return function completions when typing inside a parenthesized argument value", () => {
+        const function_names = new Map([
+            ["db_active", "db_active doc"],
+            ["db_children", "db_children doc"],
+            ["sin", "sin doc"],
+        ]);
+        const commands = { "variable set": ["var_name", "object_value", "string_value"] };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lineText = "variable set object_value=(eval(db_";
+        const localPosition = new vscode.Position(0, lineText.length);
+        const doc = makeDocument("db_", lineText);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        const kinds = completions.map((c) => c.kind);
+        assert.ok(
+            labels.includes("db_active"),
+            "Expected 'db_active' function completion inside parenthesized expression",
+        );
+        assert.ok(
+            labels.includes("db_children"),
+            "Expected 'db_children' function completion inside parenthesized expression",
+        );
+        assert.ok(
+            !labels.includes("sin"),
+            "'sin' should not appear — does not start with 'db_'",
+        );
+        assert.ok(
+            kinds.includes(vscode.CompletionItemKind.Function),
+            "Completions should be of Function kind",
+        );
+    });
+
+    test("should return function completions when opening paren is on a prior continuation line", () => {
+        const function_names = new Map([
+            ["db_active", "db_active doc"],
+            ["db_children", "db_children doc"],
+        ]);
+        const commands = { "variable set": ["var_name", "object_value", "string_value"] };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        // The opening ( is on line 0; cursor is on line 1 after db_
+        const lines = ["variable set object_value = ( &", "    db_"];
+        const localPosition = new vscode.Position(1, lines[1].length);
+        const doc = makeDocument("db_", lines);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.includes("db_active"),
+            "Expected 'db_active' when opening paren is on a previous continuation line",
+        );
+    });
+
+    test("should not return function completions when typing an arg name outside parens", () => {
+        const function_names = new Map([
+            ["db_active", "db_active doc"],
+            ["object_val_fn", "doc"],
+        ]);
+        const commands = { "variable set": ["var_name", "object_value", "string_value"] };
+        const provider = cmd_completion_provider(function_names, commands);
+
+        const lineText = "variable set object_";
+        const localPosition = new vscode.Position(0, lineText.length);
+        const doc = makeDocument("object_", lineText);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const kinds = completions.map((c) => c.kind);
+        assert.ok(
+            !kinds.includes(vscode.CompletionItemKind.Function),
+            "Should not offer function completions when typing an arg name",
+        );
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.some((l) => l.includes("object_value")),
+            "Expected 'object_value' argument completion",
+        );
+    });
+
+    test("should return function completions inside parens for abbreviated command resolved via command_tree", () => {
+        const function_names = new Map([
+            ["db_active", "db_active doc"],
+            ["db_children", "db_children doc"],
+        ]);
+        const commands = { "variable set": ["var_name", "object_value"] };
+        const command_tree = {
+            children: {
+                variable: {
+                    min_prefix: 2,
+                    children: {
+                        set: { min_prefix: 2, children: {}, is_leaf: true },
+                    },
+                },
+            },
+        };
+        const provider = cmd_completion_provider(
+            function_names,
+            commands,
+            {},
+            new Map(),
+            null,
+            command_tree,
+        );
+
+        const lineText = "var set object_value=(eval(db_";
+        const localPosition = new vscode.Position(0, lineText.length);
+        const doc = makeDocument("db_", lineText);
+        const completions = provider.provideCompletionItems(doc, localPosition, null, {});
+
+        const labels = completions.map((c) => c.label);
+        assert.ok(
+            labels.includes("db_active"),
+            "Expected 'db_active' even when command is abbreviated and resolved via command_tree",
+        );
+    });
+
     test("should fall back to function completions when command_tree is null for abbreviated command", () => {
         const function_names = new Map([["displacement", "displacement doc"]]);
         // No command_tree passed — abbreviated 'element' won't resolve

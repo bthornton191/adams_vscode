@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.2.1 (June 15th 2026)](#221-june-15th-2026)
   - [2.2.0 (June 12th 2026)](#220-june-12th-2026)
   - [2.1.2 (June 11th 2026)](#212-june-11th-2026)
   - [2.0.8 (May 27th 2026)](#208-may-27th-2026)
@@ -77,6 +78,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.2.1 (June 15th 2026)
+
+- **Fixed** Adams CMD IntelliSense: `db_*` and other design functions now appear as completions when typing inside a parenthesized argument value (e.g. `object_value=(eval(db_))`). The fix also covers the case where the opening parenthesis is on a prior continuation line.
 
 ## 2.2.0 (June 12th 2026)
 
