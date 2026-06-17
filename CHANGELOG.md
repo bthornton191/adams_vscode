@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.2.2 (June 16th 2026)](#222-june-16th-2026)
   - [2.2.1 (June 15th 2026)](#221-june-15th-2026)
   - [2.2.0 (June 12th 2026)](#220-june-12th-2026)
   - [2.1.2 (June 11th 2026)](#212-june-11th-2026)
@@ -78,6 +79,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.2.2 (June 16th 2026)
+
+- **Fixed** "Open Adams View" and "Open In View" commands silently failing to launch Adams (and, in intermediate builds, flashing multiple console windows). The 2.x launch refactors (`exec` → `execFile` → `spawn({shell, detached})` → `wscript`/VBS `Shell.Run`) progressively broke the launch: the detached/hidden approaches gave MSC's launcher chain (`mdi.bat` → `menu.exe` → `run_mdi.py` → `os.system("call adamsctl_<RAND>.bat")`) no usable console, so Adams never started. Both commands now launch via `child_process.exec` again — the long-standing approach that runs the launcher through a hidden `cmd.exe` (no flashing) while the launcher chain runs in a real console and the Adams View GUI appears normally. Note: this intentionally reverts the shell-injection hardening added in the security pass for these two commands.
 
 ## 2.2.1 (June 15th 2026)
 

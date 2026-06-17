@@ -1,7 +1,7 @@
 const path = require("path");
 const vscode = require("vscode");
 const fs = require("fs");
-const { spawnDetached } = require("./spawn_helper.ts.js");
+const child_process = require("child_process");
 
 function open_in_view(context, output_channel, reporter = null) {
     return (uri) => {
@@ -38,20 +38,27 @@ function open_in_view(context, output_channel, reporter = null) {
         );
         if (reporter) reporter.sendTelemetryEvent("open_in_view");
 
-        spawnDetached(
-            view_launcher,
-            [base_name, adams_launch_command],
-            dir_name,
+        // Launch via child_process.exec: runs the launcher through a hidden
+        // cmd.exe (no flashing console windows) while the mdi.bat chain still
+        // runs in a real console — which MSC's launcher (run_mdi.py -> adamsctl)
+        // requires — and the Adams View GUI shows its own window. This is the
+        // long-standing approach that the 2.x exec->execFile->spawn->wscript
+        // refactors regressed (flashing, then silent no-launch).
+        child_process.exec(
+            `"${view_launcher}" "${base_name}" "${adams_launch_command}"`,
+            { cwd: dir_name },
             (error) => {
-                console.log(`error: ${error.message}`);
-                output_channel.appendLine(
-                    `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
-                );
-                if (reporter)
-                    reporter.sendTelemetryErrorEvent("open_in_view", {
-                        error_type: "process_error",
-                        error_message: error.message,
-                    });
+                if (error) {
+                    console.log(`error: ${error.message}`);
+                    output_channel.appendLine(
+                        `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
+                    );
+                    if (reporter)
+                        reporter.sendTelemetryErrorEvent("open_in_view", {
+                            error_type: "process_error",
+                            error_message: error.message,
+                        });
+                }
             },
         );
     };

@@ -25,26 +25,23 @@ function makeMockReporter() {
     };
 }
 
-function makeMockChild() {
-    const listeners = {};
-    return {
-        unref: function () { this.unrefCalled = true; },
-        on: function (event, cb) { listeners[event] = cb; },
-        unrefCalled: false,
-        listeners,
+/**
+ * Capture a child_process.exec call: exec(command, options, callback).
+ * The launcher is fire-and-forget, so the return value is unused.
+ */
+function captureExec() {
+    const c = {};
+    child_process.exec = (command, options, callback) => {
+        c.command = command;
+        c.options = options;
+        c.callback = callback;
+        return {};
     };
-}
-
-/** Read the VBS file written by spawnDetached, clean it up, return content. */
-function captureVbs(capturedSpawn) {
-    const vbsPath = capturedSpawn.args[1];
-    const content = fs.readFileSync(vbsPath, "utf8");
-    try { fs.unlinkSync(vbsPath); } catch { /* ignore */ }
-    return content;
+    return c;
 }
 
 suite("open_in_view", () => {
-    let originalSpawn;
+    let originalExec;
     let originalExistsSync;
     // Use a path with spaces â€” this is the regression case that broke repeatedly
     const FAKE_LAUNCH_CMD = "C:/Program Files/fake/mdi.bat";
@@ -53,12 +50,12 @@ suite("open_in_view", () => {
         await vscode.workspace
             .getConfiguration("msc-adams")
             .update("adamsLaunchCommand", FAKE_LAUNCH_CMD, vscode.ConfigurationTarget.Workspace);
-        originalSpawn = child_process.spawn;
+        originalExec = child_process.exec;
         originalExistsSync = fs.existsSync;
     });
 
     suiteTeardown(async () => {
-        child_process.spawn = originalSpawn;
+        child_process.exec = originalExec;
         fs.existsSync = originalExistsSync;
         await vscode.workspace
             .getConfiguration("msc-adams")
@@ -70,24 +67,25 @@ suite("open_in_view", () => {
     });
 
     teardown(() => {
+        child_process.exec = originalExec;
         fs.existsSync = originalExistsSync;
     });
 
-    test("should not spawn when launch command path does not exist", (done) => {
-        let spawnCalled = false;
-        child_process.spawn = () => { spawnCalled = true; return makeMockChild(); };
+    test("should not exec when launch command path does not exist", (done) => {
+        let execCalled = false;
+        child_process.exec = () => { execCalled = true; return {}; };
         fs.existsSync = () => false;
 
         const context = makeContext("C:/fake/launcher.bat");
         open_in_view(context, output_channel, null)(makeUri("C:/models/mymodel.cmd"));
 
-        assert.strictEqual(spawnCalled, false,
-            "spawn should not be called when the launch command does not exist");
+        assert.strictEqual(execCalled, false,
+            "exec should not be called when the launch command does not exist");
         done();
     });
 
     test("should send config_missing telemetry when launch command does not exist", (done) => {
-        child_process.spawn = () => makeMockChild();
+        child_process.exec = () => ({});
         fs.existsSync = () => false;
 
         const reporter = makeMockReporter();
@@ -99,134 +97,47 @@ suite("open_in_view", () => {
         done();
     });
 
-    test("should spawn via wscript.exe (not the .bat directly) to suppress console windows", (done) => {
-        if (process.platform !== "win32") { done(); return; }
-
-        const capturedSpawn = {};
-        child_process.spawn = (file, args, opts) => {
-            capturedSpawn.file = file;
-            capturedSpawn.args = args;
-            capturedSpawn.opts = opts;
-            return makeMockChild();
-        };
-
-        open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
-
-        assert.strictEqual(capturedSpawn.file, "wscript.exe",
-            "wscript.exe must be used â€” not the .bat directly â€” to suppress child console windows");
-        assert.strictEqual(capturedSpawn.args[0], "/nologo");
-        assert.match(capturedSpawn.args[1], /adams-spawn-.*\.vbs$/,
-            "Second arg must be a temp VBS file");
-        done();
-    });
-
-    test("should write VBS containing launcher, filename, and Adams launch path", (done) => {
-        if (process.platform !== "win32") { done(); return; }
-
+    test("should exec a command containing launcher, filename, and Adams launch path", (done) => {
         const launcher = "C:/fake/launcher.bat";
-        const capturedSpawn = {};
-        child_process.spawn = (file, args, opts) => {
-            capturedSpawn.args = args;
-            return makeMockChild();
-        };
+        const c = captureExec();
 
         const uri = makeUri("C:/models/mymodel.cmd");
         open_in_view(makeContext(launcher), output_channel, null)(uri);
 
-        const vbsContent = captureVbs(capturedSpawn);
-        assert.ok(vbsContent.includes("WScript.Shell"), "VBS must use WScript.Shell");
-        assert.ok(vbsContent.includes(launcher), "VBS must contain the launcher path");
-        assert.ok(vbsContent.includes(path.basename(uri.fsPath)), "VBS must contain the model filename");
-        assert.ok(vbsContent.includes(FAKE_LAUNCH_CMD), "VBS must contain the Adams launch path");
+        assert.strictEqual(typeof c.command, "string", "exec must be called with a command string");
+        assert.ok(c.command.includes(launcher), "command must contain the launcher path");
+        assert.ok(c.command.includes(path.basename(uri.fsPath)), "command must contain the model filename");
+        assert.ok(c.command.includes(FAKE_LAUNCH_CMD), "command must contain the Adams launch path");
         done();
     });
 
-    test("should use Shell.Run style=0 to suppress console windows for the full process tree", (done) => {
-        if (process.platform !== "win32") { done(); return; }
+    test("should quote the launcher, filename, and launch path so spaces survive", (done) => {
+        // open_in_view wraps each token in quotes; the Adams launch path
+        // ("C:/Program Files/...") contains spaces and must stay one token.
+        const launcher = "C:/fake/launcher.bat";
+        const c = captureExec();
 
-        const capturedSpawn = {};
-        child_process.spawn = (file, args, opts) => {
-            capturedSpawn.args = args;
-            return makeMockChild();
-        };
+        const uri = makeUri("C:/models/mymodel.cmd");
+        open_in_view(makeContext(launcher), output_channel, null)(uri);
 
-        open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
-
-        const vbsContent = captureVbs(capturedSpawn);
-        assert.match(vbsContent, /, 0, (True|False)$/,
-            "Shell.Run must use window style 0 to suppress console windows");
-        done();
-    });
-
-    test("should use Chr(34) quoting so paths with spaces are safe in VBS", (done) => {
-        // Regression: doubled-quote escaping in VBS string literals breaks when the
-        // path starts immediately after the opening quote: ""path"" is parsed as
-        // empty-string + identifier, not a quoted path. Chr(34) is unambiguous.
-        if (process.platform !== "win32") { done(); return; }
-
-        const launcher = "C:/Program Files/fake/launcher.bat";
-        const capturedSpawn = {};
-        child_process.spawn = (file, args, opts) => {
-            capturedSpawn.args = args;
-            return makeMockChild();
-        };
-
-        open_in_view(makeContext(launcher), output_channel, null)(makeUri("C:/models/my model.cmd"));
-
-        const vbsContent = captureVbs(capturedSpawn);
-        assert.ok(vbsContent.includes("Chr(34)"),
-            "VBS must use Chr(34) â€” not doubled-quote escaping â€” for path quoting");
-        assert.ok(vbsContent.includes(`"${launcher}"`),
-            "Launcher path with spaces must appear verbatim inside a VBS string literal");
-        assert.ok(vbsContent.includes(`"${FAKE_LAUNCH_CMD}"`),
-            "Adams launch path with spaces must appear verbatim inside a VBS string literal");
-        done();
-    });
-
-    test("should spawn with detached:true so Adams gets its own window station", (done) => {
-        const capturedOpts = {};
-        child_process.spawn = (file, args, opts) => {
-            capturedOpts.value = opts;
-            return makeMockChild();
-        };
-
-        open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
-
-        assert.strictEqual(capturedOpts.value.detached, true,
-            "Process must be detached to get its own window station on Windows");
-        done();
-    });
-
-    test("should call unref so extension host does not wait for Adams to exit", (done) => {
-        let mockChild;
-        child_process.spawn = () => {
-            mockChild = makeMockChild();
-            return mockChild;
-        };
-
-        open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
-
-        assert.strictEqual(mockChild.unrefCalled, true,
-            "unref() must be called so the extension host can exit independently");
+        assert.ok(c.command.includes(`"${launcher}"`), "launcher must be quoted");
+        assert.ok(c.command.includes(`"${path.basename(uri.fsPath)}"`), "filename must be quoted");
+        assert.ok(c.command.includes(`"${FAKE_LAUNCH_CMD}"`), "launch path must be quoted");
         done();
     });
 
     test("should pass cwd as the directory containing the model file", (done) => {
-        const capturedOpts = {};
-        child_process.spawn = (file, args, opts) => {
-            capturedOpts.value = opts;
-            return makeMockChild();
-        };
+        const c = captureExec();
 
         const uri = makeUri("C:/models/mymodel.cmd");
         open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(uri);
 
-        assert.strictEqual(capturedOpts.value.cwd, path.dirname(uri.fsPath));
+        assert.strictEqual(c.options.cwd, path.dirname(uri.fsPath));
         done();
     });
 
     test("should not crash when reporter is null", (done) => {
-        child_process.spawn = () => makeMockChild();
+        child_process.exec = () => ({});
 
         assert.doesNotThrow(() => {
             open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
@@ -235,7 +146,7 @@ suite("open_in_view", () => {
     });
 
     test("should send telemetry event when reporter is provided", (done) => {
-        child_process.spawn = () => makeMockChild();
+        child_process.exec = () => ({});
 
         const reporter = makeMockReporter();
         open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, reporter)(makeUri("C:/models/mymodel.cmd"));
@@ -245,18 +156,14 @@ suite("open_in_view", () => {
         done();
     });
 
-    test("should send error telemetry when spawn emits an error", (done) => {
-        let mockChild;
-        child_process.spawn = () => {
-            mockChild = makeMockChild();
-            return mockChild;
-        };
+    test("should send error telemetry when the exec callback receives an error", (done) => {
+        const c = captureExec();
 
         const reporter = makeMockReporter();
         open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, reporter)(makeUri("C:/models/mymodel.cmd"));
 
-        const err = new Error("spawn failed");
-        mockChild.listeners.error(err);
+        const err = new Error("launch failed");
+        c.callback(err);
 
         assert.strictEqual(reporter.calls.errors.length, 1);
         assert.strictEqual(reporter.calls.errors[0][0], "open_in_view");
@@ -265,17 +172,13 @@ suite("open_in_view", () => {
         done();
     });
 
-    test("should not crash when reporter is null and spawn emits an error", (done) => {
-        let mockChild;
-        child_process.spawn = () => {
-            mockChild = makeMockChild();
-            return mockChild;
-        };
+    test("should not crash when reporter is null and the exec callback errors", (done) => {
+        const c = captureExec();
 
         open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
 
         assert.doesNotThrow(() => {
-            mockChild.listeners.error(new Error("spawn failed"));
+            c.callback(new Error("launch failed"));
         });
         done();
     });
