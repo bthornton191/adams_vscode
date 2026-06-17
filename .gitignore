@@ -36,3 +36,4 @@ doc/presentations/adams-vscode-intro/openscreen
 **.docx
 **.avi
 test/files/agent_demo/mylog.log
+*.vsix
