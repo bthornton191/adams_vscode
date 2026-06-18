@@ -37,3 +37,4 @@ doc/presentations/adams-vscode-intro/openscreen
 **.avi
 test/files/agent_demo/mylog.log
 *.vsix
+test/pyrightconfig.json
