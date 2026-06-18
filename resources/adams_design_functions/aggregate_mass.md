@@ -3,7 +3,7 @@
 Calculates and stores aggregate mass information, which you can then use in parametrics or store in variables for future use.
 
 ## Format
-```java
+```adams_cmd
 aggregate_mass(array_of_objects, reference_frame_key, type_string)
 ```
 ## Arguments
@@ -35,7 +35,7 @@ aggregate_mass(array_of_objects, reference_frame_key, type_string)
 ### Computing Mass
 
 The following example provides the mass of PART_2 and PART_3:
-```java
+```adams_cmd
 AGGREGATE_MASS( {PART_2, PART_3} , 0 , "mass" )
 ```
 Note that the objects must be in an array; therefore, the curly braces are required. In this example, the reference frame key has been set to zero because the value of mass is independent of the reference frame.
@@ -43,17 +43,17 @@ Note that the objects must be in an array; therefore, the curly braces are requi
 ### Computing CM Location
 
 The following example returns the location of the cm for the aggregation of PART_2 and PART_3. The location array will be computed and reported with respect to the ground.MARKER_3 reference frame.
-```java
+```adams_cmd
 AGGREGATE_MASS( {PART_2, PART_3} , ground.MARKER_3 ,"CM_Pos" )
 ```
 ### Obtaining Inertia Matrix Entries
 
 The following example returns the off-diagonal entries of the inertia matrix for the aggregation of PART_2 and PART_3 in the ground reference frame. Note that array indexing has been used to return the 4th, 5th, and 6th entries from the returned array.
-```java
+```adams_cmd
 AGGREGATE_MASS( {PART_2, PART_3} , 0 , "inertias" )[4:6]
 ```
 Alternatively, you can use the all type string and use array indexing to extract only the last three values. In this example, the computation is relative to PART_2.MARKER_1.
-```java
+```adams_cmd
 AGGREGATE_MASS({PART_2,PART_3}, PART_2.MARKER_1 , "All")[11:13]
 ```
 

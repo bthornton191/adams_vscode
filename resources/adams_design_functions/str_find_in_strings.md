@@ -1,7 +1,7 @@
 # STR_FIND_IN_STRINGS
 Searches for a string in an array of strings. Returns the index into the array if the string is found, zero if not found.
 ## Format
-```java
+```adams_cmd
 STR_FIND_IN_STRINGS(array_of_strings, string)
 ```
 
@@ -14,6 +14,6 @@ STR_FIND_IN_STRINGS(array_of_strings, string)
 : The string to search for.
 
 ## Example
-```java
+```adams_cmd
 if cond=(STR_FIND_IN_STRINGS(unit_names, "force"))
 ```

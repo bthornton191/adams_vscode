@@ -7,7 +7,7 @@ it returns a 0.
 
 
 ## Format
-```java
+```adams_cmd
 EXECUTE_VIEW_COMMAND (Command)
 ```
 
@@ -25,6 +25,6 @@ EXECUTE_VIEW_COMMAND("marker create marker=" // UNIQUE_NAME("mar"))
 ```
 
 ### Result
-```java
+```adams_cmd
 returns a 1 and creates a marker with a unique name
 ```

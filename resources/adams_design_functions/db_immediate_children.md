@@ -3,7 +3,7 @@
 Returns an array of all objects that are immediate children of the object you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_IMMEDIATE_CHILDREN (Object Name, Object Type)
 ```
 ## Arguments
@@ -23,7 +23,7 @@ DB_IMMEDIATE_CHILDREN (Object Name, Object Type)
 
 The following commands display all the names of the modeling objects in model_1:
 
-```java
+```adams_cmd
 list names & 
     entity = (EVAL(DB_IMMEDIATE_CHILDREN(.model_1, "adams"))) &
     file = "2u104_01.out"

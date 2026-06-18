@@ -3,7 +3,7 @@
 Returns a Boolean value indicating whether the object specified exists or not. It does an exhaustive search through the specified object context to find anything with a given name. 
 
 ## Format 
-```java
+```adams_cmd
 DB_OBJ_EXISTS_EXHAUSTIVE (ContextObject, Name) 
 ```
 ## Arguments 
@@ -23,6 +23,6 @@ DB_OBJ_EXISTS_EXHAUSTIVE (ContextObject, Name)
 ## Examples 
 
 You might branch your command file based upon the existence of a particular object:
-```java
+```adams_cmd
 if condition=(db_obj_exists_exhaustive(.model_1, "marker_1")) 
 ```

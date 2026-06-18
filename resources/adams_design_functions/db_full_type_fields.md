@@ -3,7 +3,7 @@
 Returns an array of strings for the names of the fields (including aliases) for the object you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_FULL_TYPE_FIELDS (Objects Type String)
 ```
 ## Argument
@@ -20,7 +20,7 @@ DB_FULL_TYPE_FIELDS (Objects Type String)
 
 The following commands find all the field names on a marker:
 
-```java
+```adams_cmd
 var set var=db10 &
     str=(EVAL(DB_FULL_TYPE_FIELDS("marker")))
 ```

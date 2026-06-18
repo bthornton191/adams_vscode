@@ -3,7 +3,7 @@
 Returns a non-statistical mean of the values in an array. 
 
 ## Format 
-```java
+```adams_cmd
 CENTER (A) 
 ```
 ## Argument 
@@ -19,7 +19,7 @@ CENTER (A)
 ## Equation 
 
 Mathematically, `CENTER` is calculated as follows: 
-```java
+```adams_cmd
 CENTER(A) = (min(A) + max(A))/2
 ```
 
@@ -33,11 +33,11 @@ The following example illustrates the use of the `CENTER` function:
 
 
 ### Function  
-```java
+```adams_cmd
 CENTER ({1, 0, 4, 3})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 2.5  
 ```

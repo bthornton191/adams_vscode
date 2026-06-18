@@ -3,7 +3,7 @@
 Returns an x component of translational displacement from one coordinate system object to another.
 
 ## Format
-```java
+```adams_cmd
 DX (Object 1, Object 2, Reference Frame)
 
 ```
@@ -29,7 +29,7 @@ component.
 
 ## Symbol
 Mathematically, `DX` is calculated as follows:
-```java
+```adams_cmd
 DX = [R_01 - R_02]•x_R
 ```
 where:
@@ -49,12 +49,12 @@ In the following illustration, the `DX` function returns the x component of the 
  
 
 ### Function  
-```java
+```adams_cmd
 DX(marker_O1, marker_O2, marker_R)
 ```
 
 ### Result  
-```java
+```adams_cmd
 12
 ```
 

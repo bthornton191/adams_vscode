@@ -3,7 +3,7 @@
 Returns an array of all objects of a given type that are dependents of the object you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_DEPENDENTS (Object Name, Object Type)
 ```
 Arguments
@@ -24,7 +24,7 @@ Arguments
 
 The following example lists information about all marker objects that depend on the design variable, **DV_1**. Note that **.self** is appended to **DV_1** so the functions refers to the design variable object **DV_1** and not the value in **DV_1**.
 
-```java
+```adams_cmd
 list_info &
     entity = (EVAL(DB_DEPENDENTS(.model_1.DV_1.self, "marker")))
 ```

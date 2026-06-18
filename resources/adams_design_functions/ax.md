@@ -3,7 +3,7 @@
 Returns the angular displacement from one coordinate system object to another, and accounts for angle wrapping.
 
 ## Format
-```java
+```adams_cmd
 AX (Object, Reference Frame)
 ```
 ## Arguments
@@ -22,7 +22,7 @@ AX (Object, Reference Frame)
 
 ## Symbol
 Mathematically, `AX` is calculated as follows (angle wrapping is accounted for):
-```java
+```adams_cmd
 AX = atan2(-z_o*y_R, z_o*z_R)
 ```
 where:
@@ -42,12 +42,12 @@ In the following illustration, the AX function returns the angle between the y-a
 
 
 ### Function  
-```java
+```adams_cmd
 AX(marker_O, marker_R)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 35  
 ```
 
@@ -66,7 +66,7 @@ AX(marker_O, marker_R)
 > **Tip**   
 >If you want to change the AX function so it does not account for angle wrapping, use the MOD function. For example, use the function:
 > 
->```java
+>```adams_cmd
 >(MOD(AX(.model_1.PART_1.MAR_2, .model_1.ground.MAR_1)+PI,2*PI)-PI)
 >```
 >

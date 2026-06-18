@@ -5,7 +5,7 @@ Returns a text string containing a unique full name for the specified type of ob
 
 
 ## Format 
-```java
+```adams_cmd
 UNIQUE_FULL_NAME(Type) 
 ```
 ## Arguments
@@ -17,12 +17,12 @@ UNIQUE_FULL_NAME(Type)
 The following example illustrates the use of the `UNIQUE_FULL_NAME` function:
 
 ### Function
-```java
+```adams_cmd
 UNIQUE ({9, 1, 1})
 ```
 
 ### Result
-```java
+```adams_cmd
 1.0, 9.0
 ```
 

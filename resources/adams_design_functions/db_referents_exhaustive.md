@@ -3,7 +3,7 @@
 Lists a complete chain of the objects (of the specified type) referred to by a given object. That is immediate referents, referents of referents and so on.
 
 ## Format
-```java
+```adams_cmd
 DB_REFERENTS_EXHAUSTIVE (Object Name, Object Type)
 ```
 ## Arguments
@@ -23,6 +23,6 @@ DB_REFERENTS_EXHAUSTIVE (Object Name, Object Type)
 ## Example
 
 This function is a good way to interrogate parametric models to find all of objects of a given type that influence a certain object in the model. The following example stores the array of objects that are immediate referents, referents of referents and so on of **Marker_1**, in the variable **db06**:
-```java
+```adams_cmd
 var set var = db06 obj=(eval(DB_REFERENTS_EXHAUSTIVE(Marker_1, "all")))
 ```

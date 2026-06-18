@@ -3,7 +3,7 @@
 Returns the angular displacement from one coordinate system object to another, and accounts for angle wrapping.
 
 ## Format
-```java
+```adams_cmd
 AY (Object, Reference Frame)
 ```
 ## Arguments
@@ -24,7 +24,7 @@ AY (Object, Reference Frame)
 
 Mathematically, `AY` is calculated as follows (angle wrapping is accounted for):
 
-```java
+```adams_cmd
 AY = atan2(z_o*x_R, z_o*z_R)
 ```
 
@@ -42,12 +42,12 @@ In the following illustration, the AY function returns the angle between the x-a
 
 
 ### Function  
-```java
+```adams_cmd
 AY(marker_O, marker_R)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 35  
 ```
 
@@ -65,7 +65,7 @@ AY(marker_O, marker_R)
 
 > **Tip**   
 >If you want to change the AY function so it does not account for angle wrapping, use the MOD function. For example, use the function:
->```java
+>```adams_cmd
 >(MOD(AY(.model_1.PART_1.MAR_2, .model_1.ground.MAR_1)+PI,2*PI)-PI)
 >```
 >The MOD function achieves the cyclic effect and the +PI and -PI shift the curve accordingly.

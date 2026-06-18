@@ -4,7 +4,7 @@ Returns the exponential for each element of x.
 
 
 ## Format
-```java
+```adams_cmd
 EXP (x)
 
 ```
@@ -23,11 +23,11 @@ The following example illustrates the use of the `EXP` function. The location of
  
 
 ### Function  
-```java
+```adams_cmd
 EXP(DX(marker_2, marker_1, marker_1))
 ```
 
 ### Result  
-```java
+```adams_cmd
 54.6
 ```

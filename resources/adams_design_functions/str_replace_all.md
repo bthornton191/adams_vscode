@@ -1,7 +1,7 @@
 ## STR_REPLACE_ALL
 Returns a string constructed by replacing all the occurrences of the sub string in an input string with another string
 ## Format
-```java
+```adams_cmd
 STR_REPLACE_ALL (Destination String, Old Sub String, New Replace String)
 ```
  
@@ -19,11 +19,11 @@ STR_REPLACE_ALL (Destination String, Old Sub String, New Replace String)
 The following function returns string constructed by replacing all the occurrence of old sub string with new string
  
 ### Function
-```java
+```adams_cmd
 str_replace_all("aabbccaaaeeffaaaa","aa","cba")
 ```
 ### Result
-```java
+```adams_cmd
 "cbabbcccbaaeeffcbacba"
 ```
  

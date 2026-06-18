@@ -4,7 +4,7 @@ Returns an array of three numbers representing the transformation of coordinates
 
 ## Format
 
-```java
+```adams_cmd
 LOC_LOC (Location, In Frame Object, To Frame Object)
 ```
 
@@ -38,11 +38,11 @@ In the following illustration, the LOC_LOC function returns an array of three nu
 
 
 ## Function 
-```java
+```adams_cmd
 LOC_LOC({-6, 12, 0}, marker_1, marker_2)  
 ```
 
 ## Result  
-```java
+```adams_cmd
 -2, 8, 0 (with respect to marker_2)  
 ```

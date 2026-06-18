@@ -3,7 +3,7 @@
 Returns the number of values in a given field of the object you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_COUNT (Object Name, Field Name)
 ```
 ## Arguments
@@ -24,7 +24,7 @@ DB_COUNT (Object Name, Field Name)
 
 The following function creates a variable with an integer value of 3:
 
-```java
+```adams_cmd
 var create var=xx real_value=1,2,5
 var create var=nn &
     integer_value=(DB_COUNT(xx.self, "real_value"))

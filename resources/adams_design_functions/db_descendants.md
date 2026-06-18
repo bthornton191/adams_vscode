@@ -3,7 +3,7 @@
 Returns the objects of a given type, activity, and number of levels beneath the parent. 
 
 ## Format
-```java
+```adams_cmd
 DB_DESCENDANTS (Object Name, Object Type, Activity Flag, Levels)
 ```
 ## Arguments
@@ -38,7 +38,7 @@ DB_DESCENDANTS (Object Name, Object Type, Activity Flag, Levels)
 ## Example
 
 The following function creates a variable that stores all design variables whose parent model is active and exist within the first two levels below **model_1**:
-```java
+```adams_cmd
 variable create variable=variable_list &
     object_value=(DB_DESCENDANTS (.model_1, "variable", 1, 2))
 ```

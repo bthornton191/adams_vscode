@@ -3,7 +3,7 @@
 Returns a string that describes the type of data in a field beneath the object type you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_FIELD_TYPE (Object Type, Field Name)
 ```
 ## Arguments
@@ -29,12 +29,12 @@ The following example determines that the width field on the Graphic_Interface_D
 
 
 ### Function 
-```java
+```adams_cmd
 var create var=var6 &
     string=(DB_FIELD_TYPE("Graphic_Interface_Dialog_Box", "width"))  
 ```
 
 ## Result  
-```java
+```adams_cmd
 "REAL"  
 ```

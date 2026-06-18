@@ -4,7 +4,7 @@ Returns a vector of the imaginary components of the generalized eigenvectors of 
 
 
 ## Format
-```java
+```adams_cmd
 EIG_VR (A, B)
 
 ```
@@ -25,11 +25,11 @@ The following example illustrates the use of the `EIG_VR` function:
  
 
 ### Function  
-```java
+```adams_cmd
 EIG_VR ({{1,2},{3,4}}, {{5,6},{7,8}})
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0.9999999933, -0.9999999933, 0.9999999933, -0.9999999933}
 ```

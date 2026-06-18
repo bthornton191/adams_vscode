@@ -3,7 +3,7 @@
 Converts a body-fixed 313 sequence into a user-specified sequence. 
 
 ## Format 
-```java
+```adams_cmd
 CONVERT_ANGLES (E, OriType) 
 ```
 ## Arguments 
@@ -39,14 +39,14 @@ The following list contains all the possible values for **OriType**:
 ## Example 
 
 The following function converts input angles into a body-fixed 123 sequence: 
-```java
+```adams_cmd
 CONVERT_ANGLES (E, "body123") 
 ```
 This function is shorthand for: 
-```java
+```adams_cmd
 ANGLES(TMAT(E, "body313"), OriType)
 ```
 The current default orientation type string can be obtained with the expression: 
-```java
+```adams_cmd
 USER_STRING(".system_defaults.orientation_type")
 ```

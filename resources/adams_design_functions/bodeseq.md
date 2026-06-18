@@ -3,7 +3,7 @@
 Returns the gain and/or phase values calculated from two sequences of time-based values describing the input and output of a linear system. The sequences are 1xN arrays of time data or measure entities. 
 
 ## Format 
-```java
+```adams_cmd
 BODESEQ (OUTTYPE, SEQ1, SEQ2, NUMOUT) 
 ```
 ## Arguments

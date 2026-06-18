@@ -5,7 +5,7 @@ Returns the first element in an array if an element exists; otherwise, returns a
 
 ## Format
 
-```java
+```adams_cmd
 FIRST(A)
 ```
 
@@ -18,22 +18,22 @@ FIRST(A)
 The following examples illustrate the use of the FIRST function:
  
 ### Function
-```java
+```adams_cmd
 FIRST ({})
 ```
 
 ### Result
-```java
+```adams_cmd
 0.0
 ``` 
 
 ### Function
-```java
+```adams_cmd
 FIRST({1,2,3})
 ```
 
 ### Result
-```java
+```adams_cmd
 1
 ```
 

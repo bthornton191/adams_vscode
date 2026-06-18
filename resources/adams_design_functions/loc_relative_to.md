@@ -4,7 +4,7 @@ Returns an array of three numbers representing the transformation of coordinates
 
 ## Format
 
-```java
+```adams_cmd
 LOC_RELATIVE_TO (Location, Frame Object)
 ```
 
@@ -29,12 +29,12 @@ In the following illustration, the `LOC_RELATIVE_TO` function returns an array o
 
 
 ## Function 
-```java
+```adams_cmd
 LOC_RELATIVE_TO({16,8,0}, marker_2)
 ```
 
 ## Result  
-```java
+```adams_cmd
 -4, 22, 0
 ```
 

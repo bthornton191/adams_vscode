@@ -8,10 +8,10 @@ This function will invoke given file, open in notepad window for the user to edi
 However its default value is: C:\Windows\notepad.exe 
 
 ## Format 
-```java
+```adams_cmd
 AVIEW_EDIT_FILE (STRING) 
 ```
-```java
+```adams_cmd
 AVIEW_EDIT_FILE( "P:\\work\\aview.cmd" )
 ```
 ## Arguments 
@@ -33,7 +33,7 @@ The following example illustrates the use of the AVIEW_EDIT_FILE function:
 
 
 ### Function  
-```java
+```adams_cmd
 var set var = view_file_status int = (eval(AVIEW_EDIT_FILE($f_input_file_name))) 
 ```
 

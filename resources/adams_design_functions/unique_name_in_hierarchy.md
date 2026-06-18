@@ -3,7 +3,7 @@
 Returns a text string that is a unique database name, taking into account the inherent hierarchy in the given input.This function is essentially a smarter form of `UNIQUE_NAME`. If an entity `myname_1` already exists under `.model_1`, then `UNIQUE_NAME_IN_HIERARCHY(".model_1.myname")` would return `.model_1.myname_2` ensuring that the output is truly unique in the hierarchy specified in the input. Note that an entity `myname_2` might already exist under a different model, but the value returned would still be `.model_1.myname_2` as this name is still unique within the hierarchy of `.model_1`.
 
 ## Format
-```java
+```adams_cmd
 UNIQUE_NAME_IN_HIERARCHY (Base Name)
 ```
 
@@ -18,11 +18,11 @@ Assume that an object stat_1 already exists in the database.
  
 ### Function
 
-```java
+```adams_cmd
 UNIQUE_NAME_IN_HIERARCHY("stat")
 ```
 
 ## Result
-```java
+```adams_cmd
 stat_2
 ```

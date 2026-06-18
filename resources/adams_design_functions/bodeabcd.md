@@ -3,7 +3,7 @@
 Returns gain and/or phase values for the frequency response function for a linear system specified by ABCD linear state matrices. 
 
 ## Format
-```java
+```adams_cmd
 BODEABCD (OUTTYPE, OUTINDEX, A, B, C, D, FREQSTART, FREQEND, FREQARG)
 ```
 ## Arguments
@@ -50,7 +50,7 @@ BODEABCD (OUTTYPE, OUTINDEX, A, B, C, D, FREQSTART, FREQEND, FREQARG)
 ## Examples
 
 The following example assumes that you have four Adams View matrices, ABCD, as follows: 
-```java
+```adams_cmd
 data_element create matrix full &
    matrix_name = .model_1.A &
    input_order = by_row &
@@ -80,6 +80,6 @@ data_element create matrix full &
     values = 0.0
 ```
 Because the four matrices are equivalent to the transfer function used in the **BODETFCOEF** and **BODETFS** examples, you will get identical results when you write the following command (see Using the **OUTTYPE** Key): 
-```java
+```adams_cmd
 var set var=bode_mag_log real=(BODEABCD(7, 1, .model_1.A, &    .model_1.B, .model_1.C, .model_1.D, 0.01, 10, 100))
 ```

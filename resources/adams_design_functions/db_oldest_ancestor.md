@@ -5,7 +5,7 @@ Returns the most distant ancestor of an object of the type specified. This ances
 If the given child has no ancestor of the specified type, then the function returns NONE. 
 
 ## Format 
-```java
+```adams_cmd
 DB_OLDEST_ANCESTOR (Child,Type) 
 ```
 ## Argument 
@@ -31,11 +31,11 @@ The following example illustrates the use of the `DB_OLDEST_ANCESTOR` function:
 
 
 ### Function  
-```java
+```adams_cmd
 DB_OLDEST_ANCESTOR (.model_1.part_1.marker_1,"model" )  
 ```
 
 ### Result  
-```java
+```adams_cmd
 .model_1  
 ```

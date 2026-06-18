@@ -3,7 +3,7 @@
 Returns an array of the numerator coefficients for the Butterworth filter. 
 
 ## Format 
-```java
+```adams_cmd
 BUTTER_NUMERATOR (n, wn, fType, isDigital) 
 ```
 ## Arguments 
@@ -41,11 +41,11 @@ The following example illustrates the **BUTTER_NUMERATOR** function:
 
 
 ### Function  
-```java
+```adams_cmd
 butter_numerator (6, {0.1951, 0.4081}, "pass", 1)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0.0005, 0, 0.0070, 0, -0.0094, 0, 0.0070, 0, -0.002, 8, 0,0.005}  
 ```

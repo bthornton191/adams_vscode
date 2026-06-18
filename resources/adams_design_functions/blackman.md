@@ -3,7 +3,7 @@
 Apply the Blackman window to the input array and return the new array. 
 
 ## Format
-```java
+```adams_cmd
 BLACKMAN (a)
 ```
 ## Arguments
@@ -25,11 +25,11 @@ The following is an illustration of the `BLACKMAN` function:
 
 
 ### Function  
-```java
+```adams_cmd
 blackman ({1,2 3,4,2})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0.0000, 0.6800, 3.0000, 1.3600, 0.0000}  
 ```

@@ -3,7 +3,7 @@
 Displays the contents of the variable on separate lines and presents an OK button. It always returns 1. It is recommended to use `EVAL()` function when using `ALERT2`, both to avoid unnecessary parameterization and for it to function properly.
 
 ## Format 
-```java
+```adams_cmd
 ALERT2 (var, type) 
 ```
 ## Arguments 
@@ -26,7 +26,7 @@ ALERT2 (var, type)
 * Question  
 
 ## Example 
-```java
+```adams_cmd
 var set var=msg str="Out of", "disk", "space" 
 var set var=OK int=(EVAL(ALERT2 (msg.self, "ERROR")))
 ```

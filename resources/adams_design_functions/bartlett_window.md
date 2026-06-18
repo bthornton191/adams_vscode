@@ -3,7 +3,7 @@
 Generate the Bartlett window. 
 
 ## Format
-```java
+```adams_cmd
 BARTLETT_WINDOW (n)
 ```
 ## Arguments
@@ -25,11 +25,11 @@ The following is an illustration of the BARTLETT_WINDOW function:
 
 
 ### Function  
-```java
+```adams_cmd
 bartlett_window (5)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0, 0.5000, 1.0000, 0.5000, 0}  
 ```

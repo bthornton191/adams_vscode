@@ -2,7 +2,7 @@
 Returns a numerical value corresponding to the length of a string.
 
 ## Format
-```java
+```adams_cmd
 STR_LENGTH (Input String)
 ```
 
@@ -15,11 +15,11 @@ STR_LENGTH (Input String)
 The following example illustrates the use of the `STR_LENGTH` function:
  
 ### Function
-```java
+```adams_cmd
 STR_LENGTH ("Hello there")
 ```
 ### Result
-```java
+```adams_cmd
 11
 ```
 The following function returns 10 because the double slash marks (//) concatenated the two strings into one:
@@ -29,6 +29,6 @@ The following function returns 10 because the double slash marks (//) concatenat
 STR_LENGTH ("Hello" // "there")
 ```
 ### Result
-```java
+```adams_cmd
 10
 ```

@@ -3,7 +3,7 @@
 Returns an array element nearest the number you specified.
 
 ## Format 
-```java
+```adams_cmd
 VAL(A, x) 
 ```
 ## Arguments
@@ -22,12 +22,12 @@ The following example illustrates the use of the `VAL` function:
 
 
 ### Function  
-```java
+```adams_cmd
 VAL({2,0,3}, 2.2)
 ```
 
 ### Result  
-```java
+```adams_cmd
 2
 ```
 

@@ -3,7 +3,7 @@
 Returns the numeric conversion factor from the given unit value to the current default units.
 
 ## Format
-```java
+```adams_cmd
 UNITS_CONVERSION_FACTOR (UnitsValue)
 ```
 
@@ -18,7 +18,7 @@ The following illustrates the use of the UNITS_CONVERSION_FACTOR function:
  
 ### Function
 
-```java
+```adams_cmd
 UNITS_CONVERSION_FACTOR("inch")
 ```
 

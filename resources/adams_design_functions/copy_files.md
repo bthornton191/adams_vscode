@@ -3,7 +3,7 @@
 Copies a file to the specified location. Returns 1 if successful. 
 
 ## Format
-```java
+```adams_cmd
 COPY_FILES(String Source_File_Path, String Target_File_Path)
 ```
 ## Argument
@@ -23,10 +23,10 @@ COPY_FILES(String Source_File_Path, String Target_File_Path)
 ## Example
 
 ### Function
-```java
+```adams_cmd
 COPY_FILES( "P:\\work\\aview.log", "D:\\Some_Dir" )
 ```
 ### Returns
-```java
+```adams_cmd
 1
 ```

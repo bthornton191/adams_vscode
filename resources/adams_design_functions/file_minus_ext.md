@@ -3,7 +3,7 @@
 Returns the file name with its extension removed.
 
 ## Format
-```java
+```adams_cmd
 FILE_MINUS_EXT (file_name)
 
 ```
@@ -25,12 +25,12 @@ The following example illustrates the use of the `FILE_MINUS_EXT` function:
  
 
 ### Function  
-```java
+```adams_cmd
 var set var=.file_no_ext string_value=(eval (FILE_MINUS_EXT ("my_file.dat")))
 ```
 
 ### Result  
-```java
+```adams_cmd
 "my_file"
 ```
 

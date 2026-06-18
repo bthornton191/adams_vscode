@@ -3,7 +3,7 @@
 Returns the number of columns in a given matrix. 
 
 ## Format 
-```java
+```adams_cmd
 COLS (M) 
 ```
 ## Argument 
@@ -25,12 +25,12 @@ The following examples illustrate the use of the COLS function:
 
 
 ### Function  
-```java
+```adams_cmd
 COLS({1, 2, 3})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 1  
 ```
 
@@ -39,12 +39,12 @@ COLS({1, 2, 3})
 
 
 ### Function  
-```java
+```adams_cmd
 COLS({[1, 2, 3]})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 3  
 ```
 
@@ -53,11 +53,11 @@ COLS({[1, 2, 3]})
 
 
 ### Function  
-```java
+```adams_cmd
 COLS(marker_1.location)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 1  
 ```

@@ -3,7 +3,7 @@
 Returns the name for the given object based on the state of the default for formatting names. The name will be unique only for objects of the specified type. 
 
 ## Format
-```java
+```adams_cmd
 DB_DEFAULT_NAME_FOR_TYPE (object, type) 
 ```
 ## Arguments 
@@ -23,14 +23,14 @@ DB_DEFAULT_NAME_FOR_TYPE (object, type)
 ## Examples 
 
 If you have two objects named **joint1** (one in the model and one in an analysis) and call the function as follows: 
-```java
+```adams_cmd
 DB_DEFAULT_NAME_FOR_TYPE(.model_1.joint1, "constraint")
 ```
 you should see the following when the default is set to minimum unique names or Adams IDs: 
-```java
+```adams_cmd
 joint1
 ```
 and the following when the default is set to full names: 
-```java
+```adams_cmd
 .model_1.joint1
 ```

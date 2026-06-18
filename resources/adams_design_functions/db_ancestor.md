@@ -5,7 +5,7 @@ Returns the first ancestor of an object of the type you specify. This ancestor m
 If the given child has no ancestor of the specified type, then the function returns NONE. 
 
 ## Format 
-```java
+```adams_cmd
 DB_ANCESTOR (Child,Type) 
 ```
 ## Argument 
@@ -31,11 +31,11 @@ The following is an illustration of how the `DB_ANCESTOR` function is used:
 
 
 ## Function  
-```java
+```adams_cmd
 DB_ANCESTOR (.model_1.part_1.marker_1, "model" )  
 ```
 
 ## Result  
-```java
+```adams_cmd
 .model_1  
 ```

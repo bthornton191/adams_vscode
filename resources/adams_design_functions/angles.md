@@ -3,7 +3,7 @@
 Returns a 3x1 matrix containing angles from the transformation matrix in D. 
 
 ## Format 
-```java
+```adams_cmd
 ANGLES (D, OriType) 
 ```
 ## Arguments 
@@ -23,7 +23,7 @@ ANGLES (D, OriType)
 ## Example 
 
 The following function performs the inverse of the TMAT function: 
-```java
+```adams_cmd
 ANGLES(DCOS, "body313")
 ```
 You can obtain the current default orientation type string with this expression: 

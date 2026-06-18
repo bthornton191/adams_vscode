@@ -3,7 +3,7 @@
 Returns the angular displacement from one coordinate system object to another, and accounts for angle wrapping.
 
 ## Format
-```java
+```adams_cmd
 AZ (Object, Reference Frame)
 ```
 ## Arguments
@@ -24,7 +24,7 @@ AZ (Object, Reference Frame)
 
 Mathematically, `AZ` is calculated as follows (angle wrapping is accounted for):
 
-```java
+```adams_cmd
 AZ = atan2(x_o*y_R, x_o*x_R)
 ```
 
@@ -42,12 +42,12 @@ In the following illustration, the AZ function returns the angle between the x-a
 
 
 ### Function  
-```java
+```adams_cmd
 AZ(marker_O, marker_R)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 35  
 ```
 
@@ -65,7 +65,7 @@ AZ(marker_O, marker_R)
 
 > **Tip**   
 >If you want to change the AZ function so it does not account for angle wrapping, use the MOD function. For example, use the function:
->```java
+>```adams_cmd
 >(MOD(AZ(.model_1.PART_1.MAR_2, .model_1.ground.MAR_1)+PI,2*PI)-PI)
 >```
 >The MOD function achieves the cyclic effect and the +PI and -PI shift the curve accordingly.

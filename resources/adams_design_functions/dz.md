@@ -3,7 +3,7 @@
 Returns an z component of translational displacement from one coordinate system object to another.
 
 ## Format
-```java
+```adams_cmd
 DZ (Object 1, Object 2, Reference Frame)
 
 ```
@@ -29,7 +29,7 @@ component.
 
 ## Symbol
 Mathematically, `DZ` is calculated as follows:
-```java
+```adams_cmd
 DZ = [R_01 - R_02]•z_R
 ```
 where:
@@ -49,12 +49,12 @@ In the following illustration, the `DZ` function returns the z component of the 
  
 
 ### Function  
-```java
+```adams_cmd
 DZ(marker_O1, marker_O2, marker_R)
 ```
 
 ### Result  
-```java
+```adams_cmd
 0
 ```
 

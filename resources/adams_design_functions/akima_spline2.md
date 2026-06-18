@@ -5,7 +5,7 @@ Returns an Akima-spline fit of the dependent values. It clips the output data to
 When the FLAG is 1, `AKIMA_SPLINE2` uses the first set of independent values to determine the step size. When FLAG is 0, it uses the second set of independent values.
 
 ## Format
-```java
+```adams_cmd
 AKIMA_SPLINE2 (Independent Data, Dependent Data, Independent Data2, FLAG)
 ```
 ## Arguments

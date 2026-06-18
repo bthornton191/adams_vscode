@@ -3,7 +3,7 @@
 Returns the magnitude of the translational displacement from one coordinate system object to another.
 
 ## Format
-```java
+```adams_cmd
 DM (Object 1, Object 2)
 
 ```
@@ -23,7 +23,7 @@ DM (Object 1, Object 2)
 
 ## Symbol
 Mathematically, `DM` is calculated as follows:
-```java
+```adams_cmd
 DM = √([R_01 - R_02]•[R_01 - R_02])
 ```
 where:
@@ -39,12 +39,12 @@ In the following illustration, the `DM` function returns a number greater than o
  
 
 ### Function  
-```java
+```adams_cmd
 DM(marker_O1, marker_O2)
 ```
 
 ### Result  
-```java
+```adams_cmd
 12
 ```
 

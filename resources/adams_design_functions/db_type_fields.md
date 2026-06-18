@@ -3,7 +3,7 @@
 Returns an array of strings for the names of the fields (excluding aliases) for the object type you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_TYPE_FIELDS (Objects Type String)
 ```
 ## Argument
@@ -20,7 +20,7 @@ DB_TYPE_FIELDS (Objects Type String)
 
 The following commands return all the field names for marker:
 
-```java
+```adams_cmd
 var set &
     var = db13 &
     str=(EVAL(DB_TYPE_FIELDS("marker")))

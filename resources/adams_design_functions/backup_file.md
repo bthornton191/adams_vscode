@@ -3,7 +3,7 @@
 Renames the specified file to a backup file. The name of the backup file on Linux is file_name appended with %. On Windows, the last character of file_name is replaced with a q.
 
 ## Format
-```java
+```adams_cmd
 BACKUP_FILE( file_name)
 ```
 ## Argument
@@ -19,6 +19,6 @@ BACKUP_FILE( file_name)
 ## Example
 
 The following example renames **foo.dat** to **foo.dat%** (on Linux) or **foo.daq** (on Windows):
-```java
+```adams_cmd
 var set var=bkup int=(eval(BACKUP_FILE("foo.dat")))
 ```

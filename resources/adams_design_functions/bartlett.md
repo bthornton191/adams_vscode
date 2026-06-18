@@ -3,7 +3,7 @@
 Apply the Bartlett window to the input array and return the new array.
 
 ## Format
-```java
+```adams_cmd
 BARTLETT (a)
 ```
 ## Arguments
@@ -25,11 +25,11 @@ The following is an illustration of the `BARTLETT` function:
 
 
 ### Function  
-```java
+```adams_cmd
 bartlett ({1, 2, 3, 4, 2})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0, 1, 3, 2, 0}  
 ```

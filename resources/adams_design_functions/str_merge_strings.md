@@ -1,7 +1,7 @@
 ## STR_MERGE_STRINGS
 Returns a string constructed by joining an array of strings by a delimiter you specify
 ## Format
-```java
+```adams_cmd
 STR_MERGE_STRINGS (Delimiter, Strings)
 ```
  
@@ -16,11 +16,11 @@ STR_MERGE_STRINGS (Delimiter, Strings)
 The following function returns string constructed by joining an array of strings by spaces
  
 ### Function
-```java
+```adams_cmd
 str_merge_strings(" ", {"how", "now", "brown", "cow"})
 ```
 ### Result
-```java
+```adams_cmd
 "how now brown cow"
 ```
  

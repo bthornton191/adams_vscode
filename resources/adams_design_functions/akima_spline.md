@@ -7,7 +7,7 @@ The algorithm that fits the akima spline is from the Journal of the Association 
 The length of the Independent Data array must be the same as the Dependent Data array. 
 
 ## Format 
-```java
+```adams_cmd
 AKIMA SPLINE (Independent Data, Dependent Data, Number of Output Values) 
 ```
 ## Arguments 
@@ -37,12 +37,12 @@ The following function interpolates a set of four points with ordinal values fro
 
 
 ### Function  
-```java
+```adams_cmd
 AKIMA_SPLINE({1, 2, 3, 4}, {0, 2, 1, 3}, 10)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0.0, 1.0, 1.667, 2.0, 1.778, 1.222, 1.0, 1.333, 2.0, 3.0}  
 ```
 
@@ -53,11 +53,11 @@ To compute the ordinal values for these splined values, you can use the `SERIES2
 
 
 ## Function  
-```java
+```adams_cmd
 SERIES2(1, 4, 10)  
 ```
 
 ## Result  
-```java
+```adams_cmd
 {1.0, 1.333, 1.667, 2.0, 2.333, 2.667, 3.0, 3.333, 3.667,  
 ```

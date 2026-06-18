@@ -4,7 +4,7 @@ Returns an array of objects of a given type, that are children of the object you
 
 ## Format
 
-```java
+```adams_cmd
 DB_CHILDREN (Object Name, Object Type)
 ```
 ## Arguments
@@ -25,7 +25,7 @@ DB_CHILDREN (Object Name, Object Type)
 
 The following function provides information on a marker in the default model:
 
-```java
+```adams_cmd
 list entity &
     entity=(EVAL(SELECT_TEXT(DB_CHILDREN(DB_DEFAULT(.system.defaults, "model"), "marker))))
 ```

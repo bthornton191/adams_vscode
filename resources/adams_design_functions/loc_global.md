@@ -2,7 +2,7 @@
 Returns an array of three numbers representing the global coordinates of a location obtained from transforming the local coordinates by a specified location.
 
 ## Format
-```java
+```adams_cmd
 LOC_GLOBAL (Location, Frame Object)
 ```
 
@@ -21,12 +21,12 @@ LOC_GLOBAL (Location, Frame Object)
 In the following illustration, the `LOC_GLOBAL` function returns an array of three numbers representing the global coordinates of a location:
  
 ## Function
-```java
+```adams_cmd
 LOC_GLOBAL({-5, -8, 0}, marker_1)
 ```
 
 ## Result
-```java
+```adams_cmd
 14, 12, 0 (in the global coordinate system)
 ```
 

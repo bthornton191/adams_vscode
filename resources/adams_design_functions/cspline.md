@@ -7,7 +7,7 @@ The algorithm that fits the cubic spline is from *Computer Methods for Mathemati
 The length of the Independent Data array must be equal to the Dependent Data array. 
 
 ## Format 
-```java
+```adams_cmd
 CSPLINE (Independent Data, Dependent Data, Number of Output Values) 
 ```
 ## Arguments 
@@ -37,12 +37,12 @@ The following function interpolates a set of four points with ordinal values fro
 
 
 ### Function 
-```java
+```adams_cmd
 CSPLINE({1, 2, 3, 4}, {0, 2, 1, 3}, 10)  
 ```
 
 ### Result 
-```java
+```adams_cmd
 {0.0, 0.936, 1.704, 2.0, 1.741, 1.259, 1.0, 1.296, 2.037, 3.0} 
 ```
 
@@ -54,12 +54,12 @@ To compute the ordinal values for these splined values, you can use the `SERIES2
 
 
 ### Function  
-```java
+```adams_cmd
 SERIES2(1, 4, 10)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {1.0, 1.333, 1.667, 2.0, 2.333, 2.667, 3.0, 3.333, 3.667, 4.0}  
 ```
 

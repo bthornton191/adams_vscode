@@ -3,7 +3,7 @@
 Returns the mean of a matrix.
 
 ## Format
-```java
+```adams_cmd
 MEAN(x)
 ```
 ## Argument
@@ -25,11 +25,11 @@ The following example illustrates the use of the MEAN function:
 
 
 ### Function
-```java
+```adams_cmd
 MEAN({0.1, 0.2, 0.3, 3.4})
 ```
 
 ### Result
-```java
+```adams_cmd
 1.0
 ```

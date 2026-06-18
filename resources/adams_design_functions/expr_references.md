@@ -5,7 +5,7 @@ returns a 0 value.
 
 
 ## Format
-```java
+```adams_cmd
 EXPR_REFERENCES (Expression)
 ```
 
@@ -15,6 +15,6 @@ EXPR_REFERENCES (Expression)
 : A character string name of a database field.
 
 ## Example
-```java
+```adams_cmd
 var set var=load_dep int=(eval(expr_references(".mod.par.mar.loc")))
 ```

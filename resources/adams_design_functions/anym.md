@@ -3,7 +3,7 @@
 Returns the logical sum of the elements of a matrix. If any value is nonzero, the result is nonzero. 
 
 ## Format 
-```java
+```adams_cmd
 ANYM (M) 
 ```
 ## Argument 
@@ -25,12 +25,12 @@ The following examples illustrate the use of the ANYM function:
 
 
 ### Function  
-```java
+```adams_cmd
 ANYM({8, 0, 1})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 1  
 ```
 
@@ -39,12 +39,12 @@ ANYM({8, 0, 1})
 
 
 ### Function  
-```java
+```adams_cmd
 ANYM({0, 0, 0})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 0  
 ```
 
@@ -53,11 +53,11 @@ ANYM({0, 0, 0})
 
 
 ### Function  
-```java
+```adams_cmd
 ANYM({[4, 0], [0, 0]})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 1  
 ```

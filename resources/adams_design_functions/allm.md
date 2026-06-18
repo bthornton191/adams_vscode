@@ -3,7 +3,7 @@
 Returns the logical product of the elements of a matrix. If all values are nonzero, then the result is nonzero. 
 
 ## Format 
-```java
+```adams_cmd
 ALLM (M) 
 ```
 ## Argument
@@ -25,12 +25,12 @@ The following examples illustrate the use of the ALLM function:
 
 
 ### Function  
-```java
+```adams_cmd
 ALLM({1, 0, 1})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 0  
 ```
 
@@ -39,12 +39,12 @@ ALLM({1, 0, 1})
 
 
 ### Function  
-```java
+```adams_cmd
 ALLM({1, 2, 3})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 1  
 ```
 
@@ -54,11 +54,11 @@ ALLM({1, 2, 3})
 
 
 ### Function  
-```java
+```adams_cmd
 ALLM({[1, 1], [1, 0]})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 0  
 ```

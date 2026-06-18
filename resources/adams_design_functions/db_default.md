@@ -3,7 +3,7 @@
 Returns the default object of a given type. Uses the database object named system_defaults to specify the default object.
 
 ## Format
-```java
+```adams_cmd
 DB_DEFAULT (Defaults Object Name, Object Type)
 ```
 ## Arguments
@@ -24,7 +24,7 @@ DB_DEFAULT (Defaults Object Name, Object Type)
 
 The following function creates a variable that is the default part:
 
-```java
+```adams_cmd
 var create var=default_part &
     object_value=(DB_DEFAULT(system_defaults, "part"))
 ```

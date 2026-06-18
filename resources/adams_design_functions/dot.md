@@ -4,7 +4,7 @@ Returns the dot product of two matrixes.
 
 
 ## Format
-```java
+```adams_cmd
 DOT (M1, M2)
 
 ```
@@ -29,11 +29,11 @@ The following example illustrates the use of the `DOT` function:
  
 
 ### Function  
-```java
+```adams_cmd
 DOT({1,1,0},{1,0,1})
 ```
 
 ### Result  
-```java
+```adams_cmd
 1
 ```

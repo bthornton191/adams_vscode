@@ -3,7 +3,7 @@
 Returns the gain and/or phase values for the frequency response function of an Adams transfer function element. 
 
 ## Format 
-```java
+```adams_cmd
 BODETFS (OUTTYPE, TFSISO, FREQSTART, FREQEND, FREQSTEP) 
 ```
 ## Arguments 
@@ -35,7 +35,7 @@ BODETFS (OUTTYPE, TFSISO, FREQSTART, FREQEND, FREQSTEP)
 ## Examples 
 
 The following function assumes that you created an Adams transfer function element, as follows: 
-```java
+```adams_cmd
 model create model=model_1
 
 measure create function  &
@@ -67,7 +67,7 @@ part create equation transfer_function  &
     denominator_coefficients = 1.0, 0.4, 1.14, 0.22
 ```
 Because the transfer function is equivalent to the four matrices used in the **BODEABCD** and **BODELSE** examples, you will get identical results when you write the following command (see Using the **OUTTYPE** Key): 
-```java
+```adams_cmd
 variable set variable=bode_mag_log &
     real=(BODETFS(7, .model_1.TRANSFER_FUNCTION_1, 0.01, 10.0, 100))
 ```

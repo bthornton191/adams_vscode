@@ -3,7 +3,7 @@
 Returns an array of all the parametric expressions that depend on the object you specified. 
 
 ## Format 
-```java
+```adams_cmd
 DB_DEL_PARAM_DEPENDENTS (Object Name) 
 ```
 ## Argument 
@@ -20,7 +20,7 @@ DB_DEL_PARAM_DEPENDENTS (Object Name)
 
 The following sequence of commands finds objects with parametric dependencies on **par3**: 
 
-```java
+```adams_cmd
 var set &
     var = db16 &
     obj = (eval(DB_DEL_PARAM_DEPENDENTS(par3)))

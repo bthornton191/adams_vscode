@@ -3,7 +3,7 @@
 Shifts values in an array to start at a particular value (often used to shift a curve so that the value at its starting point is 0--aligning along the curve to 0). 
 
 ## Format 
-```java
+```adams_cmd
 ALIGN (real array, real number) 
 ```
 ## Argument 
@@ -23,10 +23,10 @@ ALIGN (real array, real number)
 ## Examples 
 
 The following example shifts curve_1 to start at the same value as curve_2. 
-```java
+```adams_cmd
 ALIGN (.plot_1.curve_1, .plot_1.curve_2.Y_data[1])
 ```
 The following example shifts curve_1 to start at 0. 
-```java
+```adams_cmd
 ALIGN (.plot_1.curve_1, 0)
 ```

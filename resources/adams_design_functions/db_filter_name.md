@@ -3,7 +3,7 @@
 Returns an array of objects whose names match the filter parameters you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_FILTER_NAME (Objects to Filter, Filter String)
 ```
 ## Arguments
@@ -24,7 +24,7 @@ DB_FILTER_NAME (Objects to Filter, Filter String)
 
 The following example assigns the color yellow to all the markers whose names start with a or c:
 
-```java
+```adams_cmd
 marker attributes &
     marker = (EVAL(DB_FITLER_NAME(DB_CHILDREN(.model_1, "marker"), "[ac]*"))) &
     color = yellow

@@ -5,7 +5,7 @@ found in the X_array. X_array and Y_array must be the same length.
 
 
 ## Format 
-```java
+```adams_cmd
 VALAT(X_array, Y_array, X_value)
 ```
 ## Arguments
@@ -30,7 +30,7 @@ Used to define the domain of the curve.
 
 
 ### Function  
-```java
+```adams_cmd
 model create model=mod1
 variable create variable=x_array  rea=-1,0,2,3
 variable create variable=y_array  rea= 1,2,3,4

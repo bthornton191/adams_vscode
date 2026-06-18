@@ -3,7 +3,7 @@
 Returns an array of the cutoff frequencies for the Butterworth filter. 
 
 ## Format 
-```java
+```adams_cmd
 BUTTORD_FREQUENCY (wp, ws, rp, rs, isDigital)
 ```
 ## Arguments 
@@ -41,12 +41,12 @@ The following is an illustration of the **BUTTORD_FREQUENCY** function:
 
 
 ### Function  
-```java
+```adams_cmd
 buttord_frequency ({0.2, 0.4}, {0.1, 0.5}, 3.0, 30.0, 1)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0.19151, 0.4081}  
 ```
 

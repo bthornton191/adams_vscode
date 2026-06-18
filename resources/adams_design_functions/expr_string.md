@@ -4,7 +4,7 @@ Returns a text string containing an expression in a given field of an object tha
 
 
 ## Format
-```java
+```adams_cmd
 EXPR_STRING (Object Field)
 ```
 
@@ -16,27 +16,27 @@ EXPR_STRING (Object Field)
 ## Examples
 The following examples assume that you created a marker as follows:
 
-```java
+```adams_cmd
 marker create marker=mar1 location=(loc_relative_to({0,0,0}, mar2)) ori=1,2,3 
 ```
 
 ### Function
-```java
+```adams_cmd
 EXPR_STRING("mar1.location")
 ```
 
 ### Result
-```java
+```adams_cmd
 "(LOC_RELATIVE_TO({0, 0, 0}, .mod1.ground.mar2))"
 ```
 
 ### Function
-```java
+```adams_cmd
 EXPR_STRING(".mar1.orientation")
 ```
 
 ### Result
-```java
+```adams_cmd
 " " (an empty string)
 ```
 

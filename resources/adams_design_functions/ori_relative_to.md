@@ -5,7 +5,7 @@ This function is shorthand for `ORI_ORI(Orientation, Frame Object, To Frame Obje
 
 ## Format
 
-```java
+```adams_cmd
 ORI_RELATIVE_TO (Body313 Rotations, Frame Object)
 ```
 
@@ -34,11 +34,11 @@ The following example illustrates the use of the `ORI_RELATIVE_TO` function:
 
 
 ## Function 
-```java
+```adams_cmd
 ORI_RELATIVE_TO({marker_1.orientation}, marker_2)
 ```
 
 ## Result  
-```java
+```adams_cmd
 180, 90, 180
 ```

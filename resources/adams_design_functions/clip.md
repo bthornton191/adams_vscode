@@ -12,7 +12,7 @@ The following conditions apply to the equations above:
 * Numvals < (N-Start+1)
 
 ## Format 
-```java
+```adams_cmd
 CLIP (A, Start, Numvals) 
 ```
 ## Arguments 
@@ -42,11 +42,11 @@ The following example illustrates the use of the `CLIP` function:
 
 
 ### Function  
-```java
+```adams_cmd
 CLIP( {[8, 10], [12,14], [16, 18]} , 1 ,1 )  
 ```
 
 ## Result  
-```java
+```adams_cmd
 8, 12, 16  
 ```

@@ -3,7 +3,7 @@
 Returns a text string that is a unique database name.
 
 ## Format
-```java
+```adams_cmd
 UNIQUE_NAME (Base Name)
 ```
 ## Arguments
@@ -18,11 +18,11 @@ The following example illustrates the use of the UNIQUE_NAME function:
 
 
 ### Function  
-```java
+```adams_cmd
 UNIQUE_NAME("stat")  
 ```
 
 ### Result  
-```java
+```adams_cmd
 stat_1  
 ```

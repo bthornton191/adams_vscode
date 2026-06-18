@@ -1,7 +1,7 @@
 # STR_FIND
 Returns the starting location of the first occurrence of a string within another string. If there is no match, it returns a 0.
 ## Format
-```java
+```adams_cmd
 STR_FIND (Base String, Search String)
 ```
 ## Arguments
@@ -16,32 +16,32 @@ STR_FIND (Base String, Search String)
 The following examples illustrate the use of the STR_FIND function:
  
 ### Function
-```java
+```adams_cmd
 STR_FIND ("Hello", "l")
 ```
 
 ### Result
-```java
+```adams_cmd
 3
 ```
  
 ### Function
-```java
+```adams_cmd
 STR_FIND ("Hello", "o")
 ```
 
 ### Result
-```java
+```adams_cmd
 5
 ```
 The following function uses a second character in its search criteria to return 4, because letter "l" appears twice in the word hello:
  
 ### Function
-```java
+```adams_cmd
 STR_FIND ("Hello", "lo")
 ```
 
 ### Result
-```java
+```adams_cmd
 4
 ```

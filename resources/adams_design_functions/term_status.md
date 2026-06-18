@@ -8,7 +8,7 @@ For complete details, see PARSE_STATUS.
 > **Note**: This function returns its error codes as indicated in the expression above. First, it returns all the **A3TERM:STATUS** codes found in the file. Then, it returns all the **TERM:STATUS** codes that are appended to them.
 
 ## Format
-```java
+```adams_cmd
 TERM_STATUS (fileName)
 ```
 ## Argument
@@ -45,7 +45,7 @@ TERM_STATUS (fileName)
 
 ## Example
 ### Command
-```java
+```adams_cmd
 variable create variable=status integer=(term_status("test.msg"))
 ```
 ### Returns 

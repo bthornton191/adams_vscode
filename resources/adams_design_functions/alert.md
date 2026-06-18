@@ -3,7 +3,7 @@
 Returns an alert box using the labels you specify. It is recommended to use `EVAL()` function when using `ALERT`, both to avoid unnecessary parameterization and for it to function properly.
 
 ## Format
-```java
+```adams_cmd
 ALERT (Type, Message Text, Button 1 Label, Button 2 Label, Button 3 Label, Default Choice)
 ```
 ## Arguments
@@ -50,7 +50,7 @@ The following function creates an alert box:
 
 
 ### Function  
-```java
+```adams_cmd
 ALERT("Information", "Create a test?", "Yes", "No", "Cancel", 2)  
 ```
 

@@ -3,7 +3,7 @@
 Deletes all duplicate elements from an array.
 
 ## Format 
-```java
+```adams_cmd
 UNIQUE(Array) 
 ```
 ## Arguments
@@ -15,12 +15,12 @@ UNIQUE(Array)
 The following example illustrates the use of the `UNIQUE` function:
 
 ### Function
-```java
+```adams_cmd
 var cre var=UNIQUE("marker")
 ```
 
 ### Result
-```java
+```adams_cmd
 .model_1.ground.MAR
 ```
 

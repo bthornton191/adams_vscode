@@ -4,7 +4,7 @@ Indicates if a real value is an element of an array.
 
 
 ## Format
-```java
+```adams_cmd
 ELEMENT(A, X)
 ```
 
@@ -20,20 +20,20 @@ ELEMENT(A, X)
 Assume that the array in the following function contains the values 1 through 10:
  
 ### Function
-```java
+```adams_cmd
 ELEMENT(.MOD1.A,3)
 ```
 
 ### Result
-```java
+```adams_cmd
 true
 ```
 ### Function
-```java
+```adams_cmd
 ELEMENT(.MOD1.A,11)
 ```
 
 ### Result
-```java
+```adams_cmd
 false
 ```

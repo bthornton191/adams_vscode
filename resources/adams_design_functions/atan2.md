@@ -3,7 +3,7 @@
 Returns the arc tangent of two expressions, each representing a numerical value. x1 and x2 themselves can be expressions.
 
 ## Format 
-```java
+```adams_cmd
 ATAN2(x1, x2)
 ```
 ## Arguments
@@ -29,11 +29,11 @@ The following function shows the arc tangent of the expression a/b where a is th
 
 
 ### Function  
-```java
+```adams_cmd
 ATAN2 (DX(marker_2, marker_1, marker_2), DY(marker_2, marker_1, marker_2))  
 ```
 
 ### Result  
-```java
+```adams_cmd
 45  
 ```

@@ -3,7 +3,7 @@
 Displays the contents of the variable on separate lines and presents an alert window with up to three buttons containing specified labels. It is recommended to use `EVAL()` function when using `ALERT3`, both to avoid unnecessary parameterization and for it to function properly.
 
 ## Format 
-```java
+```adams_cmd
 ALERT3 (var, type, b1, b2, b3, choice) 
 ```
 ## Arguments 
@@ -42,7 +42,7 @@ ALERT3 (var, type, b1, b2, b3, choice)
 
 
 ## Example 
-```java
+```adams_cmd
 var set var=msg str="Out of", "disk", "space"
 var set var=OK int=(ALERT3 (msg.self, "ERROR", "OK", "Cancel", "", 1))
 ```

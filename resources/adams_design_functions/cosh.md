@@ -3,7 +3,7 @@
 Returns the hyperbolic cosine of an expression that represents a numerical value. 
 
 ## Format
-```java
+```adams_cmd
 COSH(x) 
 ```
 ## Argument 
@@ -25,12 +25,12 @@ The following function returns the hyperbolic cosine of the z component of the d
 
 
 ### Function  
-```java
+```adams_cmd
 COSH(DZ(marker_2, marker_1, marker_1))  
 ```
 
 ### Result  
-```java
+```adams_cmd
 1  
 ```
 ![](figures/cosh_1.bmp)

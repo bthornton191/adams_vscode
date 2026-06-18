@@ -3,7 +3,7 @@
 Returns the smallest integer greater than x.
 
 ## Format 
-```java
+```adams_cmd
 CEIL(x) 
 ```
 ## Argument 
@@ -16,11 +16,11 @@ CEIL(x)
 The following example illustrates the use of the `CEIL` function:
 
 ### Function  
-```java
+```adams_cmd
 CEIL(10.001)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 11  
 ```

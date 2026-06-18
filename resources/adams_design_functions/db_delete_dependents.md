@@ -3,7 +3,7 @@
 Returns an array of objects that are dependents of the object you specified. Each of the objects in the array normally prevent the specified object from being deleted.
 
 ## Format
-```java
+```adams_cmd
 DB_DELETE_DEPENDENTS (Object Name)
 ```
 ## Argument
@@ -20,7 +20,7 @@ DB_DELETE_DEPENDENTS (Object Name)
 
 The following function returns an alert if par_1 has dependent objects:
 
-```java
+```adams_cmd
 if condition=(DB_OBJECT_COUNT(DB_DELETE_DEPENDENTS(.model_1.par_1)>0))
     ! take action as needed here
 end

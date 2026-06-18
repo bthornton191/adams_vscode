@@ -3,7 +3,7 @@
 Returns the cross-product of two matrices. 
 
 ## Format 
-```java
+```adams_cmd
 CROSS (M1, M2) 
 ```
 ## Arguments 
@@ -31,11 +31,11 @@ The following example illustrates the use of the CROSS function:
 
 
 ### Function  
-```java
+```adams_cmd
 CROSS({1,0,0}, {0,1,0})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0, 0, 1}  
 ```

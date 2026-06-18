@@ -3,7 +3,7 @@
 Returns an y component of translational displacement from one coordinate system object to another.
 
 ## Format
-```java
+```adams_cmd
 DY (Object 1, Object 2, Reference Frame)
 
 ```
@@ -29,7 +29,7 @@ component.
 
 ## Symbol
 Mathematically, `DY` is calculated as follows:
-```java
+```adams_cmd
 DY = [R_01 - R_02]•y_R
 ```
 where:
@@ -49,12 +49,12 @@ In the following illustration, the `DY` function returns the y component of the 
  
 
 ### Function  
-```java
+```adams_cmd
 DY(marker_O1, marker_O2, marker_R)
 ```
 
 ### Result  
-```java
+```adams_cmd
 12
 ```
 

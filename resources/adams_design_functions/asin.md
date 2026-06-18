@@ -3,7 +3,7 @@
 Returns the arc sine of an expression that represents a numerical value. ASIN is defined only when the absolute value of the expression is 1. The range of ASIN is [/2,/2] (that is,/2 < ASIN(x) < /2). 
 
 ## Format
-```java
+```adams_cmd
 ASIN(x) 
 ```
 ## Argument
@@ -25,12 +25,12 @@ The following function calculates the value of the expression DX(marker_2, marke
 
 
 ### Function  
-```java
+```adams_cmd
 ASIN(DY(marker_2, marker_1, marker_2) / DM(marker_2, marker_1))  
 ```
 
 ### Returns  
-```java
+```adams_cmd
 45  
 ```
 ![](figures/asin_1.bmp)

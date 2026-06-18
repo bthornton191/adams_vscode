@@ -3,7 +3,7 @@
 Returns output gain and/or phase values for the frequency response function for an Adams View linear state equation element. 
 
 ## Format
-```java
+```adams_cmd
 BODELSE (OUTTYPE, OUTINDEX, O_LSE, FREQSTART, FREQEND, FREQARG) 
 ```
 ## Arguments
@@ -41,7 +41,7 @@ BODELSE (OUTTYPE, OUTINDEX, O_LSE, FREQSTART, FREQEND, FREQARG)
 ## Examples
 
 In the following example, the ABCD matrices from `BODEABCD` are encapsulated in an Adams linear state equation element, as follows: 
-```java
+```adams_cmd
 model create model=model_1
 
 measure create function  &
@@ -74,6 +74,6 @@ part create equation linear_state_equation  &
    static_hold = on 
 ```
 Because the four matrices are equivalent to the transfer function used in the **BODETFCOEF** and **BODETFS** examples, you will get identical results when you write the following command (see Using the **OUTTYPE** Key): 
-```java
+```adams_cmd
 variable set variable=bode_mag_log real=(BODELSE(7, 1, .model_1.lse, 0.01, 10, 100))
 ```

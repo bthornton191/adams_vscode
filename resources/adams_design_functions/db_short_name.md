@@ -3,7 +3,7 @@
 Returns the shortest unique name for the given object. This name may become non-unique when new objects are created, so it is best not to use this value to generate names for files that will be present for a long time.
 
 ## Format 
-```java
+```adams_cmd
 DB_SHORT_NAME (object) 
 ```
 ## Arguments 
@@ -21,10 +21,10 @@ DB_SHORT_NAME (object)
 Assuming you have two markers with the same name on two different parts.
 
 ### Function
-```java
+```adams_cmd
 DB_SHORT_NAME(.model_1.par1.mar1)
 ```
 ### Result
-```java
+```adams_cmd
 par1.mar1
 ```

@@ -3,7 +3,7 @@
 Returns the cosine of an expression that represents a numerical value. 
 
 ## Format 
-```java
+```adams_cmd
 COS(x) 
 ```
 ## Argument
@@ -26,12 +26,12 @@ The following example illustrates the use of the `COS` function. The location of
 
 
 ### Function  
-```java
+```adams_cmd
 COS(DX(marker_2, marker_1, marker_2))  
 ```
 
 ### Result  
-```java
+```adams_cmd
 .99  
 ```
 

@@ -4,7 +4,7 @@ Returns a vector of the real components of the generalized eigenvectors of matri
 
 
 ## Format
-```java
+```adams_cmd
 EIG_DR (A, B)
 
 ```
@@ -25,12 +25,12 @@ The following example illustrates the use of the `EIG_DR` function:
  
 
 ### Function  
-```java
+```adams_cmd
 EIG_DR ({{1,2},{3,4}}, {{5,6},{7,8}})
 ```
 
 ### Result  
-```java
+```adams_cmd
 {1.0, 0.0, 0.0, 1.0}
 ```
 

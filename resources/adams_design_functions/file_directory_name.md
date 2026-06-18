@@ -2,7 +2,7 @@
 Returns a 1 if a file exists, and a 0 if it doesn't.
 
 ## Format
-```java
+```adams_cmd
 FILE_EXISTS(file_name)
 ```
 
@@ -15,19 +15,19 @@ FILE_EXISTS(file_name)
 For the following examples, assume that a file named aview.log% exists, and avkiew.log% does not.
 
 ### Function
-```java
+```adams_cmd
 FILE_EXISTS(aview.log%)
 ```
 ### Returns
-```java
+```adams_cmd
 1
 ```
 
 ### Function
-```java
+```adams_cmd
 FILE_EXISTS(avkiew.log%)
 ```
 ### Returns
-```java
+```adams_cmd
 0
 ```

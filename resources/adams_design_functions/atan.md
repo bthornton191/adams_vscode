@@ -3,7 +3,7 @@
 Returns the arc tangent of an expression that represents a numerical value. The range of `ATAN` is `[-pi/2, pi/2]` (that is, `pi/2 < ATAN(x) < pi/2`). 
 
 ## Format 
-```java
+```adams_cmd
 ATAN(x)
 ```
 ## Argument
@@ -25,13 +25,13 @@ The following example illustrates the use of the ATAN function. The location of 
 
 
 ## Function  
-```java
+```adams_cmd
 ATAN(DX(marker_2, marker_1, marker_2) /
 DY(marker_2, marker_1, marker_2))  
 ```
 
 ## Returns  
-```java
+```adams_cmd
 45  
 ```
 ![](figures/atan_1.bmp)

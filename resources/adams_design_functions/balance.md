@@ -3,7 +3,7 @@
 Finds a similarity transformation T such that B = T/A*T has, as nearly as possible, approximately equal row and column norms. T is a permutation of a diagonal matrix whose elements are integer powers of two so that the balancing does not introduce any round-off error, then returns B. 
 
 ## Format
-```java
+```adams_cmd
 BALANCE(A)
 ```
 ## Arguments 
@@ -25,12 +25,12 @@ The following example illustrates the use of the BALANCE function:
 
 
 ### Function  
-```java
+```adams_cmd
 BALANCE({{1,2},{3,4}})  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {{1,2}, {3,4}}  
 ```
 

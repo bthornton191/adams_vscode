@@ -3,7 +3,7 @@
 Filter a curve with the Butterworth filter specified by the order and cutoff frequency. 
 
 ## Format 
-```java
+```adams_cmd
 BUTTER_FILTER (x, y, fType, order, cutoff, isAnalog, isTwoPass) returns ARRAY 
 ```
 ## Argument 

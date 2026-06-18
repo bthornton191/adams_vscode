@@ -3,7 +3,7 @@
 Computes the Bode response for a given set of A, B, C, and D matrices. These matrices are usually produced as the result of a linear system analysis. 
 
 ## Format 
-```java
+```adams_cmd
 BODELSM (resultType, outIndex, LSM, freqStart, freqEnd, freqStep) 
 ```
 ## Arguments 
@@ -62,7 +62,7 @@ If both phases and magnitudes are to be returned, then there are two rows for ea
 
 
 ## Examples 
-```java
+```adams_cmd
 simulation single statematrix & 
     state_matrices_name=.model_1.Analysis.Stmat_1 &
     plant_input_name = .model_1.pinput & 
@@ -74,6 +74,6 @@ If the system has a pair of inputs and a pair of outputs, there will be four res
 * row 2 = input 1/output 2
 * row 3 = input 2/output 1
 * row 4 = input 2/output 2
-```java
+```adams_cmd
 var create var=mags  rea=(BodeLSM (4, 3, Stmat_1, 1, 100, 50))
 ```

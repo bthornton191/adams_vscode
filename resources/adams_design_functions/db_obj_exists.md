@@ -3,7 +3,7 @@
 Returns a logical value indicating whether the specified object exists as an immediate child of the parent object. 
 
 ## Format 
-```java
+```adams_cmd
 DB_OBJ_EXISTS (Parent, Name) 
 ```
 ## Arguments 
@@ -29,12 +29,12 @@ The following illustrates the use of `DB_OBJ_EXISTS`:
 
 
 ### Function  
-```java
+```adams_cmd
 DB_OBJ_EXISTS(.model_1.par1, "mar1")  
 ```
 
 ### Result  
 Assuming **mar1** does **NOT** exist
-```java
+```adams_cmd
 0
 ```

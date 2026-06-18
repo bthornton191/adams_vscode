@@ -3,7 +3,7 @@
 Returns a string that is the name of a non-existent file. It is the file system analogous to the database `UNIQUE_NAME` function.
 
 ## Format 
-```java
+```adams_cmd
 UNIQUE_FILE_NAME(Initial File Name) 
 ```
 ## Arguments
@@ -19,12 +19,12 @@ The following example illustrates the use of the `UNIQUE_FILE_NAME` function:
 
 
 ### Function  
-```java
+```adams_cmd
 UNIQUE_FILE_NAME("test")
 ```
 
 ### Result  
-```java
+```adams_cmd
 test_1
 ```
 

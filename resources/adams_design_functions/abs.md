@@ -3,7 +3,7 @@
 Returns the absolute value of an expression that represents a numerical value. 
 
 ## Format 
-```java
+```adams_cmd
 ABS(x) 
 ```
 ## Argument 
@@ -25,11 +25,11 @@ The following example illustrates the use of the ABS function:
 
 
 ### Function  
-```java
+```adams_cmd
 ABS(3*(-.89))  
 ```
 
 ### Result  
-```java
+```adams_cmd
 2.67  
 ```

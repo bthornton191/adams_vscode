@@ -4,7 +4,7 @@ Returns a vector of the imaginary components of the generalized eigenvectors of 
 
 
 ## Format
-```java
+```adams_cmd
 EIG_VI (A, B)
 
 ```
@@ -25,11 +25,11 @@ The following example illustrates the use of the `EIG_VI` function:
  
 
 ### Function  
-```java
+```adams_cmd
 EIG_VI ({{1,2},{3,4}}, {{5,6},{7,8}})
 ```
 
 ### Result  
-```java
+```adams_cmd
 {5.7669324483E-09, 6.7041961058E-09, -5.7669324483E-09, -6.7041961058E-09}
 ```

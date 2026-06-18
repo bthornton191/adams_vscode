@@ -11,7 +11,7 @@ Returns a Boolean value indicating that the object will or will not take part in
 
 
 ## Format
-```java
+```adams_cmd
 DB_ACTIVE (object)
 ```
 ## Argument
@@ -27,7 +27,7 @@ DB_ACTIVE (object)
 ## Example
 
 The following is an illustration of how the `DB_ACTIVE` function is used:
-```java 
+```adams_cmd 
 if condition=(EVAL(DB_ACTIVE(.model_1.part_1)))     
 
     ! Then the part and all of

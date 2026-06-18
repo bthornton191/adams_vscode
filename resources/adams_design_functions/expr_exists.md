@@ -5,7 +5,7 @@ it does not.
 
 
 ## Format
-```java
+```adams_cmd
 EXPR_EXISTS(Object Field)
 ```
 
@@ -16,26 +16,26 @@ EXPR_EXISTS(Object Field)
 
 ## Example
 The following examples assume that you created a marker as follows:
-```java
+```adams_cmd
 marker create marker=mar1 location=(loc_relative_to({0,0,0}, mar2)) ori=1,2,3 
 ```
 
 ### Function
-```java
+```adams_cmd
 EXPR_EXISTS(".mar1.location")
 ```
 
 ### Result
-```java
+```adams_cmd
 1 (true)
 ```
 
 ### Function
-```java
+```adams_cmd
 EXPR_EXISTS(".mar1.orientation")
 ```
 
 ### Result
-```java
+```adams_cmd
 0 (false)
 ```

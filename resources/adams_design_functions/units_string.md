@@ -3,7 +3,7 @@
 Returns a text string containing a unit string associated with another string.
 
 ## Format 
-```java
+```adams_cmd
 UNITS_STRING(Object Field) 
 ```
 ## Arguments
@@ -15,12 +15,12 @@ UNITS_STRING(Object Field)
 The following example illustrates the use of the `UNITS_STRING` function:
 
 ### Function
-```java
+```adams_cmd
 UNITS_STRING(".mod1.part1.density")
 ```
 
 ### Result
-```java
+```adams_cmd
 returns something like kg/mm**3
 ```
 

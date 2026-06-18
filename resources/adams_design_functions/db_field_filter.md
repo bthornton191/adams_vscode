@@ -3,7 +3,7 @@
 Returns an array, from a given array of field names, containing a subset of the original array. The values in the array must meet the requirements that you specify in filter parameters.
 
 ## Format
-```java
+```adams_cmd
 DB_FIELD_FILTER (Filter Strings, Field Strings)
 ```
 ## Arguments
@@ -46,7 +46,7 @@ DB_FIELD_FILTER (Filter Strings, Field Strings)
 
 The following is a typical calling sequence that produces all the real scalar fields for the spring damper object:
 
-```java
+```adams_cmd
 var set var=tt &
     str = (EVAL(DB_FIELD_FILTER({"object_type=spring_damper", "t=real", "c=1"}, DB_TYPE_FIELDS("spring_damper"))))
 ```

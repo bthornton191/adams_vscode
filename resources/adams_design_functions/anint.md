@@ -11,7 +11,7 @@ Returns the nearest integer whose magnitude is not larger than the real value of
 The value of the mathematical function `ANINT` of a variable x is equal to x if x is an integer. If x is not an integer, then `ANINT(x)` is equal to the integer nearest to x whose magnitude is not greater than the magnitude of x. 
 
 ## Format
-```java
+```adams_cmd
 ANINT(x) 
 ```
 ##Argument 
@@ -33,12 +33,12 @@ The following examples illustrate the use of the ANINT function:
 
 
 ### Function  
-```java
+```adams_cmd
 ANINT(-4.6)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 -5  
 ```
 
@@ -47,11 +47,11 @@ ANINT(-4.6)
 
 
 ### Function  
-```java
+```adams_cmd
 ANINT(4.6)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 5  
 ```

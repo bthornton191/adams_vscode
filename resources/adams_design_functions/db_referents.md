@@ -3,7 +3,7 @@
 Returns an array of objects of a given type that are referenced by the object you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_REFERENTS (Object Name, Object Type)
 ```
 ## Arguments
@@ -23,7 +23,7 @@ DB_REFERENTS (Object Name, Object Type)
 ## Example
 
 The following example stores the array of objects that refer to **rev1**, in the variable **db06**:
-```java
+```adams_cmd
 var set var = db06 &
     obj = (EVAL(DB_REFERENTS(rev1, "all")))
 ```

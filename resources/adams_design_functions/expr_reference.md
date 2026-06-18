@@ -6,7 +6,7 @@ returns an empty string.
 
 
 ## Format
-```java
+```adams_cmd
 EXPR_REFERENCE (Expression, Reference)
 ```
 
@@ -19,6 +19,6 @@ EXPR_REFERENCE (Expression, Reference)
 : A numeric index into the list of references to that field.
 
 ## Example
-```java
+```adams_cmd
 var set var=load_dep str=(eval(expr_reference(".mod.par.mar.loc", 1))) 
 ```

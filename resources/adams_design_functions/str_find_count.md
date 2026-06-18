@@ -1,7 +1,7 @@
 ## STR_FIND_COUNT
 Returns the number of occurrences of a string found within another string. Overlapping matches are not included.
 ## Format
-```java
+```adams_cmd
 STR_FIND_COUNT (Base String, Search String)
 ```
  
@@ -16,29 +16,29 @@ STR_FIND_COUNT (Base String, Search String)
 The following examples illustrate the use of the `STR_FIND_COUNT` function:
  
 ### Function
-```java
+```adams_cmd
 STR_FIND_COUNT("hammer stammer", "mm")
 ```
 ### Result
-```java
+```adams_cmd
 2
 ```
  
 ### Function
-```java
+```adams_cmd
 STR_FIND_COUNT("hellllo jello", "ll")
 ```
 ### Result
-```java
+```adams_cmd
 3
 ```
 The following function returns 2 because the overlapping, matching 9's from 239990 to 129990 are not included:
  
 ### Function
-```java
+```adams_cmd
 STR_FIND_COUNT("239990 129990", "99")
 ```
 ### Result
-```java
+```adams_cmd
 2
 ```

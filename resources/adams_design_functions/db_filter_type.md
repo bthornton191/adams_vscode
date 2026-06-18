@@ -3,7 +3,7 @@
 Returns an array of objects whose types match the filter parameters you specified.
 
 ## Format
-```java
+```adams_cmd
 DB_FILTER_TYPE (Objects to Filter, Filter Type String)
 ```
 ## Arguments
@@ -24,7 +24,7 @@ DB_FILTER_TYPE (Objects to Filter, Filter Type String)
 
 The following example returns information about markers in the select list:
 
-```java
+```adams_cmd
 list_info entity &
     entity = (EVAL(DB_FILTER_TYPE( select_list.objects, "marker")))
 ```

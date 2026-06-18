@@ -7,7 +7,7 @@ The length of the Independent Data array must be equal to the Dependent Data arr
 Reference: *Digital Computation and Numerical Methods. Southworth, 1965. Chapter 8.7*
 
 ## Format 
-```java
+```adams_cmd
 CUBIC_SPLINE (Independent Data, Dependent Data, Number of Output Values) 
 ```
 ## Arguments 
@@ -37,12 +37,12 @@ The following function interpolates a set of four points with ordinal values fro
 
 
 ### Function  
-```java
+```adams_cmd
 CUBIC_SPLINE({1, 2, 3, 4}, {0, 2, 1, 3}, 10)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {0.0, 1.0, 1.667, 2.0, 2.0, 1.667, 1.0, 1.333, 2.0, 3.0}  
 ```
 
@@ -53,12 +53,12 @@ To compute the ordinal values for these splined values, you can use the `SERIES2
 
 
 ### Function  
-```java
+```adams_cmd
 SERIES2(1, 4, 10)  
 ```
 
 ### Result  
-```java
+```adams_cmd
 {1.0, 1.333, 1.667, 2.0, 2.333, 2.667, 3.0, 3.333, 3.667, 4.0}  
 ```
 

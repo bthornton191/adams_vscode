@@ -3,7 +3,7 @@
 Returns the full name for the named object of the specified type. The input name can be either a full name or a minimum unique name. 
 
 ## Format 
-```java
+```adams_cmd
 DB_FULL_NAME_FROM SHORT (short_name, type) 
 ```
 ## Arguments 
@@ -23,10 +23,10 @@ DB_FULL_NAME_FROM SHORT (short_name, type)
 ## Examples 
 
 If you have two objects named joint1 (one in the model and one in an analysis) and call the function as follows: 
-```java
+```adams_cmd
 DB_FULL_NAME_FROM_SHORT("joint1", "constraint")
 ```
 you should see: 
-```java
+```adams_cmd
 .model_1.joint1
 ```
