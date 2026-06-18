@@ -24,16 +24,25 @@ This is a VS Code extension for MSC Adams multi-body dynamics simulation softwar
 
 ## Testing
 
-Always add tests for new features and bug fixes. Tests should cover both expected functionality and edge cases. Follow the existing test patterns
+Always add tests for new features and bug fixes. Tests should cover both expected functionality and edge cases. Follow the existing test patterns.
 
-- Tests are Mocha integration tests and require a running Adams View process. The global setup in `test/global_fixture.cjs` launches Adams before tests run.
 - Use `suite()` / `test()` (not `describe()` / `it()`).
 - Use `test/utils.js` helpers (`waitForAdamsConnection`, socket helpers) rather than reimplementing connection logic.
 - Place test working files under `test/working_directory/`.
-- **Preferred way to run tests**: Use VS Code's built-in Test Explorer (the beaker icon). This runs tests through the full extension host with Adams available, and results are visible both in the Test Explorer UI and via the `test_failure` tool (which Copilot can query to read results automatically).
-- **Copilot test workflow**: After making changes, use `runTests` with specific test file paths to trigger a VS Code test run and get immediate pass/fail results. Use `test_failure` to read detailed failure info. Iterate until all tests pass. This is the **required** workflow — do not use the terminal to run tests.
 
-### Test failure: "test process exited unexpectedly"
+### Two test tiers
+
+**Unit tests** (hover provider, completion provider, etc.) have no Adams dependency and can run directly with Mocha:
+
+```
+node_modules\.bin\mocha --ui tdd test/cmd_hover_provider.test.js
+```
+
+These tests use `require("vscode")`, which is satisfied by the minimal stub at `node_modules/vscode/index.js`. That stub only exposes `Hover`, `MarkdownString`, and `Position` — enough for the current unit tests. If you add a test that needs another VS Code API, extend the stub. The real VS Code extension host always intercepts `require("vscode")` before reaching `node_modules`, so the stub is only active in the Mocha CLI context and does not affect the running extension.
+
+**Integration tests** (anything in `global_fixture.cjs` that connects to Adams View) require the full extension host. Run them via the **"Run Extension Tests"** launch configuration in `.vscode/launch.json` (F5 in VS Code with that config selected). This launches a VS Code extension development host that provides the real `vscode` module and runs `test/index.js` as the Mocha entry point. Adams View must be running before triggering this launch.
+
+### Integration test failure: "test process exited unexpectedly"
 
 When **every** test in a run (including unrelated ones) fails with `Test process exited unexpectedly` and no assertion message, this is **not a code problem**. There are two common causes:
 
