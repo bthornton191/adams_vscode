@@ -112,6 +112,10 @@ function cmd_hover_provider(
 
             const word = document.getText(range).toLowerCase();
 
+            // Adams identifiers and command keywords never start with a digit,
+            // so skip early to avoid spurious cmd_hover_miss telemetry events.
+            if (/^\d/.test(word)) return undefined;
+
             // --- Command hover ---
             // Use the FULL current line (plus any & continuation lines before it) so
             // that hovering the first keyword of a multi-word command works correctly.

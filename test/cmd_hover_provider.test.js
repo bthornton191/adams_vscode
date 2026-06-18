@@ -175,6 +175,54 @@ suite("cmd_hover_provider — function hover", () => {
         assert.strictEqual(reporter.calls.telemetry[0][0], "cmd_hover_miss");
         assert.strictEqual(reporter.calls.telemetry[0][1].word, "noop");
     });
+
+    test("returns Hover for 'eval' (Adams design function)", () => {
+        const view_functions = new Map([["eval", "# EVAL\nEvaluates a string expression."]]);
+        const provider = cmd_hover_provider(view_functions, {}, new Map(), null);
+
+        const result = provider.provideHover(makeDocument("eval(x)", "eval"), pos0, null);
+
+        assert.ok(result instanceof vscode.Hover);
+        assert.ok(result.contents[0].value.includes("EVAL"));
+    });
+
+    test("returns Hover for '_self' (Adams macro self-reference variable)", () => {
+        const view_functions = new Map([["_self", "# $_self\nMacro self-reference."]]);
+        const provider = cmd_hover_provider(view_functions, {}, new Map(), null);
+
+        const result = provider.provideHover(makeDocument("$_self", "_self"), pos0, null);
+
+        assert.ok(result instanceof vscode.Hover);
+        assert.ok(result.contents[0].value.includes("_self"));
+    });
+
+    test("'_self' in command argument context falls through to function hover", () => {
+        // Line: "variable set variable_name=$_self"
+        // strip_argument_pairs strips "variable_name=$_self", leaving "variable set"
+        // "_self" is not in the command tokens, so the function hover fires.
+        const view_functions = new Map([["_self", "# $_self\nMacro self-reference."]]);
+        const view_commands = { "variable set": ["variable_name"] };
+        const provider = cmd_hover_provider(view_functions, view_commands, new Map(), null);
+
+        const doc = makeDocument("variable set variable_name=$_self", "_self");
+        const result = provider.provideHover(doc, pos0, null);
+
+        assert.ok(result instanceof vscode.Hover);
+        assert.ok(result.contents[0].value.includes("_self"));
+    });
+
+    test("sends telemetry type=function for 'eval'", () => {
+        const view_functions = new Map([["eval", "# EVAL\nEvaluates a string expression."]]);
+        const reporter = makeMockReporter();
+        const provider = cmd_hover_provider(view_functions, {}, new Map(), reporter);
+
+        provider.provideHover(makeDocument("eval(x)", "eval"), pos0, null);
+
+        assert.strictEqual(reporter.calls.telemetry.length, 1);
+        assert.strictEqual(reporter.calls.telemetry[0][0], "cmd_hover_provider");
+        assert.strictEqual(reporter.calls.telemetry[0][1].word, "eval");
+        assert.strictEqual(reporter.calls.telemetry[0][1].type, "function");
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -428,5 +476,58 @@ suite("cmd_hover_provider — abbreviation resolution", () => {
         const result = provider.provideHover(doc, pos0, null);
 
         assert.strictEqual(result, undefined);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Numeric literal guard tests
+// ---------------------------------------------------------------------------
+
+suite("cmd_hover_provider — numeric literal guard", () => {
+    const view_functions = new Map([["abs", "**abs**(x)"]]);
+
+    function makeProvider() {
+        return cmd_hover_provider(view_functions, VIEW_COMMANDS, COMMAND_DOCS, null);
+    }
+
+    test("returns undefined for single digit '0'", () => {
+        const result = makeProvider().provideHover(makeDocument("0", "0"), pos0, null);
+        assert.strictEqual(result, undefined);
+    });
+
+    test("returns undefined for single digit '1'", () => {
+        const result = makeProvider().provideHover(makeDocument("1", "1"), pos0, null);
+        assert.strictEqual(result, undefined);
+    });
+
+    test("returns undefined for multi-digit integer '42'", () => {
+        const result = makeProvider().provideHover(makeDocument("42", "42"), pos0, null);
+        assert.strictEqual(result, undefined);
+    });
+
+    test("does not emit any telemetry for a numeric word", () => {
+        const reporter = makeMockReporter();
+        const provider = cmd_hover_provider(view_functions, {}, new Map(), reporter);
+
+        provider.provideHover(makeDocument("0", "0"), pos0, null);
+
+        assert.strictEqual(reporter.calls.telemetry.length, 0);
+    });
+
+    test("does not suppress cmd_hover_miss telemetry for a normal unknown word", () => {
+        // Regression: guard must only fire for digit-leading words, not all unknowns
+        const reporter = makeMockReporter();
+        const provider = cmd_hover_provider(view_functions, {}, new Map(), reporter);
+
+        provider.provideHover(makeDocument("noop", "noop"), pos0, null);
+
+        assert.strictEqual(reporter.calls.telemetry.length, 1);
+        assert.strictEqual(reporter.calls.telemetry[0][0], "cmd_hover_miss");
+    });
+
+    test("function hover still works for alphabetic word after guard", () => {
+        // Regression: ensure the guard does not block legitimate function hovers
+        const result = makeProvider().provideHover(makeDocument("abs(x)", "abs"), pos0, null);
+        assert.ok(result instanceof vscode.Hover);
     });
 });
