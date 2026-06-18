@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.2.3 (June 18th 2026)](#223-june-18th-2026)
   - [2.2.2 (June 16th 2026)](#222-june-16th-2026)
   - [2.2.1 (June 15th 2026)](#221-june-15th-2026)
   - [2.2.0 (June 12th 2026)](#220-june-12th-2026)
@@ -79,6 +80,13 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.2.3 (June 18th 2026)
+
+- **Fixed** hover provider firing `cmd_hover_miss` telemetry on numeric literals (`0`, `1`, etc.). Adams identifiers can never start with a digit, so these tokens now return no hover silently.
+- **Added** hover documentation for `eval()` and `$_self` — the two most-missed words in hover telemetry.
+- **Improved** hover documentation code fences now use `adams_cmd` syntax highlighting instead of `java`.
+- **Fixed** `DOE_MATRIX` documentation merged from an orphaned file in `adams_view_commands/` (where it was never loaded) into `adams_design_functions/` with three full examples.
 
 ## 2.2.2 (June 16th 2026)
 
