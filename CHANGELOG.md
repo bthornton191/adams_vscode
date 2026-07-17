@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.2.4 (June 24th 2026)](#224-june-24th-2026)
   - [2.2.3 (June 18th 2026)](#223-june-18th-2026)
   - [2.2.2 (June 16th 2026)](#222-june-16th-2026)
   - [2.2.1 (June 15th 2026)](#221-june-15th-2026)
@@ -80,6 +81,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.2.4 (June 24th 2026)
+
+- **Fixed** "Open Adams View" and "Open In View" still silently failing to launch Adams in the installed extension (the 2.2.2 `child_process.exec` fix worked in the Extension Development Host but not when VS Code is launched normally). Root cause: the extension host is a GUI process with **no console**, so `exec`/`spawn` run MSC's launcher chain (`mdi.bat` → `menu.exe` → `run_mdi.py` → `os.system("call adamsctl_<RAND>.bat")`) without a real console; that chain needs one and silently fails (exiting 0) without it. Both commands now launch through a **hidden VS Code integrated terminal** (cmd in a ConPTY pseudo-console), which provides the real console the launcher requires — the same context as running the command in an integrated Command Prompt. No console windows flash (the terminal is hidden inside VS Code), and the Adams View GUI appears normally.
 
 ## 2.2.3 (June 18th 2026)
 

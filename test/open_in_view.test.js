@@ -1,6 +1,5 @@
 const assert = require("assert");
 const path = require("path");
-const child_process = require("child_process");
 const fs = require("fs");
 const vscode = require("vscode");
 const { open_in_view } = require("../src/open_in_view.ts.js");
@@ -26,22 +25,27 @@ function makeMockReporter() {
 }
 
 /**
- * Capture a child_process.exec call: exec(command, options, callback).
- * The launcher is fire-and-forget, so the return value is unused.
+ * Stub vscode.window.createTerminal and capture the options + sendText calls.
+ * Returns a fake Terminal. Set `throwOnCreate` to simulate a creation failure.
  */
-function captureExec() {
-    const c = {};
-    child_process.exec = (command, options, callback) => {
-        c.command = command;
+function captureTerminal(throwOnCreate = false) {
+    const c = { created: false, sendTextCalls: [] };
+    vscode.window.createTerminal = (options) => {
+        if (throwOnCreate) throw new Error("terminal failed");
+        c.created = true;
         c.options = options;
-        c.callback = callback;
-        return {};
+        return {
+            sendText: (text, addNewLine) => c.sendTextCalls.push({ text, addNewLine }),
+            show() {},
+            hide() {},
+            dispose() { c.disposed = true; },
+        };
     };
     return c;
 }
 
 suite("open_in_view", () => {
-    let originalExec;
+    let originalCreateTerminal;
     let originalExistsSync;
     // Use a path with spaces â€” this is the regression case that broke repeatedly
     const FAKE_LAUNCH_CMD = "C:/Program Files/fake/mdi.bat";
@@ -50,12 +54,12 @@ suite("open_in_view", () => {
         await vscode.workspace
             .getConfiguration("msc-adams")
             .update("adamsLaunchCommand", FAKE_LAUNCH_CMD, vscode.ConfigurationTarget.Workspace);
-        originalExec = child_process.exec;
+        originalCreateTerminal = vscode.window.createTerminal;
         originalExistsSync = fs.existsSync;
     });
 
     suiteTeardown(async () => {
-        child_process.exec = originalExec;
+        vscode.window.createTerminal = originalCreateTerminal;
         fs.existsSync = originalExistsSync;
         await vscode.workspace
             .getConfiguration("msc-adams")
@@ -67,25 +71,24 @@ suite("open_in_view", () => {
     });
 
     teardown(() => {
-        child_process.exec = originalExec;
+        vscode.window.createTerminal = originalCreateTerminal;
         fs.existsSync = originalExistsSync;
     });
 
-    test("should not exec when launch command path does not exist", (done) => {
-        let execCalled = false;
-        child_process.exec = () => { execCalled = true; return {}; };
+    test("should not create a terminal when launch command path does not exist", (done) => {
+        const c = captureTerminal();
         fs.existsSync = () => false;
 
         const context = makeContext("C:/fake/launcher.bat");
         open_in_view(context, output_channel, null)(makeUri("C:/models/mymodel.cmd"));
 
-        assert.strictEqual(execCalled, false,
-            "exec should not be called when the launch command does not exist");
+        assert.strictEqual(c.created, false,
+            "a terminal should not be created when the launch command does not exist");
         done();
     });
 
     test("should send config_missing telemetry when launch command does not exist", (done) => {
-        child_process.exec = () => ({});
+        captureTerminal();
         fs.existsSync = () => false;
 
         const reporter = makeMockReporter();
@@ -97,17 +100,19 @@ suite("open_in_view", () => {
         done();
     });
 
-    test("should exec a command containing launcher, filename, and Adams launch path", (done) => {
+    test("should send a command containing launcher, filename, and Adams launch path", (done) => {
         const launcher = "C:/fake/launcher.bat";
-        const c = captureExec();
+        const c = captureTerminal();
 
         const uri = makeUri("C:/models/mymodel.cmd");
         open_in_view(makeContext(launcher), output_channel, null)(uri);
 
-        assert.strictEqual(typeof c.command, "string", "exec must be called with a command string");
-        assert.ok(c.command.includes(launcher), "command must contain the launcher path");
-        assert.ok(c.command.includes(path.basename(uri.fsPath)), "command must contain the model filename");
-        assert.ok(c.command.includes(FAKE_LAUNCH_CMD), "command must contain the Adams launch path");
+        assert.strictEqual(c.created, true, "a terminal must be created to launch Adams");
+        assert.strictEqual(c.sendTextCalls.length, 1, "the launch command must be sent once");
+        const sent = c.sendTextCalls[0].text;
+        assert.ok(sent.includes(launcher), "command must contain the launcher path");
+        assert.ok(sent.includes(path.basename(uri.fsPath)), "command must contain the model filename");
+        assert.ok(sent.includes(FAKE_LAUNCH_CMD), "command must contain the Adams launch path");
         done();
     });
 
@@ -115,29 +120,32 @@ suite("open_in_view", () => {
         // open_in_view wraps each token in quotes; the Adams launch path
         // ("C:/Program Files/...") contains spaces and must stay one token.
         const launcher = "C:/fake/launcher.bat";
-        const c = captureExec();
+        const c = captureTerminal();
 
         const uri = makeUri("C:/models/mymodel.cmd");
         open_in_view(makeContext(launcher), output_channel, null)(uri);
 
-        assert.ok(c.command.includes(`"${launcher}"`), "launcher must be quoted");
-        assert.ok(c.command.includes(`"${path.basename(uri.fsPath)}"`), "filename must be quoted");
-        assert.ok(c.command.includes(`"${FAKE_LAUNCH_CMD}"`), "launch path must be quoted");
+        const sent = c.sendTextCalls[0].text;
+        assert.ok(sent.includes(`"${launcher}"`), "launcher must be quoted");
+        assert.ok(sent.includes(`"${path.basename(uri.fsPath)}"`), "filename must be quoted");
+        assert.ok(sent.includes(`"${FAKE_LAUNCH_CMD}"`), "launch path must be quoted");
         done();
     });
 
-    test("should pass cwd as the directory containing the model file", (done) => {
-        const c = captureExec();
+    test("should use a hidden cmd terminal with cwd = the model file's directory", (done) => {
+        const c = captureTerminal();
 
         const uri = makeUri("C:/models/mymodel.cmd");
         open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(uri);
 
         assert.strictEqual(c.options.cwd, path.dirname(uri.fsPath));
+        assert.strictEqual(c.options.hideFromUser, true, "the terminal must be hidden from the user");
+        assert.ok(/cmd\.exe$/i.test(c.options.shellPath || ""), "the terminal must use cmd.exe");
         done();
     });
 
     test("should not crash when reporter is null", (done) => {
-        child_process.exec = () => ({});
+        captureTerminal();
 
         assert.doesNotThrow(() => {
             open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
@@ -146,7 +154,7 @@ suite("open_in_view", () => {
     });
 
     test("should send telemetry event when reporter is provided", (done) => {
-        child_process.exec = () => ({});
+        captureTerminal();
 
         const reporter = makeMockReporter();
         open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, reporter)(makeUri("C:/models/mymodel.cmd"));
@@ -156,29 +164,23 @@ suite("open_in_view", () => {
         done();
     });
 
-    test("should send error telemetry when the exec callback receives an error", (done) => {
-        const c = captureExec();
+    test("should send terminal_error telemetry when createTerminal throws", (done) => {
+        captureTerminal(true);
 
         const reporter = makeMockReporter();
         open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, reporter)(makeUri("C:/models/mymodel.cmd"));
 
-        const err = new Error("launch failed");
-        c.callback(err);
-
         assert.strictEqual(reporter.calls.errors.length, 1);
         assert.strictEqual(reporter.calls.errors[0][0], "open_in_view");
-        assert.strictEqual(reporter.calls.errors[0][1].error_type, "process_error");
-        assert.strictEqual(reporter.calls.errors[0][1].error_message, err.message);
+        assert.strictEqual(reporter.calls.errors[0][1].error_type, "terminal_error");
         done();
     });
 
-    test("should not crash when reporter is null and the exec callback errors", (done) => {
-        const c = captureExec();
-
-        open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
+    test("should not crash when reporter is null and createTerminal throws", (done) => {
+        captureTerminal(true);
 
         assert.doesNotThrow(() => {
-            c.callback(new Error("launch failed"));
+            open_in_view(makeContext("C:/fake/launcher.bat"), output_channel, null)(makeUri("C:/models/mymodel.cmd"));
         });
         done();
     });

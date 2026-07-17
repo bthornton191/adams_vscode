@@ -1,6 +1,5 @@
 const vscode = require("vscode");
 const fs = require("fs");
-const child_process = require("child_process");
 
 function open_view_here(output_channel, reporter = null) {
     return (uri) => {
@@ -37,29 +36,36 @@ function open_view_here(output_channel, reporter = null) {
                     !!adams_launch_command && fs.existsSync(adams_launch_command),
                 ),
             });
-        // Launch via child_process.exec: runs the launcher through a hidden
-        // cmd.exe (no flashing console windows) while the mdi.bat chain still
-        // runs in a real console — which MSC's launcher (run_mdi.py -> adamsctl)
-        // requires — and the Adams View GUI shows its own window. This is the
-        // long-standing approach that the 2.x exec->execFile->spawn->wscript
-        // refactors regressed (flashing, then silent no-launch).
-        child_process.exec(
-            `"${adams_launch_command}" aview ru-s i`,
-            { cwd: uri.fsPath },
-            (error) => {
-                if (error) {
-                    console.log(`error: ${error.message}`);
-                    output_channel.appendLine(
-                        `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
-                    );
-                    if (reporter)
-                        reporter.sendTelemetryErrorEvent("open_view_here", {
-                            error_type: "process_error",
-                            error_message: error.message,
-                        });
-                }
-            },
-        );
+        // Launch through a hidden VS Code integrated terminal rather than
+        // child_process.exec. The extension host is a GUI process with no
+        // console, so exec runs `cmd /d /s /c` with piped I/O and no real
+        // console; MSC's launcher chain (mdi.bat -> menu.exe -> run_mdi.py ->
+        // os.system("call adamsctl_<RAND>.bat")) needs a real console and
+        // silently fails without one (exiting 0). The integrated terminal runs
+        // cmd in a ConPTY (a real pseudo-console), which is the context the user
+        // verified works, and hideFromUser keeps it out of the panel with no
+        // flashing console window. Adams View shows its own GUI window.
+        try {
+            const terminal = vscode.window.createTerminal({
+                name: "Adams View",
+                cwd: uri.fsPath,
+                shellPath: process.env.ComSpec || "cmd.exe",
+                hideFromUser: true,
+            });
+            // Do not dispose the terminal: that would kill the shell process
+            // tree, potentially taking the just-launched Adams with it.
+            terminal.sendText(`"${adams_launch_command}" aview ru-s i`, true);
+        } catch (error) {
+            console.log(`error: ${error.message}`);
+            output_channel.appendLine(
+                `[${new Date().toLocaleTimeString()}]: error: ${error.message}`,
+            );
+            if (reporter)
+                reporter.sendTelemetryErrorEvent("open_view_here", {
+                    error_type: "terminal_error",
+                    error_message: error.message,
+                });
+        }
     };
 }
 exports.open_view_here = open_view_here;
