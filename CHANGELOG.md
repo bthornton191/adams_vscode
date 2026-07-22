@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.3.1 (July 22nd 2026)](#231-july-22nd-2026)
   - [2.3.0 (July 22nd 2026)](#230-july-22nd-2026)
   - [2.2.4 (June 24th 2026)](#224-june-24th-2026)
   - [2.2.3 (June 18th 2026)](#223-june-18th-2026)
@@ -82,6 +83,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.3.1 (July 22nd 2026)
+
+- **Changed** Terminal profile renamed from "Adams CMD" to "Adams" with a red terminal icon in the terminal dropdown and tab.
 
 ## 2.3.0 (July 22nd 2026)
 
