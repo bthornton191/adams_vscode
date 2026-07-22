@@ -95,7 +95,8 @@ function getAdamsTerminalOptions(context) {
     }
 
     return {
-        name: "Adams CMD",
+        name: "Adams",
+        iconPath: new vscode.ThemeIcon("terminal", new vscode.ThemeColor("terminal.ansiRed")),
         shellPath: process.env.ComSpec || "cmd.exe",
         shellArgs: ["/K", wrapperPath],
         cwd: cwd,
@@ -199,7 +200,8 @@ function open_adams_terminal(context, output_channel, reporter) {
 
         try {
             var terminal = vscode.window.createTerminal({
-                name: "Adams CMD",
+                name: "Adams",
+                iconPath: new vscode.ThemeIcon("terminal", new vscode.ThemeColor("terminal.ansiRed")),
                 shellPath: process.env.ComSpec || "cmd.exe",
                 shellArgs: ["/K", wrapperPath],
                 cwd: cwd,

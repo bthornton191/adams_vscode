@@ -324,7 +324,7 @@ suite("open_adams_terminal", () => {
         open_adams_terminal(fakeContext, output_channel, null)();
 
         assert.strictEqual(c.created, true, "a terminal must be created");
-        assert.strictEqual(c.options.name, "Adams CMD", "terminal name must be 'Adams CMD'");
+        assert.strictEqual(c.options.name, "Adams", "terminal name must be 'Adams'");
         assert.ok(/cmd\.exe$/i.test(c.options.shellPath || ""),
             "shellPath must be cmd.exe");
         assert.ok(Array.isArray(c.options.shellArgs),
