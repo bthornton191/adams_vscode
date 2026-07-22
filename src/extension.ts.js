@@ -13,6 +13,7 @@ const { cmd_hover_provider } = require("./cmd_hover_provider.ts");
 const { link_provider } = require("./link_provider.ts.js");
 const { add_adams_site_packages } = require("../src/add_adams_site_packages.ts.js");
 const { cmd_lsp_client } = require("./cmd_lsp_client.ts.js");
+const { open_adams_terminal, getAdamsTerminalOptions } = require("./open_adams_terminal.ts.js");
 
 //Create output channel
 const output_channel = vscode.window.createOutputChannel("MSC Adams");
@@ -223,7 +224,38 @@ function activate(context, enableTelemetry = true, skipCommandRegistration = fal
                 "msc_adams.loadAdamsSitePackages",
                 add_adams_site_packages(output_channel, reporter),
             ),
+            vscode.commands.registerCommand(
+                "msc_adams.openAdamsTerminal",
+                open_adams_terminal(context, output_channel, reporter),
+            ),
         );
+
+        // Terminal Profile Provider — lets users select "Adams CMD" from
+        // the terminal dropdown (+ icon) in addition to the command palette.
+        try {
+            context.subscriptions.push(
+                vscode.window.registerTerminalProfileProvider(
+                    "msc_adams.adamsTerminal",
+                    {
+                        provideTerminalProfile(token) {
+                            try {
+                                var opts = getAdamsTerminalOptions(context);
+                                return new vscode.TerminalProfile(opts);
+                            } catch (err) {
+                                output_channel.appendLine(
+                                    `[${new Date().toLocaleTimeString()}]: Failed to provide Adams terminal profile: ${err.message}`,
+                                );
+                                return undefined;
+                            }
+                        },
+                    },
+                ),
+            );
+        } catch (err) {
+            output_channel.appendLine(
+                `[${new Date().toLocaleTimeString()}]: Failed to register Adams terminal profile: ${err.message}`,
+            );
+        }
     }
 
     // Set to run whenever the loadStubFiles setting is changed

@@ -1,6 +1,7 @@
 # Changelog
 
 - [Changelog](#changelog)
+  - [2.3.0 (July 22nd 2026)](#230-july-22nd-2026)
   - [2.2.4 (June 24th 2026)](#224-june-24th-2026)
   - [2.2.3 (June 18th 2026)](#223-june-18th-2026)
   - [2.2.2 (June 16th 2026)](#222-june-16th-2026)
@@ -81,6 +82,10 @@
     - [Snippets](#snippets)
     - [Improvements to the Adams View Python stub files](#improvements-to-the-adams-view-python-stub-files)
     - [Improvements to Debugger](#improvements-to-debugger)
+
+## 2.3.0 (July 22nd 2026)
+
+- **Added** "MSC Adams: Open Adams Terminal" command and "Adams CMD" terminal profile. Opens a VS Code integrated terminal pre-configured with the Adams environment (PATH, compiler settings, working directory). Derives `AdamsSetup.bat` from the configured `mdi.bat` path, generates a filtered copy in extension global storage that replaces the `%~dsp0` self-discovery line with the literal Adams installation path and removes the `%windir%\system32\cmd.exe /K` line that would spawn a nested shell. The terminal profile appears in the terminal dropdown (+ icon) alongside the command palette entry. Minimum VS Code engine bumped from 1.63 to 1.65 for `registerTerminalProfileProvider` support.
 
 ## 2.2.4 (June 24th 2026)
 

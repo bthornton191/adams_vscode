@@ -3,7 +3,7 @@
     "displayName": "MSC Adams",
     "publisher": "savvyanalyst",
     "description": "Support for the MSC Adams lanugages",
-    "version": "2.2.4",
+    "version": "2.3.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/bthornton191/adams_vscode.git"
@@ -14,7 +14,7 @@
     },
     "qna": "marketplace",
     "engines": {
-        "vscode": "^1.63.0"
+        "vscode": "^1.65.0"
     },
     "categories": [
         "Programming Languages"
@@ -29,7 +29,9 @@
         "onLanguage:python",
         "onCommand:msc_adams.activate",
         "onCommand:msc_adams.openInView",
-        "onCommand:msc_adams.openViewHere"
+        "onCommand:msc_adams.openViewHere",
+        "onCommand:msc_adams.openAdamsTerminal",
+        "onTerminalProfile:msc_adams.adamsTerminal"
     ],
     "icon": "./images/adams.png",
     "contributes": {
@@ -75,11 +77,24 @@
                 "icon": "resources/icons/adams.svg"
             },
             {
+                "command": "msc_adams.openAdamsTerminal",
+                "title": "MSC Adams: Open Adams Terminal",
+                "icon": "resources/icons/adams.svg"
+            },
+            {
                 "command": "msc_adams.loadStubFiles",
                 "title": "MSC Adams: Load adamspy stub files",
                 "icon": "resources/icons/adams.svg"
             }
         ],
+        "terminal": {
+            "profiles": [
+                {
+                    "id": "msc_adams.adamsTerminal",
+                    "title": "Adams CMD"
+                }
+            ]
+        },
         "menus": {
             "explorer/context": [
                 {
